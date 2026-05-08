@@ -11,10 +11,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700",
-  secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300",
-  danger: "bg-red-600 text-white hover:bg-red-700",
-  ghost: "bg-transparent text-gray-700 hover:bg-gray-100"
+  primary: "bg-primary-400 text-white hover:bg-primary-500",
+  secondary: "glass-soft border border-white/60 text-neutral-700 hover:bg-white/70",
+  danger: "bg-danger text-white hover:bg-red-600",
+  ghost: "bg-transparent text-neutral-700 hover:bg-white/60"
 };
 
 export function Button({
@@ -28,7 +28,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex h-10 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
         variantStyles[variant],
         className
       )}

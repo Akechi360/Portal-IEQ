@@ -11,6 +11,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+    "/guest/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/guest/page.js"
+    ],
     "/admin/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -21,6 +26,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/admin/issue/page.js"
     ],
+    "/doctor/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/doctor/page.js"
+    ],
     "/admin/list/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -30,11 +40,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/user/own/page.js"
-    ],
-    "/doctor/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/doctor/page.js"
     ]
   }
 }

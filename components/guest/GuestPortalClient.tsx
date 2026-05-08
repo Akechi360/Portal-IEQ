@@ -57,30 +57,30 @@ export function GuestPortalClient({ placeholders }: GuestPortalClientProps) {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-md items-center justify-center">
-        <section className="w-full overflow-hidden rounded-xl bg-white shadow-sm">
-          <header className="border-b border-gray-200 bg-blue-50 px-4 py-4">
+    <main>
+      <div className="mx-auto w-full max-w-md">
+        <section className="glass-panel w-full overflow-hidden rounded-xl border border-white/60">
+          <header className="border-b border-white/50 bg-white/35 px-4 py-4">
             <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg">
               +++
             </div>
-            <h1 className="text-xl font-bold text-gray-900">WiFi Clinica IEQ</h1>
-            <p className="text-xs text-gray-600">Acceso para pacientes, visitantes, medicos y gerencia.</p>
+            <h1 className="text-xl font-bold text-neutral-900">WiFi Clinica IEQ</h1>
+            <p className="text-xs text-neutral-500">Acceso para pacientes, visitantes, medicos y gerencia.</p>
           </header>
 
           <div className="space-y-4 px-4 py-5">
-            <section className="rounded-md bg-blue-50 px-3 py-3 text-sm text-blue-800">
+            <section className="glass-soft rounded-lg px-3 py-3 text-sm text-primary-700">
               <p className="font-semibold">Bienvenido al portal WiFi de la clinica.</p>
-              <p className="mt-1 text-xs text-blue-800">
+              <p className="mt-1 text-xs text-primary-700">
                 Complete un unico paso para conectarse y continuar con su navegacion segura.
               </p>
             </section>
 
             <section aria-labelledby="formulario-acceso" className="space-y-3">
-              <h2 id="formulario-acceso" className="text-lg font-bold text-gray-900">
+              <h2 id="formulario-acceso" className="text-lg font-bold text-neutral-900">
                 Formulario de acceso
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-500">
                 Introduce el usuario y contrasena o token que te entrego Admision.
               </p>
 
@@ -89,19 +89,19 @@ export function GuestPortalClient({ placeholders }: GuestPortalClientProps) {
                   label="Usuario / Token"
                   placeholder="usuario_XXXXX o token"
                   required
-                  className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  className="rounded-lg border-neutral-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-300"
                 />
                 <Input
                   label="Contrasena (opcional)"
                   type="password"
                   placeholder="Si aplica para su acceso"
-                  className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  className="rounded-lg border-neutral-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-300"
                 />
                 <Select
                   label="Tipo de acceso"
                   value={role}
                   onChange={(event) => setRole(event.target.value as AccessRole)}
-                  className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  className="rounded-lg border-neutral-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-300"
                   options={[
                     { label: "Paciente", value: "paciente" },
                     { label: "Transito", value: "transito" },
@@ -111,7 +111,7 @@ export function GuestPortalClient({ placeholders }: GuestPortalClientProps) {
                 />
 
                 {error ? (
-                  <div className="flex items-center gap-2 rounded-md bg-red-100 px-3 py-2 text-sm text-red-800" role="alert">
+                  <div className="flex items-center gap-2 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-600" role="alert">
                     <span aria-hidden="true">⚠️</span>
                     <span>Acceso denegado: credencial invalida, expirada o no tiene sesion disponible.</span>
                   </div>
@@ -120,7 +120,7 @@ export function GuestPortalClient({ placeholders }: GuestPortalClientProps) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary-400 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-primary-500 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : null}
                   {loading ? "Validando..." : "Acceder al WiFi"}
@@ -129,7 +129,7 @@ export function GuestPortalClient({ placeholders }: GuestPortalClientProps) {
             </section>
 
             <section aria-labelledby="tipos-acceso" className="space-y-2">
-              <h2 id="tipos-acceso" className="text-sm font-bold text-gray-900">
+              <h2 id="tipos-acceso" className="text-sm font-bold text-neutral-900">
                 Que tipo de acceso necesitas?
               </h2>
               <div className="space-y-2">
@@ -138,12 +138,14 @@ export function GuestPortalClient({ placeholders }: GuestPortalClientProps) {
                   return (
                     <article
                       key={roleKey}
-                      className={`rounded-md border p-3 text-sm shadow-sm ${
-                        isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"
+                      className={`rounded-lg border p-3 text-sm ${
+                        isSelected
+                          ? "glass-soft border-primary-300 bg-primary-50/70"
+                          : "glass-soft border-white/50"
                       }`}
                     >
-                      <p className="font-semibold text-gray-900">{roleHelp[roleKey].title}</p>
-                      <p className="mt-1 text-xs text-gray-600">{roleHelp[roleKey].description}</p>
+                      <p className="font-semibold text-neutral-900">{roleHelp[roleKey].title}</p>
+                      <p className="mt-1 text-xs text-neutral-500">{roleHelp[roleKey].description}</p>
                     </article>
                   );
                 })}
