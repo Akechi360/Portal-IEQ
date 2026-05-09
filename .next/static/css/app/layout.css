@@ -581,6 +581,10 @@ video {
   margin-top: auto;
   margin-bottom: auto;
 }
+.my-1 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
 .mb-1 {
   margin-bottom: 0.25rem;
 }
@@ -2067,6 +2071,10 @@ a:hover {
 
   .md\:w-56 {
     width: 14rem;
+  }
+
+  .md\:w-48 {
+    width: 12rem;
   }
 
   .md\:grid-cols-2 {
