@@ -1,3 +1,4 @@
 {
-  "/admin/policies/page": "app/admin/policies/page.js"
+  "/admin/policies/page": "app/admin/policies/page.js",
+  "/admin/config/page": "app/admin/config/page.js"
 }
