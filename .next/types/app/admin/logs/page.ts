@@ -1,4 +1,4 @@
-// File: C:\Users\Manny López\Desktop\Portal-IEQ-main\app\admin\logs\page.tsx
+// File: C:\Users\Manny López\Desktop\Portal-IEQ\app\admin\logs\page.tsx
 import * as entry from '../../../../../app/admin/logs/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
