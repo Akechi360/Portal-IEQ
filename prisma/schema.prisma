@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PACIENTE
+  TRANSITO
+  MEDICO
+  GERENCIA
+  ADMISSION_OPERATOR
+  SYSTEMS
+  BLOQUEADO
+  ADMISION_OPERATOR
+  SISTEMAS
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  EXPIRED
+  INACTIVE
+}
+
+enum GrantType {
+  TOKEN
+  PASSWORD
+  MIXED
+}
+
+enum AuditAction {
+  LOGIN_TRY
+  LOGIN_OK
+  LOGIN_FAIL
+  ISSUE_ACCESS
+  ISSUE_DOCTOR_ACCESS
+  ISSUE_MANAGEMENT_ACCESS
+  DOCTOR_VALIDATE
+  DOCTOR_CREATE
+  POLICY_ANOMALY
+  USER_BLOCKED_BY_POLICY
+  RUIJIE_AUTHORIZE
+}
+
+model User {
+  id            String      @id @default(cuid())
+  username      String      @unique
+  personName    String
+  email         String?     @unique
+  phone         String?
+  specialty     String?
+  role          UserRole
+  status        UserStatus  @default(ACTIVE)
+  passwordHash  String?
+  createdByRole UserRole?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  expiresAt     DateTime?
+  blockedAt     DateTime?
+  blockedReason String?
+
+  devices Device[]
+  grants  AccessGrant[]
+
+  auditsAsActor  AuditLog[] @relation("AuditActor")
+  auditsAsTarget AuditLog[] @relation("AuditTarget")
+
+  @@index([role, status])
+  @@index([expiresAt])
+}
+
+model AccessProfile {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  maxDevices     Int
+  sessionMinutes Int?
+  permanent      Boolean  @default(false)
+  canIssue       Boolean  @default(false)
+  canBrowse      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  grants AccessGrant[]
+}
+
+model AccessGrant {
+  id          String      @id @default(cuid())
+  userId      String
+  profileCode String?
+  room        String?
+  type        GrantType   @default(TOKEN)
+  token       String?     @unique
+  startsAt    DateTime    @default(now())
+  endsAt      DateTime?
+  active      Boolean     @default(true)
+  maxDevices  Int         @default(1)
+  createdBy   String?
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile AccessProfile? @relation(fields: [profileCode], references: [code], onDelete: SetNull)
+
+  @@index([userId, active])
+  @@index([profileCode])
+  @@index([endsAt])
+}
+
+model Device {
+  id        String   @id @default(cuid())
+  userId    String
+  mac       String
+  label     String?
+  firstSeen DateTime @default(now())
+  lastSeen  DateTime @default(now())
+  anomalies String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mac])
+  @@index([mac])
+  @@index([lastSeen])
+}
+
+model AuditLog {
+  id            String    @id @default(cuid())
+  actor         String?
+  action        AuditAction
+  target        String?
+  actorUserId   String?
+  actorUsername String?
+  targetUserId  String?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+
+  actorUser  User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt])
+  @@index([actor, createdAt])
+  @@index([target, createdAt])
+}
