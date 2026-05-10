@@ -12,7 +12,8 @@ import {
   FileText,
   ShieldCheck,
   Settings,
-  UserCircle2
+  UserCircle2,
+  Stethoscope
 } from "lucide-react";
 import { cn } from "@/app/lib/styles";
 
@@ -25,6 +26,7 @@ type NavItem = {
 const principalItems: NavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "Usuarios", icon: Users },
+  { href: "/admin/medicos", label: "Médicos", icon: Stethoscope },
   { href: "/admin/sessions", label: "Sesiones Wifi", icon: Wifi },
   { href: "/admin/devices", label: "Dispositivos", icon: Monitor }
 ];
@@ -52,6 +54,7 @@ function getBreadcrumb(pathname: string) {
     admin: "Portal IEQ",
     dashboard: "Dashboard",
     list: "Usuarios",
+    medicos: "Médicos",
     sessions: "Sesiones Wifi",
     devices: "Dispositivos",
     reports: "Reportes",

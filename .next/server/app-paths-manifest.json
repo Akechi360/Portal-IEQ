@@ -1,7 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js",
-  "/login/page": "app/login/page.js",
-  "/admin/settings/notifications/page": "app/admin/settings/notifications/page.js",
-  "/admin/settings/appearance/page": "app/admin/settings/appearance/page.js"
+  "/admision/login/page": "app/admision/login/page.js",
+  "/admision/(panel)/dashboard/page": "app/admision/(panel)/dashboard/page.js",
+  "/admision/(panel)/emitir/page": "app/admision/(panel)/emitir/page.js",
+  "/admision/(panel)/credenciales/page": "app/admision/(panel)/credenciales/page.js",
+  "/admin/medicos/page": "app/admin/medicos/page.js",
+  "/admin/settings/page": "app/admin/settings/page.js"
 }
