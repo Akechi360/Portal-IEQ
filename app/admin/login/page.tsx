@@ -17,13 +17,20 @@ export default function AdminLoginPage() {
 
     setStatus("loading");
 
-    // Simular llamada a API
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const res = await fetch("/api/auth/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usuario, password }),
+      });
 
-    // Lógica mock
-    if (usuario === "admin" && password === "admin123") {
-      router.push("/admin/dashboard");
-    } else {
+      if (res.ok) {
+        const data = await res.json();
+        router.push(data.redirect || "/admin/dashboard");
+      } else {
+        setStatus("error");
+      }
+    } catch (err) {
       setStatus("error");
     }
   };

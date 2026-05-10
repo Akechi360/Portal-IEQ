@@ -17,13 +17,20 @@ export default function AdmisionLoginPage() {
 
     setStatus("loading");
 
-    // Simular llamada a API
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const res = await fetch("/api/auth/admision/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usuario, password }),
+      });
 
-    // Lógica mock
-    if (usuario === "admision" && password === "admision123") {
-      router.push("/admision/dashboard");
-    } else {
+      if (res.ok) {
+        const data = await res.json();
+        router.push(data.redirect || "/admision/dashboard");
+      } else {
+        setStatus("error");
+      }
+    } catch (err) {
       setStatus("error");
     }
   };
