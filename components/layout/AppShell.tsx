@@ -37,7 +37,7 @@ const analysisItems: NavItem[] = [
 
 const systemItems: NavItem[] = [
   { href: "/admin/policies", label: "Políticas", icon: ShieldCheck },
-  { href: "/admin/config", label: "Configuración", icon: Settings }
+  { href: "/admin/settings", label: "Configuración", icon: Settings }
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -58,7 +58,7 @@ function getBreadcrumb(pathname: string) {
     traffic: "Tráfico",
     logs: "Logs de acceso",
     policies: "Políticas",
-    config: "Configuración"
+    settings: "Configuración"
   };
   return segments.map((s) => labels[s] ?? s.charAt(0).toUpperCase() + s.slice(1)).join(" / ");
 }
@@ -105,7 +105,7 @@ function NavSection({
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hideShell =
-    pathname === "/" || pathname === "/guest" || pathname.startsWith("/guest/");
+    pathname === "/" || pathname === "/guest" || pathname.startsWith("/guest/") || pathname === "/admin/login" || pathname === "/login";
 
   if (hideShell) {
     return <div className="min-h-screen">{children}</div>;

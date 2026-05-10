@@ -1,4 +1,7 @@
 {
-  "/admin/policies/page": "app/admin/policies/page.js",
-  "/admin/config/page": "app/admin/config/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/admin/settings/notifications/page": "app/admin/settings/notifications/page.js",
+  "/admin/settings/appearance/page": "app/admin/settings/appearance/page.js"
 }
