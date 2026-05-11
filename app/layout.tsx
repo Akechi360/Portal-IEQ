@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AppShell } from "@/components/layout/AppShell";
-
 export const metadata: Metadata = {
   title: "Portal WiFi Clinica IEQ",
   description: "Frontend del portal cautivo para pacientes, visitantes, medicos y gerencia."
@@ -14,8 +12,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>
-        <AppShell>{children}</AppShell>
+      <body suppressHydrationWarning>
+        {children}
       </body>
     </html>
   );

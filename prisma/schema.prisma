@@ -3,148 +3,155 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-enum UserRole {
+
+// ─── CREDENCIALES (Paciente / Tránsito) ───────────────────
+model Credential {
+  id           String           @id @default(cuid())
+  voucherCode  String           @unique
+  tipo         CredentialType   // PACIENTE | TRANSITO
+  nombre       String
+  habitacion   String?
+  maxDevices   Int              @default(1)
+  diasEstancia Int?             // solo Paciente
+  expireAt     DateTime?
+  issuerId     String           // ID del admin/operador que lo emitió
+  issuer       Admin            @relation("AdminToCredentials", fields: [issuerId], references: [id])
+  status       CredentialStatus @default(ACTIVE)
+  sessions     Session[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+// ─── MÉDICOS ───────────────────────────────────────────────
+model Doctor {
+  id           String       @id @default(cuid())
+  nombre       String
+  especialidad String?
+  email        String       @unique
+  telefono     String?
+  voucherCode  String?      @unique  // voucher permanente en Ruijie
+  status       DoctorStatus @default(PENDING)
+  sessions     Session[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+// ─── SESIONES WiFi ────────────────────────────────────────
+model Session {
+  id           String      @id @default(cuid())
+  mac          String
+  ip           String?
+  ssid         String?
+  credentialId String?
+  doctorId     String?
+  startedAt    DateTime    @default(now())
+  endedAt      DateTime?
+  dataDownMB   Float?
+  dataUpMB     Float?
+  credential   Credential? @relation(fields: [credentialId], references: [id])
+  doctor       Doctor?     @relation(fields: [doctorId], references: [id])
+
+  @@index([mac])
+  @@index([startedAt])
+  @@index([credentialId])
+  @@index([doctorId])
+}
+
+// ─── LOGS DE ACCESO ───────────────────────────────────────
+model AccessLog {
+  id        String    @id @default(cuid())
+  event     LogEvent
+  actor     String
+  mac       String?
+  ip        String?
+  ssid      String?
+  detail    String?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([event])
+  @@index([mac])
+}
+
+// ─── ADMINISTRADORES del panel ────────────────────────────
+model Admin {
+  id                String       @id @default(cuid())
+  nombre            String
+  username          String       @unique
+  email             String       @unique
+  passwordHash      String
+  role              AdminRole    @default(OPERADOR)
+  status            AdminStatus  @default(ACTIVE)
+  lastLoginAt       DateTime?
+  createdAt         DateTime     @default(now())
+  credentialsIssued Credential[] @relation("AdminToCredentials")
+}
+
+// ─── CONFIGURACIÓN del portal público ────────────────────
+model PortalConfig {
+  id            String   @id @default(cuid())
+  portalName    String   @default("Portal IEQ")
+  slogan        String?
+  logoUrl       String?
+  bgUrl         String?
+  primaryColor  String   @default("#0EA5E9")
+  fontFamily    String   @default("Inter")
+  loginTitle    String   @default("Acceso WiFi")
+  loginButton   String   @default("Conectarme")
+  successMsg    String   @default("¡Acceso concedido!")
+  errorMsg      String   @default("Código inválido o expirado.")
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── CONFIGURACIÓN DEL SISTEMA (Toggles internos) ────────
+model SystemConfig {
+  key         String   @id
+  value       String   // Se almacena como string. La capa de acceso debe hacer JSON.parse/stringify
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── ENUMS ────────────────────────────────────────────────
+enum CredentialType {
   PACIENTE
   TRANSITO
-  MEDICO
-  GERENCIA
-  ADMISSION_OPERATOR
-  SYSTEMS
-  BLOQUEADO
-  ADMISION_OPERATOR
-  SISTEMAS
 }
 
-enum UserStatus {
+enum CredentialStatus {
   ACTIVE
-  BLOCKED
   EXPIRED
+  BLOCKED
+}
+
+enum DoctorStatus {
+  PENDING
+  ACTIVE
   INACTIVE
 }
 
-enum GrantType {
-  TOKEN
-  PASSWORD
-  MIXED
+enum LogEvent {
+  AUTH_SUCCESS
+  AUTH_FAIL
+  BLOCKED
+  DISCONNECTED
+  NEW_SESSION
+  LIMIT_REACHED
+  DOCTOR_APPROVED
+  DOCTOR_REJECTED
 }
 
-enum AuditAction {
-  LOGIN_TRY
-  LOGIN_OK
-  LOGIN_FAIL
-  ISSUE_ACCESS
-  ISSUE_DOCTOR_ACCESS
-  ISSUE_MANAGEMENT_ACCESS
-  DOCTOR_VALIDATE
-  DOCTOR_CREATE
-  POLICY_ANOMALY
-  USER_BLOCKED_BY_POLICY
-  RUIJIE_AUTHORIZE
+enum AdminRole {
+  SUPERADMIN
+  ADMIN
+  OPERADOR
 }
 
-model User {
-  id            String      @id @default(cuid())
-  username      String      @unique
-  personName    String
-  email         String?     @unique
-  phone         String?
-  specialty     String?
-  role          UserRole
-  status        UserStatus  @default(ACTIVE)
-  passwordHash  String?
-  createdByRole UserRole?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  expiresAt     DateTime?
-  blockedAt     DateTime?
-  blockedReason String?
-
-  devices Device[]
-  grants  AccessGrant[]
-
-  auditsAsActor  AuditLog[] @relation("AuditActor")
-  auditsAsTarget AuditLog[] @relation("AuditTarget")
-
-  @@index([role, status])
-  @@index([expiresAt])
-}
-
-model AccessProfile {
-  id             String   @id @default(cuid())
-  code           String   @unique
-  name           String
-  maxDevices     Int
-  sessionMinutes Int?
-  permanent      Boolean  @default(false)
-  canIssue       Boolean  @default(false)
-  canBrowse      Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  grants AccessGrant[]
-}
-
-model AccessGrant {
-  id          String      @id @default(cuid())
-  userId      String
-  profileCode String?
-  room        String?
-  type        GrantType   @default(TOKEN)
-  token       String?     @unique
-  startsAt    DateTime    @default(now())
-  endsAt      DateTime?
-  active      Boolean     @default(true)
-  maxDevices  Int         @default(1)
-  createdBy   String?
-  metadata    Json?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  profile AccessProfile? @relation(fields: [profileCode], references: [code], onDelete: SetNull)
-
-  @@index([userId, active])
-  @@index([profileCode])
-  @@index([endsAt])
-}
-
-model Device {
-  id        String   @id @default(cuid())
-  userId    String
-  mac       String
-  label     String?
-  firstSeen DateTime @default(now())
-  lastSeen  DateTime @default(now())
-  anomalies String[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, mac])
-  @@index([mac])
-  @@index([lastSeen])
-}
-
-model AuditLog {
-  id            String    @id @default(cuid())
-  actor         String?
-  action        AuditAction
-  target        String?
-  actorUserId   String?
-  actorUsername String?
-  targetUserId  String?
-  metadata      Json?
-  createdAt     DateTime  @default(now())
-
-  actorUser  User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
-
-  @@index([action, createdAt])
-  @@index([actor, createdAt])
-  @@index([target, createdAt])
+enum AdminStatus {
+  ACTIVE
+  INACTIVE
 }

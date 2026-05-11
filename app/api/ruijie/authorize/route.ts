@@ -1,45 +1,100 @@
-import { AuditAction } from "@prisma/client";
+// app/api/ruijie/authorize/route.ts
+// GET — Punto de entrada del portal cautivo Ruijie.
+// Recibe parámetros del gateway, valida credencial (guest/doctor), autoriza en gateway.
+// Reescrito para schema clínico: usa guestLogin(), doctorLogin(), authorizeClient(), logAccess().
+// Modo offline: validación mock + autorización mock.
+// TODO Fase 3: eliminar mocks y conectar a DB real.
+
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { executeLogin } from "@/lib/access";
-import { authorizeWithRuijieGateway } from "@/lib/ruijie";
-import { logAudit } from "@/lib/audit";
+import { LogEvent } from "@prisma/client";
+import { guestLogin, doctorLogin } from "@/lib/access";
+import { authorizeClient, buildRuijieSuccessRedirect, buildRuijieDenyRedirect, detectPortalProtocol } from "@/lib/ruijie";
+import { logAccess } from "@/lib/audit";
 
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const query = url.searchParams;
 
-    const username = query.get("username") ?? query.get("user") ?? "";
-    const passwordOrToken = query.get("password") ?? query.get("token") ?? "";
-    const clientMac = query.get("client_mac") ?? query.get("mac") ?? "";
-    const apMac = query.get("ap_mac") ?? query.get("gateway_mac") ?? "unknown";
-    const ssid = query.get("ssid") ?? "unknown";
-    const redirect = query.get("redirect") ?? query.get("url") ?? "/";
+    // ── Parámetros del gateway Ruijie ──
+    const voucherCode = query.get("voucher") ?? query.get("username") ?? query.get("user") ?? "";
+    const clientMac = query.get("client_mac") ?? query.get("mac") ?? query.get("macaddr") ?? "";
+    const clientIp = query.get("client_ip") ?? query.get("ip") ?? query.get("uip") ?? null;
+    const ssid = query.get("ssid") ?? query.get("wlan") ?? "IEQ-Guest";
+    const redirect = query.get("redirect") ?? query.get("url") ?? query.get("dst") ?? "/";
 
-    if (!username || !clientMac || !redirect) {
-      return NextResponse.json({ ok: false, message: "Parametros incompletos para autorizacion" }, { status: 400 });
+    // Guardar MAC/IP en cookies para el flujo de login
+    const cookieStore = await cookies();
+    if (clientMac) {
+      cookieStore.set("portal_mac", clientMac, { httpOnly: true, secure: false, sameSite: "lax", maxAge: 300 });
+    }
+    if (clientIp) {
+      cookieStore.set("portal_ip", clientIp, { httpOnly: true, secure: false, sameSite: "lax", maxAge: 300 });
+    }
+    if (ssid) {
+      cookieStore.set("portal_ssid", ssid, { httpOnly: true, secure: false, sameSite: "lax", maxAge: 300 });
     }
 
-    const loginResult = await executeLogin({ username, passwordOrToken, clientMac, apMac, ssid });
-    const ruijieResult = await authorizeWithRuijieGateway({
-      approved: loginResult.ok,
-      reason: loginResult.ok ? undefined : loginResult.message,
-      redirect,
-      query
-    });
+    // Si no hay voucher, redirigir al portal de login intermedio
+    if (!voucherCode) {
+      const loginUrl = new URL("/login/guest", req.url);
+      loginUrl.searchParams.set("redirect", redirect);
+      loginUrl.searchParams.set("mac", clientMac);
+      loginUrl.searchParams.set("ssid", ssid);
+      return NextResponse.redirect(loginUrl.toString(), { status: 302 });
+    }
 
-    await logAudit({
-      action: AuditAction.RUIJIE_AUTHORIZE,
-      actorUsername: username,
-      metadata: {
-        approved: ruijieResult.allow,
-        protocol: ruijieResult.protocol,
-        redirect: ruijieResult.redirectUrl,
-        clientMac
+    // ── Validar credencial (modo offline) ──
+    // Intentar como guest (PACIENTE/TRANSITO) primero, luego como doctor
+    const guestResult = await guestLogin({ voucherCode, mac: clientMac });
+    let isAuthorized = false;
+    let actorName = "";
+    let groupId = "grp-guest";
+
+    if (guestResult.ok) {
+      isAuthorized = true;
+      actorName = guestResult.nombre;
+      groupId = "grp-guest";
+    } else {
+      const doctorResult = await doctorLogin({ voucherCode, mac: clientMac });
+      if (doctorResult.ok) {
+        isAuthorized = true;
+        actorName = doctorResult.nombre;
+        groupId = "grp-medicos";
       }
+    }
+
+    // ── Autorizar en gateway Ruijie ──
+    if (isAuthorized) {
+      await authorizeClient({ mac: clientMac, username: voucherCode, groupId });
+
+      await logAccess({
+        event: LogEvent.AUTH_SUCCESS,
+        actor: voucherCode,
+        mac: clientMac,
+        ip: clientIp,
+        ssid,
+        detail: `ruijie_authorize:${groupId}`,
+      });
+
+      const successUrl = buildRuijieSuccessRedirect(redirect);
+      return NextResponse.redirect(successUrl, { status: 302 });
+    }
+
+    // ── Acceso denegado ──
+    await logAccess({
+      event: LogEvent.AUTH_FAIL,
+      actor: voucherCode,
+      mac: clientMac,
+      ip: clientIp,
+      ssid,
+      detail: "ruijie_authorize:denied",
     });
 
-    return NextResponse.redirect(ruijieResult.redirectUrl, { status: 302 });
+    const denyUrl = buildRuijieDenyRedirect(redirect, "invalid_voucher");
+    return NextResponse.redirect(denyUrl, { status: 302 });
+
   } catch (error) {
     console.error("GET /api/ruijie/authorize", error);
     return NextResponse.json({ ok: false, message: "Error interno" }, { status: 500 });
