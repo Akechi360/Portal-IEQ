@@ -10,8 +10,7 @@ import { AccessRole } from "@/types";
 const roleOptions = [
   { label: "Paciente", value: "paciente" },
   { label: "Transito", value: "transito" },
-  { label: "Medico", value: "medico" },
-  { label: "Gerencia", value: "gerencia" }
+  { label: "Medico", value: "medico" }
 ];
 
 export default function AdminIssuePage() {
@@ -36,7 +35,7 @@ export default function AdminIssuePage() {
     if (role === "medico") {
       return 'Estas creando un acceso de tipo "Medico". Acceso permanente.';
     }
-    return 'Estas creando un acceso de tipo "Gerencia". Acceso permanente, no expira.';
+    return ''; // No hay descripción para "gerencia" ya que se elimina de roleOptions
   }, [role]);
 
   return (
@@ -44,7 +43,7 @@ export default function AdminIssuePage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <header>
           <h1 className="text-xl font-bold text-neutral-900">Emision de credenciales de WiFi</h1>
-          <p className="text-sm text-neutral-500">Cree acceso para pacientes, visitantes, medicos o gerencia.</p>
+          <p className="text-sm text-neutral-500">Cree acceso para pacientes, visitantes o medicos.</p>
         </header>
 
         <Card>

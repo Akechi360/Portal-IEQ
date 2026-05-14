@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ticket, Mail, AlertCircle, Wifi, Stethoscope, User, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Ticket, Mail, AlertCircle, Wifi, Stethoscope, User, ArrowRight, CheckCircle2, Building2 } from "lucide-react";
 import { LoginLayout } from "@/components/login/LoginLayout";
 
 interface LoginClientProps {
@@ -16,7 +16,7 @@ interface LoginClientProps {
   ssid: string;
 }
 
-type TabType = "code" | "doctor";
+type TabType = "code" | "doctor" | "staff";
 type StatusType = "idle" | "loading" | "success" | "error";
 
 export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
@@ -32,6 +32,11 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
   const [email, setEmail] = useState("");
   const [doctorStatus, setDoctorStatus] = useState<StatusType>("idle");
   const [doctorError, setDoctorError] = useState("");
+
+  // Formulario de Gerencia / Staff
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffStatus, setStaffStatus] = useState<StatusType>("idle");
+  const [staffError, setStaffError] = useState("");
 
   // Características para el panel lateral
   const leftFeatures = [
@@ -118,7 +123,46 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
     } catch (err) {
       setDoctorStatus("error");
       setDoctorError("Error de conexión. Intenta de nuevo.");
+    } finally {
+      setDoctorStatus("idle");
     }
+  };
+
+  // Handler simulado para acceso de Gerencia / Staff
+  const handleStaffSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffEmail.trim() || !staffEmail.includes("@")) {
+      setStaffError("Ingresa un correo institucional válido.");
+      return;
+    }
+
+    setStaffStatus("loading");
+    setStaffError("");
+
+    // Simular llamada a API
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simular carga
+
+    // Lógica de mock para diferentes estados
+    if (staffEmail.includes("success")) {
+      setStaffStatus("success");
+      // En un caso real, redirigir
+      console.log("Acceso concedido para:", staffEmail);
+    } else if (staffEmail.includes("notfound")) {
+      setStaffStatus("error");
+      setStaffError("Correo no encontrado en la base de datos institucional.");
+    } else if (staffEmail.includes("invalid")) {
+      setStaffStatus("error");
+      setStaffError("Formato de correo inválido.");
+    } else if (staffEmail.includes("error")) {
+      setStaffStatus("error");
+      setStaffError("Error temporal del sistema. Intenta de nuevo más tarde.");
+    } else {
+      // Por defecto, simular éxito para cualquier otro correo
+      setStaffStatus("success");
+      console.log("Acceso concedido para:", staffEmail);
+    }
+    // Opcional: resetear estado después de un tiempo para poder re-probar visualmente
+    // setTimeout(() => setStaffStatus("idle"), 5000);
   };
 
   // Helper para calcular tiempo restante
@@ -171,6 +215,21 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
             <div className="flex items-center justify-center gap-2">
               <Stethoscope className="h-4 w-4" />
               Soy médico
+            </div>
+          </button>
+          {/* Nuevo botón para Gerencia / Staff */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("staff")}
+            className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "staff"
+                ? "bg-blue-600 text-white shadow-md" // Usando blue-600 para staff
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Gerencia / Staff
             </div>
           </button>
         </div>
@@ -319,6 +378,86 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
           </div>
         )}
 
+        {/* Panel: Gerencia / Staff */}
+        {activeTab === "staff" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <form onSubmit={handleStaffSubmit}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Correo institucional
+                </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Conéctate a la red WiFi con tu correo institucional.
+                </p>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={staffEmail}
+                    onChange={(e) => setStaffEmail(e.target.value)}
+                    placeholder="nombre@clinicaieq.com"
+                    disabled={staffStatus === "loading"}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {staffStatus === "error" && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-3 flex items-start gap-3">
+                  <AlertCircle className="text-red-500 shrink-0 h-[18px] w-[18px]" />
+                  <div>
+                    <p className="text-sm text-red-700 font-medium">
+                      {staffError || "Error de autenticación."}
+                    </p>
+                    <p className="text-xs text-red-500 mt-1">
+                      Verifica tu correo o intenta de nuevo.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {staffStatus === "success" && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-3 flex items-start gap-3">
+                  <CheckCircle2 className="text-green-500 shrink-0 h-[18px] w-[18px]" />
+                  <div>
+                    <p className="text-sm text-green-700 font-medium">
+                      Acceso concedido.
+                    </p>
+                    <p className="text-xs text-green-500 mt-1">
+                      Redirigiendo para conectarte...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={staffStatus === "loading" || !staffEmail.trim()}
+                className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-70 flex items-center justify-center gap-2 transition-colors"
+              >
+                {staffStatus === "loading" ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    Verificar y conectar
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("code")} // Volver al tab de código como opción general
+                className="w-full mt-2 py-3 rounded-xl font-semibold text-sm text-gray-600 hover:bg-gray-100 flex items-center justify-center gap-2 transition-colors"
+              >
+                Volver a opciones
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* Info técnica (solo para debugging) */}
         {(mac || ip) && (
           <div className="mt-6 pt-4 border-t border-gray-100">
@@ -331,11 +470,11 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
         )}
 
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-center gap-2 bg-green-50 border border-green-100 rounded-xl py-2.5 px-4">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <div className="mt-6 flex items-center justify-center gap-2 bg-gray-50 border border-gray-100 rounded-xl py-2.5 px-4">
+          <span className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
           <span className="text-xs text-gray-500">
             Red disponible ·{" "}
-            <span className="font-semibold text-green-600">WiFi-ClinicaIEQ</span>
+            <span className="font-semibold text-gray-500">WiFi-ClinicaIEQ</span>
           </span>
         </div>
       </div>

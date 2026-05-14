@@ -14,7 +14,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-<<<<<<< HEAD
 // app/login/success/page.tsx
 // Página de éxito compartida para todos los tipos de acceso WiFi
 // Muestra confirmación de conexión a WiFi-ClinicaIEQ
@@ -23,12 +22,6 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   
   const ssid = searchParams.get("ssid") || "WiFi-ClinicaIEQ";
-=======
-function SuccessContent() {
-  const searchParams = useSearchParams();
-  
-  const ssid = searchParams.get("ssid");
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   const plan = searchParams.get("plan");
   const nombre = searchParams.get("nombre");
   const devicesUsed = searchParams.get("devicesUsed");
@@ -45,13 +38,9 @@ function SuccessContent() {
     return () => clearTimeout(timer);
   }, []);
 
-<<<<<<< HEAD
   // Determinar el nombre del SSID a mostrar
   const displaySsid = ssid === "WiFi-ClinicaIEQ" ? "WiFi-ClinicaIEQ" : ssid;
-  const isMedico = plan === "Medico";
 
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-sky-50 flex items-center justify-center p-4 font-sans">
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 w-full max-w-md mx-auto">
@@ -68,11 +57,7 @@ function SuccessContent() {
 
         {/* 3. SUBTÍTULO */}
         <p className="text-sm text-gray-500 text-center mt-1 mb-6">
-<<<<<<< HEAD
           Ya estás conectado a <strong>{displaySsid}</strong>
-=======
-          Ya estás conectado a la red WiFi de Clínica IEQ
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
         </p>
 
         {/* 4. SEPARADOR */}
@@ -85,7 +70,6 @@ function SuccessContent() {
             <>
               <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div className="flex items-center gap-2">
-<<<<<<< HEAD
                   <User className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-500">Paciente</span>
                 </div>
@@ -100,13 +84,6 @@ function SuccessContent() {
                   <span className="text-sm font-semibold text-gray-800">{habitacion}</span>
                 </div>
               )}
-=======
-                  <BedDouble className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Habitación</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{habitacion}</span>
-              </div>
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
               <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-gray-400" />
@@ -120,22 +97,9 @@ function SuccessContent() {
                   <span className="text-sm text-gray-500">Dispositivos</span>
                 </div>
                 <span className="text-sm font-semibold text-gray-800">
-<<<<<<< HEAD
                   {devicesUsed || 1} de {maxDevices || 4} conectados
                 </span>
               </div>
-=======
-                  {devicesUsed} de {maxDevices} conectados
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Acceso para</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">Paciente y acompañantes</span>
-              </div>
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
             </>
           )}
 
@@ -146,11 +110,7 @@ function SuccessContent() {
                   <Stethoscope className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-500">Médico</span>
                 </div>
-<<<<<<< HEAD
                 <span className="text-sm font-semibold text-gray-800">{nombre || "Personal médico"}</span>
-=======
-                <span className="text-sm font-semibold text-gray-800">{nombre}</span>
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div className="flex items-center gap-2">
@@ -166,11 +126,7 @@ function SuccessContent() {
                   <Wifi className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-500">Red asignada</span>
                 </div>
-<<<<<<< HEAD
                 <span className="text-sm font-semibold text-gray-800">{displaySsid}</span>
-=======
-                <span className="text-sm font-semibold text-gray-800">IEQ-MEDICOS</span>
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
               </div>
             </>
           )}
@@ -179,7 +135,6 @@ function SuccessContent() {
             <>
               <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div className="flex items-center gap-2">
-<<<<<<< HEAD
                   <User className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-500">Visitante</span>
                 </div>
@@ -191,12 +146,6 @@ function SuccessContent() {
                   <span className="text-sm text-gray-500">Tiempo disponible</span>
                 </div>
                 <span className="text-sm font-semibold text-gray-800">{timeLeft || "30 minutos"}</span>
-=======
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Tiempo disponible</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">30 minutos</span>
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div className="flex items-center gap-2">
@@ -205,22 +154,12 @@ function SuccessContent() {
                 </div>
                 <span className="text-sm font-semibold text-gray-800">1 dispositivo</span>
               </div>
-<<<<<<< HEAD
               <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700">
                     El acceso expira al finalizar el tiempo asignado.
                   </p>
-=======
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 mt-2">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-500">Nota</span>
-                    <span className="text-xs text-amber-600 mt-0.5">El acceso expira 30 min tras la primera conexión</span>
-                  </div>
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
                 </div>
               </div>
             </>
@@ -244,27 +183,11 @@ function SuccessContent() {
 
         {/* 8. BADGE DE SSID */}
         <div className="mt-6 flex items-center justify-center gap-2">
-<<<<<<< HEAD
           <span className="w-2 h-2 rounded-full animate-pulse bg-green-500" />
           <span className="text-xs text-gray-400">
             Conectado a{" "}
             <span className="font-semibold text-green-600">
               {displaySsid}
-=======
-          <span
-            className={`w-2 h-2 rounded-full animate-pulse ${
-              ssid === "medicos" ? "bg-blue-500" : "bg-green-500"
-            }`}
-          />
-          <span className="text-xs text-gray-400">
-            Conectado a{" "}
-            <span
-              className={`font-semibold ${
-                ssid === "medicos" ? "text-blue-600" : "text-green-600"
-              }`}
-            >
-              {ssid === "medicos" ? "IEQ-MEDICOS" : "IEQ-GUEST"}
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
             </span>
           </span>
         </div>

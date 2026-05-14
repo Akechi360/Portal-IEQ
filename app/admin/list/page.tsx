@@ -56,7 +56,7 @@ export default function AdminListPage() {
             <option value="paciente">Paciente</option>
             <option value="transito">Transito</option>
             <option value="medico">Medico</option>
-            <option value="gerencia">Gerencia</option>
+
           </select>
           <select
             value={statusFilter}

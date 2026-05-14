@@ -74,7 +74,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-<<<<<<< HEAD
 // Validate ../../app/admin/list/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/admin/list">> = Specific
@@ -84,8 +83,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 // Validate ../../app/admin/login/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/admin/login">> = Specific
@@ -320,18 +317,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-<<<<<<< HEAD
-// Validate ../../app/staff/login/page.tsx
-{
-  type __IsExpected<Specific extends AppPageConfig<"/staff/login">> = Specific
-  const handler = {} as typeof import("../../app/staff/login/page.js")
-  type __Check = __IsExpected<typeof handler>
-  // @ts-ignore
-  type __Unused = __Check
-}
-
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 // Validate ../../app/user/own/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/user/own">> = Specific
@@ -341,7 +326,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-<<<<<<< HEAD
 // Validate ../../app/api/admin/credentials/issue/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/admin/credentials/issue">> = Specific
@@ -414,17 +398,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-// Validate ../../app/api/auth/staff/login/route.ts
+// Validate ../../app/api/auth/staff-wifi/route.ts
 {
-  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/staff/login">> = Specific
-  const handler = {} as typeof import("../../app/api/auth/staff/login/route.js")
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/staff-wifi">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/staff-wifi/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
 }
 
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 // Validate ../../app/api/doctor/create/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/doctor/create">> = Specific
@@ -479,7 +461,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-<<<<<<< HEAD
 // Validate ../../app/api/ruijie/callback/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/ruijie/callback">> = Specific
@@ -498,8 +479,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 // Validate ../../app/api/user/own/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/user/own">> = Specific
@@ -509,7 +488,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-<<<<<<< HEAD
 // Validate ../../app/api/webhooks/clinic/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/webhooks/clinic">> = Specific
@@ -519,8 +497,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 
 
 

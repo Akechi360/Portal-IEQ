@@ -165,11 +165,7 @@ function KpiCard({
   subColor
 }: {
   label: string;
-<<<<<<< HEAD
   value: React.ReactNode;
-=======
-  value: string | number;
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   sub: string;
   subColor?: string;
 }) {
