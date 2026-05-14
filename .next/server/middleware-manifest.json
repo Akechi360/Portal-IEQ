@@ -1,6 +1,5 @@
 {
   "version": 3,
-<<<<<<< HEAD
   "middleware": {
     "/": {
       "files": [
@@ -19,10 +18,10 @@
       "assets": [],
       "env": {
         "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "9GWmtiOwEYGME/mY2NUVft4EooouHtiB46GYgvEOU5E=",
-        "__NEXT_PREVIEW_MODE_ID": "39a272b13b9f4b652d4dbc3384eca93c",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "60b51c000656a819c8c259e928084f4142baae72fe7cb6e0ee5df74b9284f0f9",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "a65f71ea7c50e0df2b7dfd7e44257e36dec1a8df2e7495e1b674e4bd4f353803"
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "X84oeh/6ERajT1WUEa5Yrz8iuTbxG5G8ThILAijrsGI=",
+        "__NEXT_PREVIEW_MODE_ID": "efa5b611200459d81adf6df8cb2e312f",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "758250b287d5dcdfc009c15fcd411fca9144d8f427508a60468bafb556474402",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "880a0a6fc544996527cd7019a43cd9d08cd560c1de710bbeb0c345cd963e74dd"
       }
     }
   },
@@ -30,9 +29,4 @@
   "sortedMiddleware": [
     "/"
   ]
-=======
-  "middleware": {},
-  "functions": {},
-  "sortedMiddleware": []
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 }

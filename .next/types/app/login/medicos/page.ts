@@ -1,4 +1,4 @@
-// File: C:\Users\Manny López\Desktop\Portal-IEQ\app\login\medicos\page.tsx
+// File: /home/ieqadmin/workspace/PortalIEQ/app/login/medicos/page.tsx
 import * as entry from '../../../../../app/login/medicos/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

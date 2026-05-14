@@ -8,10 +8,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 // ─── CREDENCIALES (Paciente / Tránsito) ───────────────────
 model Credential {
   id           String           @id @default(cuid())
@@ -120,7 +117,6 @@ model SystemConfig {
 }
 
 // ─── ENUMS ────────────────────────────────────────────────
-<<<<<<< HEAD
 enum CredentialType {
   PACIENTE
   TRANSITO
@@ -159,15 +155,3 @@ enum AdminStatus {
   ACTIVE
   INACTIVE
 }
-=======
-enum CredentialType   { PACIENTE TRANSITO }
-enum CredentialStatus { ACTIVE EXPIRED BLOCKED }
-enum DoctorStatus     { PENDING ACTIVE INACTIVE }
-enum LogEvent         {
-  AUTH_SUCCESS AUTH_FAIL BLOCKED
-  DISCONNECTED NEW_SESSION LIMIT_REACHED
-  DOCTOR_APPROVED DOCTOR_REJECTED
-}
-enum AdminRole        { SUPERADMIN ADMIN OPERADOR }
-enum AdminStatus      { ACTIVE INACTIVE }
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27

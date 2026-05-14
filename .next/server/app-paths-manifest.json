@@ -1,13 +1,5 @@
 {
-<<<<<<< HEAD
   "/login/page": "app/login/page.js",
-  "/staff/login/page": "app/staff/login/page.js"
-=======
   "/admision/login/page": "app/admision/login/page.js",
-  "/admision/(panel)/dashboard/page": "app/admision/(panel)/dashboard/page.js",
-  "/admision/(panel)/emitir/page": "app/admision/(panel)/emitir/page.js",
-  "/admision/(panel)/credenciales/page": "app/admision/(panel)/credenciales/page.js",
-  "/admin/medicos/page": "app/admin/medicos/page.js",
-  "/admin/settings/page": "app/admin/settings/page.js"
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
+  "/staff/login/page": "app/staff/login/page.js"
 }

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-// File: C:\Users\AnalistaIT\Desktop\Portal IEQ\app\page.tsx
-=======
-// File: C:\Users\Manny López\Desktop\Portal-IEQ\app\page.tsx
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
+// File: /home/ieqadmin/workspace/PortalIEQ/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

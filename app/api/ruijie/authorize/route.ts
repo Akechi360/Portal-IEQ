@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // app/api/ruijie/authorize/route.ts
 // GET — Punto de entrada del portal cautivo Ruijie.
 // Recibe parámetros del gateway, valida credencial (guest/doctor), autoriza en gateway.
@@ -10,22 +9,14 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { LogEvent } from "@prisma/client";
 import { guestLogin, doctorLogin } from "@/lib/access";
-import { authorizeClient, buildRuijieSuccessRedirect, buildRuijieDenyRedirect, detectPortalProtocol } from "@/lib/ruijie";
+import { authorizeClient, buildRuijieSuccessRedirect, buildRuijieDenyRedirect } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
-=======
-import { AuditAction } from "@prisma/client";
-import { NextResponse } from "next/server";
-import { executeLogin } from "@/lib/access";
-import { authorizeWithRuijieGateway } from "@/lib/ruijie";
-import { logAudit } from "@/lib/audit";
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const query = url.searchParams;
 
-<<<<<<< HEAD
     // ── Parámetros del gateway Ruijie ──
     const voucherCode = query.get("voucher") ?? query.get("username") ?? query.get("user") ?? "";
     const clientMac = query.get("client_mac") ?? query.get("mac") ?? query.get("macaddr") ?? "";
@@ -104,39 +95,6 @@ export async function GET(req: Request) {
     const denyUrl = buildRuijieDenyRedirect(redirect, "invalid_voucher");
     return NextResponse.redirect(denyUrl, { status: 302 });
 
-=======
-    const username = query.get("username") ?? query.get("user") ?? "";
-    const passwordOrToken = query.get("password") ?? query.get("token") ?? "";
-    const clientMac = query.get("client_mac") ?? query.get("mac") ?? "";
-    const apMac = query.get("ap_mac") ?? query.get("gateway_mac") ?? "unknown";
-    const ssid = query.get("ssid") ?? "unknown";
-    const redirect = query.get("redirect") ?? query.get("url") ?? "/";
-
-    if (!username || !clientMac || !redirect) {
-      return NextResponse.json({ ok: false, message: "Parametros incompletos para autorizacion" }, { status: 400 });
-    }
-
-    const loginResult = await executeLogin({ username, passwordOrToken, clientMac, apMac, ssid });
-    const ruijieResult = await authorizeWithRuijieGateway({
-      approved: loginResult.ok,
-      reason: loginResult.ok ? undefined : loginResult.message,
-      redirect,
-      query
-    });
-
-    await logAudit({
-      action: AuditAction.RUIJIE_AUTHORIZE,
-      actorUsername: username,
-      metadata: {
-        approved: ruijieResult.allow,
-        protocol: ruijieResult.protocol,
-        redirect: ruijieResult.redirectUrl,
-        clientMac
-      }
-    });
-
-    return NextResponse.redirect(ruijieResult.redirectUrl, { status: 302 });
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   } catch (error) {
     console.error("GET /api/ruijie/authorize", error);
     return NextResponse.json({ ok: false, message: "Error interno" }, { status: 500 });

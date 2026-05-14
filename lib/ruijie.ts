@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // ─── lib/ruijie.ts ────────────────────────────────────────────────────────────
 // Abstracción única para el gateway Ruijie.
 // En modo offline cada función retorna mock data.
@@ -9,18 +8,12 @@ import { URL } from "url";
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface RuijieAuthorizeResult {
-=======
-import { URL } from "url";
-
-interface RuijieAuthorizeResult {
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   allow: boolean;
   redirectUrl: string;
   protocol: "WISPr" | "WiFiDog" | "Unknown";
   reason?: string;
 }
 
-<<<<<<< HEAD
 export interface RuijieDevice {
   mac: string;
   ip: string;
@@ -167,10 +160,8 @@ export async function getUserGroups(): Promise<RuijieUserGroup[]> {
   ];
 }
 
-// ─── Funciones existentes (mantener para compatibilidad con /api/ruijie/authorize) ──
+// ─── Funciones de protocolo (compatibilidad con /api/ruijie/authorize) ────────
 
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
 export function detectPortalProtocol(query: URLSearchParams): RuijieAuthorizeResult["protocol"] {
   if (query.get("gw_id") || query.get("gw_address")) return "WiFiDog";
   if (query.get("WISPrVersion") || query.get("WISPAccessGatewayAddress")) return "WISPr";
@@ -203,26 +194,12 @@ export async function authorizeWithRuijieGateway(input: {
 }): Promise<RuijieAuthorizeResult> {
   const protocol = detectPortalProtocol(input.query);
   if (input.approved) {
-<<<<<<< HEAD
     return { allow: true, redirectUrl: buildRuijieSuccessRedirect(input.redirect), protocol };
   }
-=======
-    return {
-      allow: true,
-      redirectUrl: buildRuijieSuccessRedirect(input.redirect),
-      protocol
-    };
-  }
-
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   return {
     allow: false,
     redirectUrl: buildRuijieDenyRedirect(input.redirect, input.reason ?? "denied"),
     protocol,
-<<<<<<< HEAD
     reason: input.reason,
-=======
-    reason: input.reason
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   };
 }
