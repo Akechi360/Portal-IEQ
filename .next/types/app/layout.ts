@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // File: C:\Users\AnalistaIT\Desktop\Portal IEQ\app\layout.tsx
+=======
+// File: /home/ieqadmin/workspace/PortalIEQ/app/layout.tsx
+>>>>>>> 122e5623a76acc8320884b73a0c20152eceade21
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

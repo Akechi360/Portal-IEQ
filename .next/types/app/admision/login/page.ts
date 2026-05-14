@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // File: C:\Users\AnalistaIT\Desktop\Portal IEQ\app\admision\login\page.tsx
+=======
+// File: /home/ieqadmin/workspace/PortalIEQ/app/admision/login/page.tsx
+>>>>>>> 122e5623a76acc8320884b73a0c20152eceade21
 import * as entry from '../../../../../app/admision/login/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

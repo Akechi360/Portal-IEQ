@@ -5,16 +5,30 @@ import { verifyToken } from '@/lib/jwt';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
+<<<<<<< HEAD
+  // Rutas de autenticación internas (legacy + nuevo)
+  const isAdminLogin = path === "/admin/login";
+  const isAdmisionLogin = path === "/admision/login";
+  const isStaffLogin = path === "/staff/login";
+=======
   // Rutas de autenticación internas
-  const isAdminLogin = path === '/admin/login';
-  const isAdmisionLogin = path === '/admision/login';
+  const isAdminLogin = path === "/admin/login";
+  const isAdmisionLogin = path === "/admision/login";
+>>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   
   // Zonas protegidas
-  const isAdminZone = path.startsWith('/admin') && !isAdminLogin;
-  const isAdmisionZone = path.startsWith('/admision') && !isAdmisionLogin;
+  const isAdminZone = path.startsWith("/admin") && !isAdminLogin;
+  const isAdmisionZone = path.startsWith("/admision") && !isAdmisionLogin;
+<<<<<<< HEAD
+  const isStaffZone = path.startsWith("/staff") && !isStaffLogin;
+
+  // Si no es una zona protegida interna, dejamos pasar
+  if (!isAdminLogin && !isAdmisionLogin && !isStaffLogin && !isAdminZone && !isAdmisionZone && !isStaffZone) {
+=======
 
   // Si no es una zona protegida interna, dejamos pasar
   if (!isAdminLogin && !isAdmisionLogin && !isAdminZone && !isAdmisionZone) {
+>>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
     return NextResponse.next();
   }
 
@@ -27,7 +41,8 @@ export async function middleware(request: NextRequest) {
 
   // --- LÓGICA PARA RUTAS DE LOGIN ---
   // Si ya tiene sesión válida y entra al login, redirigirlo a su dashboard
-  if (isAdminLogin || isAdmisionLogin) {
+<<<<<<< HEAD
+  if (isAdminLogin || isAdmisionLogin || isStaffLogin) {
     if (payload) {
       const isAdminRole = payload.role === 'SUPERADMIN' || payload.role === 'ADMIN';
       const isOperadorRole = payload.role === 'OPERADOR';
@@ -46,14 +61,14 @@ export async function middleware(request: NextRequest) {
 
   // --- LÓGICA PARA ZONAS PROTEGIDAS ---
   if (!payload) {
-    if (isAdminZone) {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
-    if (isAdmisionZone) {
-      return NextResponse.redirect(new URL('/admision/login', request.url));
-    }
-    // Fallback para cualquier otra ruta protegida que no sea admin/admision (aunque ya no debería haber)
-    return NextResponse.redirect(new URL('/login', request.url));
+<<<<<<< HEAD
+    // Redirigir al login unificado
+    return NextResponse.redirect(new URL("/staff/login", request.url));
+=======
+    // Redirigir al login correspondiente según la zona intentada
+    const loginUrl = isAdmisionZone ? "/admision/login" : "/admin/login";
+    return NextResponse.redirect(new URL(loginUrl, request.url));
+>>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   }
 
   // Verificar roles para /admin/*
@@ -69,7 +84,15 @@ export async function middleware(request: NextRequest) {
     // Solo OPERADOR, ADMIN, SUPERADMIN permitidos
     const validRoles = ['OPERADOR', 'ADMIN', 'SUPERADMIN'];
     if (!validRoles.includes(payload.role)) {
-      return NextResponse.redirect(new URL('/admision/login', request.url));
+      return NextResponse.redirect(new URL("/staff/login", request.url));
+    }
+  }
+
+  // Verificar roles para /staff/* (dashboards de staff, si existen)
+  if (isStaffZone) {
+    const validRoles = ["OPERADOR", "ADMIN", "SUPERADMIN"];
+    if (!validRoles.includes(payload.role)) {
+      return NextResponse.redirect(new URL("/staff/login", request.url));
     }
   }
 
@@ -79,7 +102,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Configurar las rutas donde aplica el middleware para optimizar el rendimiento
   matcher: [
-    '/admin/:path*',
-    '/admision/:path*',
+    "/admin/:path*",
+    "/admision/:path*",
+<<<<<<< HEAD
+    "/staff/:path*",
+=======
+>>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   ],
 };
+
