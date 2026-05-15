@@ -398,15 +398,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-// Validate ../../app/api/auth/staff-wifi/route.ts
-{
-  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/staff-wifi">> = Specific
-  const handler = {} as typeof import("../../app/api/auth/staff-wifi/route.js")
-  type __Check = __IsExpected<typeof handler>
-  // @ts-ignore
-  type __Unused = __Check
-}
-
 // Validate ../../app/api/doctor/create/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/doctor/create">> = Specific
