@@ -16,7 +16,7 @@ interface LoginClientProps {
   ssid: string;
 }
 
-type TabType = "code" | "doctor";
+type TabType = "code" | "doctor" | "staff";
 type StatusType = "idle" | "loading" | "success" | "error";
 
 export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
@@ -32,6 +32,11 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
   const [email, setEmail] = useState("");
   const [doctorStatus, setDoctorStatus] = useState<StatusType>("idle");
   const [doctorError, setDoctorError] = useState("");
+
+  // Formulario de Gerencia / Staff
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffStatus, setStaffStatus] = useState<StatusType>("idle");
+  const [staffError, setStaffError] = useState("");
 
   // Características para el panel lateral
   const leftFeatures = [
@@ -123,6 +128,51 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
     }
   };
 
+  // Handler simulado para acceso de Gerencia / Staff
+  const handleStaffSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffEmail.trim() || !staffEmail.includes("@")) {
+      setStaffError("Ingresa un correo institucional válido.");
+      return;
+    }
+
+    setStaffStatus("loading");
+    setStaffError("");
+
+    try {
+      const res = await fetch("/api/auth/staff-wifi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email: staffEmail.trim(),
+          mac 
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setStaffStatus("success");
+        // Redirigir a página de éxito
+        const successUrl = new URL("/login/success", window.location.origin);
+        successUrl.searchParams.set("plan", "Staff");
+        successUrl.searchParams.set("nombre", data.data?.nombre || "");
+        successUrl.searchParams.set("timeLeft", "permanente");
+        successUrl.searchParams.set("ssid", "WiFi-ClinicaIEQ");
+        
+        router.push(successUrl.toString());
+      } else {
+        setStaffStatus("error");
+        setStaffError(data.message || "Error de autenticación.");
+      }
+    } catch (err) {
+      setStaffStatus("error");
+      setStaffError("Error de conexión. Intenta de nuevo.");
+    } finally {
+      setStaffStatus("idle");
+    }
+  };
+
   // Helper para calcular tiempo restante
   function calculateTimeLeft(expireAt: string): string {
     const diff = new Date(expireAt).getTime() - Date.now();
@@ -175,7 +225,21 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
               Soy médico
             </div>
           </button>
-
+          {/* Nuevo botón para Gerencia / Staff */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("staff")}
+            className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "staff"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Gerencia / Staff
+            </div>
+          </button>
         </div>
 
         {/* Panel: Acceso con código */}
@@ -322,7 +386,85 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
           </div>
         )}
 
+        {/* Panel: Gerencia / Staff */}
+        {activeTab === "staff" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <form onSubmit={handleStaffSubmit}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Correo institucional
+                </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Conéctate a la red WiFi con tu correo institucional.
+                </p>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={staffEmail}
+                    onChange={(e) => setStaffEmail(e.target.value)}
+                    placeholder="nombre@clinicaieq.com"
+                    disabled={staffStatus === "loading"}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:opacity-50"
+                  />
+                </div>
+              </div>
 
+              {staffStatus === "error" && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-3 flex items-start gap-3">
+                  <AlertCircle className="text-red-500 shrink-0 h-[18px] w-[18px]" />
+                  <div>
+                    <p className="text-sm text-red-700 font-medium">
+                      {staffError || "Error de autenticación."}
+                    </p>
+                    <p className="text-xs text-red-500 mt-1">
+                      Verifica tu correo o intenta de nuevo.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {staffStatus === "success" && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-3 flex items-start gap-3">
+                  <CheckCircle2 className="text-green-500 shrink-0 h-[18px] w-[18px]" />
+                  <div>
+                    <p className="text-sm text-green-700 font-medium">
+                      Acceso concedido.
+                    </p>
+                    <p className="text-xs text-green-500 mt-1">
+                      Redirigiendo para conectarte...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={staffStatus === "loading" || !staffEmail.trim()}
+                className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-70 flex items-center justify-center gap-2 transition-colors"
+              >
+                {staffStatus === "loading" ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    Verificar y conectar
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("code")} // Volver al tab de código como opción general
+                className="w-full mt-2 py-3 rounded-xl font-semibold text-sm text-gray-600 hover:bg-gray-100 flex items-center justify-center gap-2 transition-colors"
+              >
+                Volver a opciones
+              </button>
+            </form>
+          </div>
+        )}
 
         {/* Info técnica (solo para debugging) */}
         {(mac || ip) && (
