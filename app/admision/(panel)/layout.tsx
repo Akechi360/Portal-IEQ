@@ -12,8 +12,8 @@ export default function AdmisionLayout({
         
         {/* IZQUIERDA del header */}
         <div className="flex items-center gap-3">
-          <div className="bg-sky-500 rounded-lg p-1.5 text-white">
-            <Wifi className="h-4 w-4" />
+          <div className="bg-white rounded-lg p-0.5 h-8 w-8 flex items-center justify-center overflow-hidden border border-gray-100">
+            <img src="/logo-ieq.png" alt="IEQ" className="h-full w-full object-contain" />
           </div>
           <span className="font-semibold text-gray-900 text-sm">Portal IEQ</span>
           <div className="w-px h-4 bg-gray-300" />

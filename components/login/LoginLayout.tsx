@@ -92,8 +92,8 @@ export function LoginLayout({
           {/* Logo Header (Visible on both Mobile and Desktop) */}
           <div className="flex items-center justify-between lg:justify-start lg:mb-20">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl bg-sky-500 shadow-lg shadow-sky-500/20">
-                <Wifi className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg shadow-sky-500/10 p-1.5 overflow-hidden">
+                <img src="/logo-ieq.png" alt="IEQ Logo" className="h-full w-full object-contain" />
               </div>
               <div>
                 <h1 className="text-base lg:text-lg font-semibold leading-tight text-white">Portal IEQ</h1>
