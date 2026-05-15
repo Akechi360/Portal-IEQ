@@ -32,13 +32,13 @@ export async function middleware(request: NextRequest) {
       const isAdminRole = payload.role === 'SUPERADMIN' || payload.role === 'ADMIN';
       const isOperadorRole = payload.role === 'OPERADOR';
 
-      // Admin/Superadmin -> /admin
+      // Admin/Superadmin -> /admin/dashboard
       if (isAdminRole) {
-        return NextResponse.redirect(new URL('/admin', request.url));
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       }
-      // Operador -> /admision
+      // Operador -> /admision/dashboard
       if (isOperadorRole) {
-        return NextResponse.redirect(new URL('/admision', request.url));
+        return NextResponse.redirect(new URL('/admision/dashboard', request.url));
       }
     }
     return NextResponse.next();
@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
     if (!isAdminRole) {
       // Si un operador intenta entrar a sistemas -> redirigir a su panel de admision
       if (payload.role === 'OPERADOR') {
-        return NextResponse.redirect(new URL('/admision', request.url));
+        return NextResponse.redirect(new URL('/admision/dashboard', request.url));
       }
       // Si es cualquier otro rol no autorizado -> login de sistemas
       return NextResponse.redirect(new URL('/admin/login', request.url));
