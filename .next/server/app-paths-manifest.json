@@ -1,11 +1,1 @@
-{
-  "/api/list/route": "app/api/list/route.js",
-  "/admin/dashboard/page": "app/admin/dashboard/page.js",
-  "/admin/users/page": "app/admin/users/page.js",
-  "/admin/medicos/page": "app/admin/medicos/page.js",
-  "/admin/traffic/page": "app/admin/traffic/page.js",
-  "/admin/settings/page": "app/admin/settings/page.js",
-  "/admin/settings/admins/page": "app/admin/settings/admins/page.js",
-  "/admin/settings/database/page": "app/admin/settings/database/page.js",
-  "/admin/settings/auth/page": "app/admin/settings/auth/page.js"
-}
+{}
