@@ -33,8 +33,6 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
   const [doctorStatus, setDoctorStatus] = useState<StatusType>("idle");
   const [doctorError, setDoctorError] = useState("");
 
-  const [doctorError, setDoctorError] = useState("");
-
   // Características para el panel lateral
   const leftFeatures = [
     { icon: "shield" as const, bold: "Conexión segura", text: "con cifrado WPA3" },
