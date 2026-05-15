@@ -73,7 +73,7 @@ export async function getRuijieToken(): Promise<string> {
   
   if (!res.ok) throw new Error("Failed to get Ruijie token");
   const data = await res.json();
-  return data.access_token || "";
+  return data.accessToken || data.access_token || "";
 }
 
 /**
