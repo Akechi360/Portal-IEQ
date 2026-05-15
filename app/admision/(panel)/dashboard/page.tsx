@@ -1,7 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { PlusCircle, ArrowRight, ClipboardList, List } from "lucide-react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AdmisionDashboardPage() {
+  const { data, error, isLoading } = useSWR("/api/list", fetcher, { refreshInterval: 10000 });
+
   // Calcular saludo
   const hour = new Date().getHours();
   let greeting = "Buenas tardes";
@@ -18,6 +25,13 @@ export default function AdmisionDashboardPage() {
   const dateStr = formatter.format(new Date());
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
+  const items = data?.items || [];
+  const today = new Date().toISOString().split('T')[0];
+  
+  const credencialesHoy = items.filter((c: any) => c.createdAt.startsWith(today) && (c.type === 'PACIENTE' || c.type === 'TRANSITO')).length;
+  const pacientesActivos = items.filter((c: any) => c.type === 'PACIENTE' && c.status === 'Active').length;
+  const transitoActivos = items.filter((c: any) => c.type === 'TRANSITO' && c.status === 'Active').length;
+
   return (
     <div className="max-w-2xl mx-auto">
       
@@ -30,15 +44,15 @@ export default function AdmisionDashboardPage() {
       {/* KPI STRIP */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
-          <p className="text-3xl font-bold text-sky-600">12</p>
+          <p className="text-3xl font-bold text-sky-600">{isLoading ? "-" : credencialesHoy}</p>
           <p className="text-xs text-gray-500 mt-1">Credenciales hoy</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
-          <p className="text-3xl font-bold text-green-600">9</p>
+          <p className="text-3xl font-bold text-green-600">{isLoading ? "-" : pacientesActivos}</p>
           <p className="text-xs text-gray-500 mt-1">Pacientes activos</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
-          <p className="text-3xl font-bold text-amber-500">3</p>
+          <p className="text-3xl font-bold text-amber-500">{isLoading ? "-" : transitoActivos}</p>
           <p className="text-xs text-gray-500 mt-1">Tránsito activos</p>
         </div>
       </div>

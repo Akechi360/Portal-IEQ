@@ -24,35 +24,7 @@ export async function adminLogin(input: {
 }): Promise<AdminLoginResult> {
   const username = input.username.trim();
 
-  // ── MOCK OFFLINE ──────────────────────────────────────────────────────────
-  // Credenciales de desarrollo. Reemplazar con consulta DB en Fase 3.
-  // Passwords de prueba: sistemas → "Sistemas#2026" | operador → "Admision#2026"
-  const MOCK_ADMINS = [
-    {
-      id: "admin-mock-superadmin",
-      username: "admin_sistemas",
-      // bcryptjs hash de "Sistemas#2026"
-      passwordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lVWy",
-      role: AdminRole.SUPERADMIN,
-      nombre: "Administrador de Sistemas",
-      status: AdminStatus.ACTIVE,
-    },
-    {
-      id: "admin-mock-operador",
-      username: "admin_operador",
-      // bcryptjs hash de "Admision#2026"
-      passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
-      role: AdminRole.OPERADOR,
-      nombre: "Operador de Admisión",
-      status: AdminStatus.ACTIVE,
-    },
-  ];
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /* TODO Fase 3: descomentar y eliminar MOCK_ADMINS
   const found = await db.admin.findUnique({ where: { username } });
-  */
-  const found = MOCK_ADMINS.find((a) => a.username === username);
 
   if (!found || found.status !== AdminStatus.ACTIVE) {
     await logAccess({ event: "AUTH_FAIL", actor: username, detail: "USER_NOT_FOUND" });
@@ -83,10 +55,6 @@ export async function guestLogin(input: {
   voucherCode: string;
   mac: string;
 }): Promise<GuestLoginResult> {
-  // ── MOCK OFFLINE ──────────────────────────────────────────────────────────
-  console.warn("[access][offline] guestLogin — voucherCode:", input.voucherCode);
-
-  /* TODO Fase 3: descomentar
   const credential = await db.credential.findUnique({ where: { voucherCode: input.voucherCode } });
   if (!credential || credential.status !== "ACTIVE") {
     return { ok: false, message: "Código inválido o expirado." };
@@ -104,15 +72,6 @@ export async function guestLogin(input: {
     } 
   });
   return { ok: true, credentialId: credential.id, nombre: credential.nombre, tipo: credential.tipo, expireAt: credential.expireAt };
-  */
-
-  return {
-    ok: true,
-    credentialId: "cred-mock-001",
-    nombre: "Paciente Demo",
-    tipo: "PACIENTE",
-    expireAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
-  };
 }
 
 // ─── Login Médico WiFi (voucher permanente) ───────────────────────────────────
@@ -129,10 +88,6 @@ export async function doctorLogin(input: {
   voucherCode: string;
   mac: string;
 }): Promise<DoctorLoginResult> {
-  // ── MOCK OFFLINE ──────────────────────────────────────────────────────────
-  console.warn("[access][offline] doctorLogin — voucherCode:", input.voucherCode);
-
-  /* TODO Fase 3: descomentar
   const doctor = await db.doctor.findUnique({ where: { voucherCode: input.voucherCode } });
   if (!doctor || doctor.status !== "ACTIVE") {
     return { ok: false, message: "Acceso no autorizado." };
@@ -146,15 +101,6 @@ export async function doctorLogin(input: {
     } 
   });
   return { ok: true, doctorId: doctor.id, nombre: doctor.nombre, especialidad: doctor.especialidad };
-  */
-
-  return {
-    ok: true,
-    doctorId: "doctor-mock-001",
-    nombre: "Dr. Demo",
-    especialidad: "Medicina General",
-  };
 }
 
-// Suppress unused import warning for db (used in TODO Fase 3 comments)
-void db;
+

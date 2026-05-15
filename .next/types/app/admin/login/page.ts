@@ -1,4 +1,4 @@
-// File: C:\Users\AnalistaIT\Desktop\Portal IEQ\app\admin\login\page.tsx
+// File: /home/ieqadmin/workspace/PortalIEQ/app/admin/login/page.tsx
 import * as entry from '../../../../../app/admin/login/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

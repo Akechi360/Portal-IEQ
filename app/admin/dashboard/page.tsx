@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 /* ── Types ───────────────────────────────────────────────── */
 type UserStatus = "Activo" | "Limitado" | "Autenticando" | "Bloqueado";
@@ -17,76 +20,6 @@ interface ActiveUser {
   time: string;
   status: UserStatus;
 }
-
-/* ── Mock data ───────────────────────────────────────────── */
-const activeUsers: ActiveUser[] = [
-  {
-    id: "jm",
-    initials: "JM",
-    color: "#3B82F6",
-    name: "Juan Méndez",
-    mac: "192.168.1.42",
-    ip: "192.168.1.42",
-    signal: 4,
-    time: "2h 14m",
-    status: "Activo"
-  },
-  {
-    id: "lc",
-    initials: "LC",
-    color: "#10B981",
-    name: "Laura Castro",
-    mac: "192.168.1.87",
-    ip: "192.168.1.87",
-    signal: 3,
-    time: "45m",
-    status: "Activo"
-  },
-  {
-    id: "pr",
-    initials: "PR",
-    color: "#8B5CF6",
-    name: "Pedro Rojas",
-    mac: "192.168.1.163",
-    ip: "192.168.1.163",
-    signal: 3,
-    time: "1h 02m",
-    status: "Limitado"
-  },
-  {
-    id: "mv",
-    initials: "MV",
-    color: "#F59E0B",
-    name: "María Vega",
-    mac: "192.168.1.55",
-    ip: "192.168.1.55",
-    signal: 4,
-    time: "3h 30m",
-    status: "Activo"
-  },
-  {
-    id: "kl",
-    initials: "KL",
-    color: "#EC4899",
-    name: "Karen Lara",
-    mac: "192.168.1.201",
-    ip: "192.168.1.201",
-    signal: 2,
-    time: "12m",
-    status: "Autenticando"
-  },
-  {
-    id: "rt",
-    initials: "RT",
-    color: "#EF4444",
-    name: "Roberto Torres",
-    mac: "192.168.1.178",
-    ip: "192.168.1.178",
-    signal: 1,
-    time: "—",
-    status: "Bloqueado"
-  }
-];
 
 const recentEvents = [
   {
@@ -181,11 +114,35 @@ function KpiCard({
 /* ── Page ─────────────────────────────────────────────────── */
 export default function AdminDashboardPage() {
   const [search, setSearch] = useState("");
+  const { data, isLoading } = useSWR("/api/list", fetcher, { refreshInterval: 10000 });
+
+  const items = data?.items || [];
+  
+  const activeUsers: ActiveUser[] = items.map((item: any) => {
+    let status: UserStatus = "Activo";
+    if (item.status === "Blocked" || item.status === "Expired") status = "Bloqueado";
+    if (item.status === "Pending") status = "Autenticando";
+    
+    const initials = item.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
+    const color = item.type === "PACIENTE" ? "#3B82F6" : item.type === "TRANSITO" ? "#F59E0B" : "#10B981";
+
+    return {
+      id: item.id,
+      initials,
+      color,
+      name: item.name,
+      mac: item.identifier,
+      ip: "---",
+      signal: 4,
+      time: new Date(item.createdAt).toLocaleDateString(),
+      status
+    };
+  });
 
   const filtered = activeUsers.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.mac.includes(search)
+      u.mac.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -198,31 +155,31 @@ export default function AdminDashboardPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
-          label="Usuarios conectados"
-          value={47}
-          sub="+8 vs ayer"
-          subColor="text-green-600"
+          label="Usuarios Registrados"
+          value={isLoading ? "-" : items.length}
+          sub="Total en el sistema"
+          subColor="text-neutral-400"
         />
         <KpiCard
-          label="Sesiones hoy"
-          value={213}
-          sub="Desde las 00:00"
-          subColor="text-neutral-400"
+          label="Usuarios Activos"
+          value={isLoading ? "-" : items.filter((i: any) => i.status === 'Active').length}
+          sub="Credenciales válidas"
+          subColor="text-green-600"
         />
         <KpiCard
           label="Ancho de banda"
           value={
             <span>
-              68 <span className="text-lg font-semibold text-neutral-500">%</span>
+              -- <span className="text-lg font-semibold text-neutral-500">%</span>
             </span>
           }
-          sub="340 Mbps en uso"
+          sub="Pendiente integración Ruijie"
           subColor="text-neutral-400"
         />
         <KpiCard
-          label="Bloqueados hoy"
-          value={5}
-          sub="2 por política"
+          label="Bloqueados / Expirados"
+          value={isLoading ? "-" : items.filter((i: any) => i.status === 'Blocked' || i.status === 'Expired').length}
+          sub="Acceso denegado"
           subColor="text-red-500"
         />
       </div>
@@ -252,7 +209,7 @@ export default function AdminDashboardPage() {
                   Usuario
                 </th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                  MAC / IP
+                  Identificador
                 </th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
                   Señal

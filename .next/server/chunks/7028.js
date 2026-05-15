@@ -1,0 +1,1 @@
+"use strict";exports.id=7028,exports.ids=[7028],exports.modules={7028:(a,b,c)=>{c(55511);"function"==typeof setImmediate||"object"==typeof scheduler&&"function"==typeof scheduler.postTask&&scheduler.postTask.bind(scheduler)}};

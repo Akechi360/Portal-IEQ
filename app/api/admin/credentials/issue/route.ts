@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { issueCredentialSchema } from "@/lib/validators";
 import { generateVoucherCode } from "@/lib/auth";
 import { logAccess } from "@/lib/audit";
+import { db } from "@/lib/db";
 
 function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Date {
   const now = new Date();
@@ -34,8 +35,6 @@ export async function POST(req: Request) {
     const voucherCode = generateVoucherCode();
     const expireAt = getExpireAt(tipo, diasEstancia);
 
-    // TODO Fase 3: descomentar
-    /*
     const credential = await db.credential.create({
       data: {
         voucherCode,
@@ -50,7 +49,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // Crear voucher en el gateway Ruijie
+    /*
+    // TODO Fase 3: Crear voucher en el gateway Ruijie (Pendiente API Docs)
     const groupId = tipo === "PACIENTE"
       ? await getSystemConfig("ruijie_group_guest")
       : await getSystemConfig("ruijie_group_guest");
@@ -63,23 +63,20 @@ export async function POST(req: Request) {
       detail: `issued:${tipo}:${voucherCode}:${nombre}`,
     });
 
-    // Mock response
     return NextResponse.json(
       {
         ok: true,
         message: "Credencial emitida",
         data: {
-          // TODO Fase 3: retornar credential.id real de la DB
-          id: `cred-mock-${Date.now()}`,
-          voucherCode,
-          tipo,
-          nombre,
-          habitacion: habitacion ?? null,
-          maxDevices,
-          expireAt: expireAt.toISOString(),
-          issuerId,
-          status: "ACTIVE",
-          offline: true,
+          id: credential.id,
+          voucherCode: credential.voucherCode,
+          tipo: credential.tipo,
+          nombre: credential.nombre,
+          habitacion: credential.habitacion,
+          maxDevices: credential.maxDevices,
+          expireAt: credential.expireAt?.toISOString() ?? null,
+          issuerId: credential.issuerId,
+          status: credential.status,
         },
       },
       { status: 201 }

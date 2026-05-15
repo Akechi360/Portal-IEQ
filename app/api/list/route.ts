@@ -44,60 +44,51 @@ export async function GET(req: Request) {
     const page = Number(url.searchParams.get("page") ?? "1");
     const limit = Number(url.searchParams.get("limit") ?? "20");
 
-    // ── MOCK OFFLINE — Datos simulados alineados al schema clínico ──
-    // TODO Fase 3: reemplazar con consultas a db.credential.findMany() y db.doctor.findMany()
+    let items: ListItem[] = [];
 
-    const mockCredentials: ListItem[] = [
-      {
-        id: "cred-mock-001",
-        name: "Juan Pérez",
-        type: "PACIENTE",
-        identifier: "IEQ-DEMO-PAC1",
-        room: "H-204",
-        status: "Active",
-        devicesCount: 2,
-        expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: "cred-mock-002",
-        name: "María García",
-        type: "TRANSITO",
-        identifier: "IEQ-DEMO-TRN1",
-        room: "Caja",
-        status: "Active",
-        devicesCount: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-        createdAt: new Date().toISOString(),
-      },
-    ];
+    const includeDoctors = !type || type === "MEDICO";
+    const includeCredentials = !type || type === "PACIENTE" || type === "TRANSITO";
 
-    const mockDoctors: ListItem[] = [
-      {
-        id: "doctor-mock-001",
-        name: "Dr. Jaime Ramírez",
-        type: "MEDICO",
-        identifier: "j.ramirez@ieq.med",
-        room: null,
-        status: "Active",
-        devicesCount: 2,
-        expiresAt: null, // Médicos: acceso permanente
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: "doctor-mock-002",
-        name: "Dra. Elena Vargas",
-        type: "MEDICO",
-        identifier: "e.vargas@ieq.med",
-        room: null,
-        status: "Active",
-        devicesCount: 1,
-        expiresAt: null,
-        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
+    if (includeCredentials) {
+      const credentials = await db.credential.findMany({
+        where: type && type !== "MEDICO" ? { tipo: type as "PACIENTE" | "TRANSITO" } : undefined,
+        include: { _count: { select: { sessions: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      items.push(
+        ...credentials.map((c) => ({
+          id: c.id,
+          name: c.nombre,
+          type: c.tipo as ListItemType,
+          identifier: c.voucherCode,
+          room: c.habitacion,
+          status: mapCredentialStatus(c.status, c.expireAt),
+          devicesCount: c._count.sessions,
+          expiresAt: c.expireAt?.toISOString() || null,
+          createdAt: c.createdAt.toISOString(),
+        }))
+      );
+    }
 
-    let items: ListItem[] = [...mockCredentials, ...mockDoctors];
+    if (includeDoctors) {
+      const doctors = await db.doctor.findMany({
+        include: { _count: { select: { sessions: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      items.push(
+        ...doctors.map((d) => ({
+          id: d.id,
+          name: d.nombre,
+          type: "MEDICO" as ListItemType,
+          identifier: d.email,
+          room: d.especialidad,
+          status: mapDoctorStatus(d.status),
+          devicesCount: d._count.sessions,
+          expiresAt: null,
+          createdAt: d.createdAt.toISOString(),
+        }))
+      );
+    }
 
     // ── Filtros ──
     if (type && ["PACIENTE", "TRANSITO", "MEDICO"].includes(type)) {
@@ -128,7 +119,6 @@ export async function GET(req: Request) {
       total,
       page,
       limit,
-      offline: true,
     });
   } catch (error) {
     console.error("GET /api/list", error);
