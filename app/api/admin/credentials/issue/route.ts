@@ -49,13 +49,12 @@ export async function POST(req: Request) {
       },
     });
 
-    /*
-    // TODO Fase 3: Crear voucher en el gateway Ruijie (Pendiente API Docs)
-    const groupId = tipo === "PACIENTE"
-      ? await getSystemConfig("ruijie_group_guest")
-      : await getSystemConfig("ruijie_group_guest");
-    await createVoucher({ groupId, maxDevices, expireAt, note: nombre });
-    */
+    const groupId = process.env.RUIJIE_GROUP_ID || "default-group";
+    try {
+      await createVoucher({ code: voucherCode, groupId, maxDevices, expireAt, note: nombre });
+    } catch (e) {
+      console.warn("Fallo al crear voucher en Ruijie (es posible que estés en local sin credenciales)", e);
+    }
 
     await logAccess({
       event: "NEW_SESSION",

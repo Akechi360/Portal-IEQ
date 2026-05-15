@@ -5,6 +5,10 @@
 
 import { URL } from "url";
 
+const RUIJIE_CLOUD_URL = process.env.RUIJIE_CLOUD_URL || "https://cloud-as.ruijienetworks.com";
+const RUIJIE_APP_ID = process.env.RUIJIE_APP_ID || "";
+const RUIJIE_SECRET = process.env.RUIJIE_SECRET || "";
+
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface RuijieAuthorizeResult {
@@ -53,8 +57,23 @@ export interface RuijieVoucher {
  * TODO Fase 3: POST /gateway/token con credenciales del .env
  */
 export async function getRuijieToken(): Promise<string> {
-  console.warn("[ruijie][offline] getRuijieToken — usando token mock");
-  return "MOCK_TOKEN_OFFLINE";
+  if (!RUIJIE_APP_ID || !RUIJIE_SECRET) {
+    console.warn("[ruijie][offline] Faltan credenciales RUIJIE_APP_ID o RUIJIE_SECRET. Retornando mock.");
+    return "MOCK_TOKEN_OFFLINE";
+  }
+  
+  const res = await fetch(`${RUIJIE_CLOUD_URL}/service/api/oauth20/client/access_token?token=d63dss0a81e4415a889ac5b78fsc904a`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      appid: RUIJIE_APP_ID,
+      secret: RUIJIE_SECRET
+    })
+  });
+  
+  if (!res.ok) throw new Error("Failed to get Ruijie token");
+  const data = await res.json();
+  return data.access_token || "";
 }
 
 /**
@@ -77,16 +96,42 @@ export async function authorizeClient(payload: {
  * TODO Fase 3: POST /gateway/vouchers
  */
 export async function createVoucher(payload: {
+  code: string;
   groupId: string;
   maxDevices: number;
   expireAt?: Date;
   note?: string;
 }): Promise<RuijieVoucher> {
-  console.warn("[ruijie][offline] createVoucher — groupId:", payload.groupId);
-  // TODO Fase 3: llamada real al gateway para crear el voucher y retornar el código
-  const code = `IEQ-${Date.now().toString(36).toUpperCase().slice(-4)}-MOCK`;
+  const token = await getRuijieToken();
+  if (token === "MOCK_TOKEN_OFFLINE") {
+    console.warn("[ruijie][offline] createVoucher — groupId:", payload.groupId);
+    return {
+      code: payload.code,
+      groupId: payload.groupId,
+      maxDevices: payload.maxDevices,
+      expireAt: payload.expireAt?.toISOString() ?? null,
+      note: payload.note,
+    };
+  }
+
+  const res = await fetch(`${RUIJIE_CLOUD_URL}/service/api/open/auth/voucher/customerCreate/${payload.groupId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      code: payload.code,
+      maxDevices: payload.maxDevices,
+      expireAt: payload.expireAt ? payload.expireAt.getTime() : null,
+      note: payload.note
+    })
+  });
+
+  if (!res.ok) throw new Error("Error creando voucher en Ruijie");
+
   return {
-    code,
+    code: payload.code,
     groupId: payload.groupId,
     maxDevices: payload.maxDevices,
     expireAt: payload.expireAt?.toISOString() ?? null,
@@ -99,26 +144,44 @@ export async function createVoucher(payload: {
  * TODO Fase 3: GET /gateway/devices
  */
 export async function getDevices(): Promise<RuijieDevice[]> {
-  console.warn("[ruijie][offline] getDevices — retornando mock");
-  // TODO Fase 3: fetch(RUIJIE_GATEWAY_URL + "/devices", { headers: { Authorization: token } })
-  return [
-    {
-      mac: "00:1a:c2:7b:00:47",
-      ip: "192.168.10.101",
-      ssid: "IEQ-Guest",
-      connectedAt: new Date(Date.now() - 3600_000).toISOString(),
-      bytesDown: 1_048_576,
-      bytesUp: 204_800,
-    },
-    {
-      mac: "9c:3d:cf:2f:bc:11",
-      ip: "192.168.10.102",
-      ssid: "IEQ-Medicos",
-      connectedAt: new Date(Date.now() - 7_200_000).toISOString(),
-      bytesDown: 5_242_880,
-      bytesUp: 1_048_576,
-    },
-  ];
+  const token = await getRuijieToken();
+  if (token === "MOCK_TOKEN_OFFLINE") {
+    console.warn("[ruijie][offline] getDevices — retornando mock");
+    return [
+      {
+        mac: "00:1a:c2:7b:00:47",
+        ip: "192.168.10.101",
+        ssid: "IEQ-Guest",
+        connectedAt: new Date(Date.now() - 3600_000).toISOString(),
+        bytesDown: 1_048_576,
+        bytesUp: 204_800,
+      },
+      {
+        mac: "9c:3d:cf:2f:bc:11",
+        ip: "192.168.10.102",
+        ssid: "IEQ-Medicos",
+        connectedAt: new Date(Date.now() - 7_200_000).toISOString(),
+        bytesDown: 5_242_880,
+        bytesUp: 1_048_576,
+      },
+    ];
+  }
+
+  const res = await fetch(`${RUIJIE_CLOUD_URL}/service/api/maint/devices`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Error fetching devices from Ruijie");
+  const json = await res.json();
+  const data = json.data || [];
+  
+  return data.map((d: any) => ({
+    mac: d.mac || d.deviceMac,
+    ip: d.ip,
+    ssid: d.ssid || "N/A",
+    connectedAt: new Date().toISOString(),
+    bytesDown: d.flowDown || 0,
+    bytesUp: d.flowUp || 0,
+  }));
 }
 
 /**
@@ -126,24 +189,41 @@ export async function getDevices(): Promise<RuijieDevice[]> {
  * TODO Fase 3: GET /gateway/sessions
  */
 export async function getSessions(): Promise<RuijieSession[]> {
-  console.warn("[ruijie][offline] getSessions — retornando mock");
-  // TODO Fase 3: fetch(RUIJIE_GATEWAY_URL + "/sessions", { headers: { Authorization: token } })
-  return [
-    {
-      id: "sess-mock-001",
-      mac: "00:1a:c2:7b:00:47",
-      username: "paciente_demo",
-      startedAt: new Date(Date.now() - 3_600_000).toISOString(),
-      durationSeconds: 3_600,
-    },
-    {
-      id: "sess-mock-002",
-      mac: "9c:3d:cf:2f:bc:11",
-      username: "dr.demo",
-      startedAt: new Date(Date.now() - 86_400_000).toISOString(),
-      durationSeconds: 86_400,
-    },
-  ];
+  const token = await getRuijieToken();
+  if (token === "MOCK_TOKEN_OFFLINE") {
+    console.warn("[ruijie][offline] getSessions — retornando mock");
+    return [
+      {
+        id: "sess-mock-001",
+        mac: "00:1a:c2:7b:00:47",
+        username: "paciente_demo",
+        startedAt: new Date(Date.now() - 3_600_000).toISOString(),
+        durationSeconds: 3_600,
+      },
+      {
+        id: "sess-mock-002",
+        mac: "9c:3d:cf:2f:bc:11",
+        username: "dr.demo",
+        startedAt: new Date(Date.now() - 86_400_000).toISOString(),
+        durationSeconds: 86_400,
+      },
+    ];
+  }
+
+  const res = await fetch(`${RUIJIE_CLOUD_URL}/service/api/open/v1/dev/user/current-user`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Error fetching sessions from Ruijie");
+  const json = await res.json();
+  const data = json.data || [];
+
+  return data.map((u: any) => ({
+    id: u.mac,
+    mac: u.mac,
+    username: u.userName || "Unknown",
+    startedAt: u.onlineTime ? new Date(u.onlineTime).toISOString() : new Date().toISOString(),
+    durationSeconds: 0,
+  }));
 }
 
 /**
