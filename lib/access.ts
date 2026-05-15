@@ -3,7 +3,7 @@
 // Modo offline: los flujos de login retornan mock data sin consultar la DB.
 // TODO Fase 3: descomentar las llamadas a `db.*` y eliminar los bloques MOCK.
 
-import { AdminRole } from "@prisma/client";
+import { AdminRole, AdminStatus, SessionAccessType } from "@prisma/client";
 import { db } from "@/lib/db";
 import { comparePassword } from "@/lib/auth";
 import { logAccess } from "@/lib/audit";
@@ -35,7 +35,7 @@ export async function adminLogin(input: {
       passwordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lVWy",
       role: AdminRole.SUPERADMIN,
       nombre: "Administrador de Sistemas",
-      status: "ACTIVE" as const,
+      status: AdminStatus.ACTIVE,
     },
     {
       id: "admin-mock-operador",
@@ -44,7 +44,7 @@ export async function adminLogin(input: {
       passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
       role: AdminRole.OPERADOR,
       nombre: "Operador de Admisión",
-      status: "ACTIVE" as const,
+      status: AdminStatus.ACTIVE,
     },
   ];
   // ─────────────────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ export async function adminLogin(input: {
   */
   const found = MOCK_ADMINS.find((a) => a.username === username);
 
-  if (!found || found.status !== "ACTIVE") {
+  if (!found || found.status !== AdminStatus.ACTIVE) {
     await logAccess({ event: "AUTH_FAIL", actor: username, detail: "USER_NOT_FOUND" });
     return { ok: false, message: "Credenciales inválidas" };
   }
@@ -95,7 +95,14 @@ export async function guestLogin(input: {
     return { ok: false, message: "Código inválido o expirado." };
   }
   // Registrar sesión
-  await db.session.create({ data: { mac: input.mac, credentialId: credential.id, ssid: "IEQ-Guest" } });
+  await db.session.create({ 
+    data: { 
+      mac: input.mac, 
+      credentialId: credential.id, 
+      ssid: "IEQ-Guest",
+      accessType: SessionAccessType.GUEST 
+    } 
+  });
   return { ok: true, credentialId: credential.id, nombre: credential.nombre, tipo: credential.tipo, expireAt: credential.expireAt };
   */
 
@@ -130,7 +137,14 @@ export async function doctorLogin(input: {
   if (!doctor || doctor.status !== "ACTIVE") {
     return { ok: false, message: "Acceso no autorizado." };
   }
-  await db.session.create({ data: { mac: input.mac, doctorId: doctor.id, ssid: "IEQ-Medicos" } });
+  await db.session.create({ 
+    data: { 
+      mac: input.mac, 
+      doctorId: doctor.id, 
+      ssid: "IEQ-Medicos",
+      accessType: SessionAccessType.DOCTOR
+    } 
+  });
   return { ok: true, doctorId: doctor.id, nombre: doctor.nombre, especialidad: doctor.especialidad };
   */
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { SessionAccessType } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
@@ -34,9 +35,9 @@ export async function POST(req: Request) {
       message: "Acceso concedido.",
       data: {
         email: email,
-        name: "Staff IEQ", // Nombre mock
+        nombre: "Staff IEQ", // Nombre mock alineado al schema
         mac: mac,
-        accessType: "STAFF",
+        accessType: SessionAccessType.STAFF,
         sessionId: "mock_staff_session_id", // ID de sesión mock
       },
     });

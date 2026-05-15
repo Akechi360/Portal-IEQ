@@ -5,30 +5,16 @@ import { verifyToken } from '@/lib/jwt';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-<<<<<<< HEAD
-  // Rutas de autenticación internas (legacy + nuevo)
-  const isAdminLogin = path === "/admin/login";
-  const isAdmisionLogin = path === "/admision/login";
-  const isStaffLogin = path === "/staff/login";
-=======
   // Rutas de autenticación internas
   const isAdminLogin = path === "/admin/login";
   const isAdmisionLogin = path === "/admision/login";
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   
   // Zonas protegidas
   const isAdminZone = path.startsWith("/admin") && !isAdminLogin;
   const isAdmisionZone = path.startsWith("/admision") && !isAdmisionLogin;
-<<<<<<< HEAD
-  const isStaffZone = path.startsWith("/staff") && !isStaffLogin;
 
-  // Si no es una zona protegida interna, dejamos pasar
-  if (!isAdminLogin && !isAdmisionLogin && !isStaffLogin && !isAdminZone && !isAdmisionZone && !isStaffZone) {
-=======
-
-  // Si no es una zona protegida interna, dejamos pasar
+  // Si no es una zona protegida interna, dejamos pasar (ej. portal de invitados, assets)
   if (!isAdminLogin && !isAdmisionLogin && !isAdminZone && !isAdmisionZone) {
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
     return NextResponse.next();
   }
 
@@ -41,8 +27,7 @@ export async function middleware(request: NextRequest) {
 
   // --- LÓGICA PARA RUTAS DE LOGIN ---
   // Si ya tiene sesión válida y entra al login, redirigirlo a su dashboard
-<<<<<<< HEAD
-  if (isAdminLogin || isAdmisionLogin || isStaffLogin) {
+  if (isAdminLogin || isAdmisionLogin) {
     if (payload) {
       const isAdminRole = payload.role === 'SUPERADMIN' || payload.role === 'ADMIN';
       const isOperadorRole = payload.role === 'OPERADOR';
@@ -61,38 +46,31 @@ export async function middleware(request: NextRequest) {
 
   // --- LÓGICA PARA ZONAS PROTEGIDAS ---
   if (!payload) {
-<<<<<<< HEAD
-    // Redirigir al login unificado
-    return NextResponse.redirect(new URL("/staff/login", request.url));
-=======
     // Redirigir al login correspondiente según la zona intentada
     const loginUrl = isAdmisionZone ? "/admision/login" : "/admin/login";
     return NextResponse.redirect(new URL(loginUrl, request.url));
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   }
 
   // Verificar roles para /admin/*
   if (isAdminZone) {
-    if (payload.role !== 'SUPERADMIN' && payload.role !== 'ADMIN') {
-      // Si un operador intenta entrar a sistemas -> redirigir a admision
-      return NextResponse.redirect(new URL('/admision', request.url));
+    const isAdminRole = payload.role === 'SUPERADMIN' || payload.role === 'ADMIN';
+    if (!isAdminRole) {
+      // Si un operador intenta entrar a sistemas -> redirigir a su panel de admision
+      if (payload.role === 'OPERADOR') {
+        return NextResponse.redirect(new URL('/admision', request.url));
+      }
+      // Si es cualquier otro rol no autorizado -> login de sistemas
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
 
   // Verificar roles para /admision/*
   if (isAdmisionZone) {
     // Solo OPERADOR, ADMIN, SUPERADMIN permitidos
-    const validRoles = ['OPERADOR', 'ADMIN', 'SUPERADMIN'];
-    if (!validRoles.includes(payload.role)) {
-      return NextResponse.redirect(new URL("/staff/login", request.url));
-    }
-  }
-
-  // Verificar roles para /staff/* (dashboards de staff, si existen)
-  if (isStaffZone) {
-    const validRoles = ["OPERADOR", "ADMIN", "SUPERADMIN"];
-    if (!validRoles.includes(payload.role)) {
-      return NextResponse.redirect(new URL("/staff/login", request.url));
+    const validRolesForAdmision = ['OPERADOR', 'ADMIN', 'SUPERADMIN'];
+    if (!validRolesForAdmision.includes(payload.role)) {
+      // Si tuviera una sesión válida de otro tipo pero no permitida aquí, login de admisión
+      return NextResponse.redirect(new URL("/admision/login", request.url));
     }
   }
 
@@ -104,10 +82,5 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/admision/:path*",
-<<<<<<< HEAD
-    "/staff/:path*",
-=======
->>>>>>> 53f8a2c92a064c1299ac43fdff28034dd65a9b27
   ],
 };
-
