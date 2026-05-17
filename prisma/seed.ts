@@ -2,15 +2,7 @@
 // Modelos: Admin, PortalConfig, SystemConfig, Doctor, Credential, StaffUser
 // Ejecutar: npm run prisma:seed  (requiere DB activa en Fase 3)
 
-import { 
-  PrismaClient, 
-  AdminRole, 
-  AdminStatus, 
-  DoctorStatus, 
-  CredentialType, 
-  CredentialStatus,
-  StaffStatus
-} from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -32,8 +24,8 @@ async function main() {
       username:     "admin_sistemas",
       email:        "sistemas@ieq.med",
       passwordHash: superadminHash,
-      role:         AdminRole.SUPERADMIN,
-      status:       AdminStatus.ACTIVE,
+      role:         "SUPERADMIN",
+      status:       "ACTIVE",
     },
   });
 
@@ -45,8 +37,8 @@ async function main() {
       username:     "admin_operador",
       email:        "admision@ieq.med",
       passwordHash: operadorHash,
-      role:         AdminRole.OPERADOR,
-      status:       AdminStatus.ACTIVE,
+      role:         "OPERADOR",
+      status:       "ACTIVE",
     },
   });
 
@@ -129,7 +121,7 @@ async function main() {
       email:       "j.ramirez@ieq.med",
       telefono:    "809-555-0101",
       voucherCode: "IEQ-AA11-BB22",
-      status:      DoctorStatus.ACTIVE,
+      status:      "ACTIVE",
     },
   });
 
@@ -142,7 +134,7 @@ async function main() {
       email:       "e.vargas@ieq.med",
       telefono:    "809-555-0202",
       voucherCode: "IEQ-CC33-DD44",
-      status:      DoctorStatus.ACTIVE,
+      status:      "ACTIVE",
     },
   });
 
@@ -155,14 +147,14 @@ async function main() {
     update: {},
     create: {
       voucherCode:  "IEQ-DEMO-PAC1",
-      tipo:         CredentialType.PACIENTE,
+      tipo:         "PACIENTE",
       nombre:       "Paciente Demo Uno",
       habitacion:   "H-204",
       maxDevices:   2,
       diasEstancia: 2,
       expireAt:     new Date(Date.now() + 50 * 60 * 60 * 1000), // ~2 días
       issuerId:     operador.id,
-      status:       CredentialStatus.ACTIVE,
+      status:       "ACTIVE",
     },
   });
 
@@ -171,13 +163,13 @@ async function main() {
     update: {},
     create: {
       voucherCode: "IEQ-DEMO-TRN1",
-      tipo:        CredentialType.TRANSITO,
+      tipo:        "TRANSITO",
       nombre:      "Visitante Demo",
       habitacion:  "Caja",
       maxDevices:  1,
       expireAt:    new Date(Date.now() + 30 * 60 * 1000), // 30 minutos
       issuerId:    operador.id,
-      status:      CredentialStatus.ACTIVE,
+      status:      "ACTIVE",
     },
   });
 
@@ -193,7 +185,7 @@ async function main() {
     create: {
       email: "gerencia@ieq.med",
       nombre: "Gerencia General",
-      status: StaffStatus.ACTIVE,
+      status: "ACTIVE",
     },
   });
 

@@ -122,9 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="flex w-[220px] shrink-0 flex-col bg-[#111827] text-white">
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white p-1 overflow-hidden">
-            <img src="/logo-ieq.png" alt="IEQ" className="h-full w-full object-contain" />
-          </div>
+          <img src="/logo-ieq.png" alt="IEQ" className="h-9 w-auto object-contain" />
           <div>
             <p className="text-sm font-bold leading-tight text-white">Portal IEQ</p>
             <p className="text-[11px] text-neutral-400">Control de acceso</p>

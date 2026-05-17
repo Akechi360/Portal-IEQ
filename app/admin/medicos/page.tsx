@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import useSWR from "swr";
 import {
   UserPlus,
   AlertCircle,
@@ -10,34 +11,29 @@ import {
   EyeOff,
   Eye,
   Clock,
+  Loader2,
 } from "lucide-react";
 
 type StatusMedico = "activo" | "pendiente" | "inactivo";
 
-interface MedicoMock {
+interface Medico {
   id: string;
   nombre: string;
-  especialidad: string;
+  especialidad: string | null;
   email: string;
-  telefono: string;
+  telefono: string | null;
   voucherCode: string | null;
-  status: StatusMedico;
-  fechaRegistro: string;
-  ultimaConexion: string | null;
+  status: "ACTIVE" | "PENDING" | "INACTIVE";
+  createdAt: string;
 }
 
-const mockInicial: MedicoMock[] = [
-  { id: "1", nombre: "Dr. Roberto Sánchez", especialidad: "Cardiología", email: "rsanchez@ieq.com", telefono: "+58 414 123 4567", voucherCode: "MED-X9L2", status: "activo", fechaRegistro: "15/01/2026", ultimaConexion: "hace 2h" },
-  { id: "2", nombre: "Dra. Ana López", especialidad: "Pediatría", email: "alopez@ieq.com", telefono: "+58 424 987 6543", voucherCode: "MED-K4M9", status: "activo", fechaRegistro: "10/02/2026", ultimaConexion: "ayer" },
-  { id: "3", nombre: "Dr. Carlos Medina", especialidad: "Neurología", email: "cmedina@ieq.com", telefono: "+58 412 456 7890", voucherCode: null, status: "pendiente", fechaRegistro: "09/05/2026", ultimaConexion: null },
-  { id: "4", nombre: "Dra. Sofía Rivas", especialidad: "Dermatología", email: "srivas@ieq.com", telefono: "+58 414 321 0987", voucherCode: null, status: "pendiente", fechaRegistro: "09/05/2026", ultimaConexion: null },
-  { id: "5", nombre: "Dr. Luis Torres", especialidad: "Traumatología", email: "ltorres@ieq.com", telefono: "+58 424 111 2233", voucherCode: "MED-P7Q1", status: "inactivo", fechaRegistro: "05/11/2025", ultimaConexion: "hace 4 meses" },
-  { id: "6", nombre: "Dra. Elena Castro", especialidad: "Ginecología", email: "ecastro@ieq.com", telefono: "+58 412 888 9900", voucherCode: "MED-B3N5", status: "activo", fechaRegistro: "02/03/2026", ultimaConexion: "hace 5h" },
-  { id: "7", nombre: "Dr. Miguel Blanco", especialidad: "Oncología", email: "mblanco@ieq.com", telefono: "+58 414 555 4433", voucherCode: "MED-W8Y2", status: "activo", fechaRegistro: "10/05/2026", ultimaConexion: "Nunca" },
-];
+const mapStatus = (status: string): StatusMedico => {
+  if (status === "ACTIVE") return "activo";
+  if (status === "PENDING") return "pendiente";
+  return "inactivo";
+};
 
 export default function MedicosPage() {
-  const [medicos, setMedicos] = useState<MedicoMock[]>(mockInicial);
   const [filtro, setFiltro] = useState<"todos" | "activo" | "pendiente" | "inactivo">("todos");
   const [busqueda, setBusqueda] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -51,63 +47,72 @@ export default function MedicosPage() {
     telefono: "",
   });
 
-  const pendientesCount = medicos.filter((m) => m.status === "pendiente").length;
+  const { data, error, isLoading, mutate } = useSWR("/api/admin/doctors", (url) =>
+    fetch(url).then((res) => res.json())
+  );
+
+  const medicos: Medico[] = data?.data || [];
+  const pendientesCount = medicos.filter((m) => m.status === "PENDING").length;
 
   const medicosFiltrados = medicos.filter((m) => {
+    const statusMapeado = mapStatus(m.status);
     const matchesSearch =
       m.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      m.especialidad.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (m.especialidad && m.especialidad.toLowerCase().includes(busqueda.toLowerCase())) ||
       m.email.toLowerCase().includes(busqueda.toLowerCase());
-    const matchesFiltro = filtro === "todos" || m.status === filtro;
+    const matchesFiltro = filtro === "todos" || statusMapeado === filtro;
     return matchesSearch && matchesFiltro;
   });
 
-  const handleAprobar = async (id: string) => {
+  const handleToggleStatus = async (id: string, nuevoStatus: "ACTIVE" | "INACTIVE" | "PENDING") => {
     setLoadingId(id);
-    await new Promise((r) => setTimeout(r, 1000));
-    setMedicos((prev) =>
-      prev.map((m) =>
-        m.id === id
-          ? {
-              ...m,
-              status: "activo",
-              voucherCode: `MED-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-              ultimaConexion: "Nunca",
-            }
-          : m
-      )
-    );
-    setLoadingId(null);
+    try {
+      const res = await fetch("/api/admin/doctors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: nuevoStatus }),
+      });
+      if (res.ok) {
+        mutate(); // trigger SWR revalidation
+      } else {
+        const err = await res.json();
+        alert(err.message || "Error al actualizar estado.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de red al actualizar estado.");
+    } finally {
+      setLoadingId(null);
+    }
   };
 
-  const handleRechazar = (id: string) => {
-    setMedicos((prev) => prev.filter((m) => m.id !== id));
-  };
-
-  const handleToggleStatus = (id: string, nuevoStatus: StatusMedico) => {
-    setMedicos((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status: nuevoStatus } : m))
-    );
-  };
-
-  const handleRegistrar = () => {
+  const handleRegistrar = async () => {
     if (!modalMedico.nombre || !modalMedico.email) return;
 
-    const nuevoMedico: MedicoMock = {
-      id: Math.random().toString(),
-      nombre: modalMedico.nombre,
-      especialidad: modalMedico.especialidad,
-      email: modalMedico.email,
-      telefono: modalMedico.telefono,
-      status: "activo",
-      fechaRegistro: new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }),
-      ultimaConexion: "Nunca",
-      voucherCode: `MED-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-    };
+    try {
+      const res = await fetch("/api/admin/doctors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: modalMedico.nombre,
+          especialidad: modalMedico.especialidad || undefined,
+          email: modalMedico.email,
+          telefono: modalMedico.telefono || undefined,
+        }),
+      });
 
-    setMedicos([nuevoMedico, ...medicos]);
-    setModalAbierto(false);
-    setModalMedico({ nombre: "", especialidad: "", email: "", telefono: "" });
+      if (res.ok) {
+        mutate(); // trigger SWR revalidation
+        setModalAbierto(false);
+        setModalMedico({ nombre: "", especialidad: "", email: "", telefono: "" });
+      } else {
+        const err = await res.json();
+        alert(err.message || "Error al registrar médico.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de red al registrar médico.");
+    }
   };
 
   return (
@@ -180,13 +185,23 @@ export default function MedicosPage() {
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Especialidad</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Correo</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Voucher</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Última conexión</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha Registro</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {medicosFiltrados.map((m) => {
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-sm text-gray-400">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+                      Cargando listado de médicos...
+                    </div>
+                  </td>
+                </tr>
+              ) : medicosFiltrados.map((m) => {
+                const statusMapeado = mapStatus(m.status);
                 const iniciales = m.nombre
                   .replace("Dr. ", "")
                   .replace("Dra. ", "")
@@ -207,7 +222,7 @@ export default function MedicosPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900 leading-tight">{m.nombre}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{m.telefono}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{m.telefono || "—"}</p>
                         </div>
                       </div>
                     </td>
@@ -215,7 +230,7 @@ export default function MedicosPage() {
                     {/* COLUMNA "Especialidad" */}
                     <td className="px-4 py-3.5">
                       <span className="bg-gray-100 text-gray-600 rounded-full px-2.5 py-1 text-xs font-medium">
-                        {m.especialidad}
+                        {m.especialidad || "—"}
                       </span>
                     </td>
 
@@ -235,33 +250,29 @@ export default function MedicosPage() {
                       )}
                     </td>
 
-                    {/* COLUMNA "Última conexión" */}
+                    {/* COLUMNA "Fecha Registro" */}
                     <td className="px-4 py-3.5 text-sm text-gray-500">
-                      {m.ultimaConexion ? (
-                        m.ultimaConexion === "Nunca" ? (
-                          <span className="text-gray-300">Nunca</span>
-                        ) : (
-                          m.ultimaConexion
-                        )
-                      ) : (
-                        <span className="text-gray-300">Nunca</span>
-                      )}
+                      {new Date(m.createdAt).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
                     </td>
 
                     {/* COLUMNA "Estado" */}
                     <td className="px-4 py-3.5">
-                      {m.status === "activo" && (
+                      {statusMapeado === "activo" && (
                         <span className="bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5 text-xs inline-flex items-center gap-1">
                           Activo
                         </span>
                       )}
-                      {m.status === "pendiente" && (
+                      {statusMapeado === "pendiente" && (
                         <span className="bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-xs inline-flex items-center gap-1">
                           <Clock className="w-[10px] h-[10px]" />
                           Pendiente
                         </span>
                       )}
-                      {m.status === "inactivo" && (
+                      {statusMapeado === "inactivo" && (
                         <span className="bg-gray-50 text-gray-400 border border-gray-200 rounded-full px-2 py-0.5 text-xs inline-flex items-center gap-1">
                           Inactivo
                         </span>
@@ -271,10 +282,10 @@ export default function MedicosPage() {
                     {/* COLUMNA "Acciones" */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
-                        {m.status === "pendiente" && (
+                        {statusMapeado === "pendiente" && (
                           <>
                             <button
-                              onClick={() => handleAprobar(m.id)}
+                              onClick={() => handleToggleStatus(m.id, "ACTIVE")}
                               disabled={loadingId === m.id}
                               className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-70"
                             >
@@ -286,7 +297,7 @@ export default function MedicosPage() {
                               Aprobar
                             </button>
                             <button
-                              onClick={() => handleRechazar(m.id)}
+                              onClick={() => handleToggleStatus(m.id, "INACTIVE")}
                               className="bg-white border border-red-200 text-red-500 hover:bg-red-50 rounded-lg px-3 py-1.5 text-xs transition-colors flex items-center gap-1.5 font-medium"
                             >
                               <X className="w-3 h-3" />
@@ -294,20 +305,22 @@ export default function MedicosPage() {
                             </button>
                           </>
                         )}
-                        {m.status === "activo" && (
+                        {statusMapeado === "activo" && (
                           <button
                             title="Desactivar"
-                            onClick={() => handleToggleStatus(m.id, "inactivo")}
-                            className="bg-gray-100 hover:bg-gray-200 rounded-lg p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                            onClick={() => handleToggleStatus(m.id, "INACTIVE")}
+                            disabled={loadingId === m.id}
+                            className="bg-gray-100 hover:bg-gray-200 rounded-lg p-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
                           >
                             <EyeOff className="w-[14px] h-[14px]" />
                           </button>
                         )}
-                        {m.status === "inactivo" && (
+                        {statusMapeado === "inactivo" && (
                           <button
                             title="Reactivar"
-                            onClick={() => handleToggleStatus(m.id, "activo")}
-                            className="bg-gray-100 hover:bg-green-100 rounded-lg p-1.5 text-gray-400 hover:text-green-600 transition-colors"
+                            onClick={() => handleToggleStatus(m.id, "ACTIVE")}
+                            disabled={loadingId === m.id}
+                            className="bg-gray-100 hover:bg-green-100 rounded-lg p-1.5 text-gray-400 hover:text-green-600 transition-colors disabled:opacity-50"
                           >
                             <Eye className="w-[14px] h-[14px]" />
                           </button>
@@ -318,7 +331,7 @@ export default function MedicosPage() {
                 );
               })}
               
-              {medicosFiltrados.length === 0 && (
+              {!isLoading && medicosFiltrados.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-12 text-center">
                     <p className="text-sm text-gray-400">No se encontraron médicos</p>

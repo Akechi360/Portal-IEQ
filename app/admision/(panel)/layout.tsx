@@ -12,9 +12,7 @@ export default function AdmisionLayout({
         
         {/* IZQUIERDA del header */}
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-lg p-0.5 h-8 w-8 flex items-center justify-center overflow-hidden border border-gray-100">
-            <img src="/logo-ieq.png" alt="IEQ" className="h-full w-full object-contain" />
-          </div>
+          <img src="/logo-ieq.png" alt="IEQ" className="h-8 w-auto object-contain" />
           <span className="font-semibold text-gray-900 text-sm">Portal IEQ</span>
           <div className="w-px h-4 bg-gray-300" />
           <span className="bg-sky-50 text-sky-700 border border-sky-200 rounded-full px-2.5 py-0.5 text-xs font-medium">

@@ -2,33 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, PlusCircle, Search, ClipboardList } from "lucide-react";
+import useSWR from "swr";
+import { ArrowLeft, PlusCircle, Search, ClipboardList, Loader2 } from "lucide-react";
 
 type TipoAcceso = "Todos" | "Paciente" | "Transito";
-type EstadoCredencial = "Activo" | "Expirado" | "Bloqueado" | "En uso";
 
-interface CredencialMock {
+interface ListItem {
   id: string;
-  codigo: string;
-  tipo: "Paciente" | "Transito";
-  nombre: string;
-  habitacion?: string;
-  creadaA: string;
-  expira: string;
-  dispositivos: string;
-  estado: EstadoCredencial;
+  name: string;
+  type: "PACIENTE" | "TRANSITO" | "MEDICO";
+  identifier: string; // voucherCode
+  room?: string | null;
+  status: string; // "Active" | "Expired" | "Blocked" | "Pending"
+  devicesCount: number;
+  expiresAt: string | null;
+  createdAt: string;
 }
-
-const mockCredenciales: CredencialMock[] = [
-  { id: "1", codigo: "A3F9-2K7X", tipo: "Paciente", nombre: "Juan Pérez", habitacion: "302-A", creadaA: "08:15 AM", expira: "74h", dispositivos: "0/4", estado: "Activo" },
-  { id: "2", codigo: "M9L2-P4QC", tipo: "Paciente", nombre: "María Gómez", habitacion: "105-B", creadaA: "09:30 AM", expira: "26h", dispositivos: "2/4", estado: "En uso" },
-  { id: "3", codigo: "R7T1-V8WN", tipo: "Transito", nombre: "Carlos Mendoza", creadaA: "10:05 AM", expira: "30 min", dispositivos: "0/1", estado: "Activo" },
-  { id: "4", codigo: "K5B4-H9FD", tipo: "Paciente", nombre: "Ana Torres", habitacion: "410-C", creadaA: "10:45 AM", expira: "50h", dispositivos: "0/3", estado: "Activo" },
-  { id: "5", codigo: "Z2X8-C1MV", tipo: "Transito", nombre: "Luis Sánchez", creadaA: "11:20 AM", expira: "Expiró hace 2h", dispositivos: "1/1", estado: "Expirado" },
-  { id: "6", codigo: "Q6W3-E7RT", tipo: "Transito", nombre: "Elena Ruiz", creadaA: "11:55 AM", expira: "30 min", dispositivos: "0/1", estado: "Activo" },
-  { id: "7", codigo: "Y4U9-I2OP", tipo: "Paciente", nombre: "Pedro Vargas", habitacion: "208-A", creadaA: "Ayer", expira: "Expiró ayer", dispositivos: "4/4", estado: "Expirado" },
-  { id: "8", codigo: "L1K5-J8HG", tipo: "Transito", nombre: "Usuario bloqueado", creadaA: "12:10 PM", expira: "—", dispositivos: "0/1", estado: "Bloqueado" },
-];
 
 export default function CredencialesPage() {
   const router = useRouter();
@@ -36,16 +25,17 @@ export default function CredencialesPage() {
   const [search, setSearch] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<TipoAcceso>("Todos");
 
-  // Filtrado
-  const filtradas = mockCredenciales.filter((cred) => {
-    const matchesSearch =
-      cred.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      cred.codigo.toLowerCase().includes(search.toLowerCase());
-    
-    const matchesTipo = filtroTipo === "Todos" || cred.tipo === filtroTipo;
+  // Map filters to API params
+  const typeParam = filtroTipo === "Paciente" ? "PACIENTE" : filtroTipo === "Transito" ? "TRANSITO" : "";
 
-    return matchesSearch && matchesTipo;
-  });
+  // SWR query
+  const { data, error, isLoading } = useSWR(
+    `/api/list?limit=100${typeParam ? `&type=${typeParam}` : ""}${search ? `&search=${search}` : ""}`,
+    (url) => fetch(url).then((res) => res.json())
+  );
+
+  const items: ListItem[] = data?.items || [];
+  const total = data?.total || 0;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -61,7 +51,7 @@ export default function CredencialesPage() {
           </button>
           <h1 className="text-xl font-bold text-gray-900">Credenciales de hoy</h1>
           <span className="bg-sky-50 text-sky-700 border border-sky-200 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-            {mockCredenciales.length} total
+            {isLoading ? "..." : `${total} total`}
           </span>
         </div>
         <button
@@ -120,16 +110,25 @@ export default function CredencialesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtradas.length > 0 ? (
-                filtradas.map((cred) => (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-sm text-gray-400">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+                      Cargando credenciales emitidas...
+                    </div>
+                  </td>
+                </tr>
+              ) : items.length > 0 ? (
+                items.map((cred) => (
                   <tr key={cred.id} className="hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors">
                     <td className="px-4 py-3.5 text-sm">
                       <span className="font-mono font-semibold text-gray-900 tracking-wider">
-                        {cred.codigo}
+                        {cred.identifier}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-sm">
-                      {cred.tipo === "Paciente" ? (
+                      {cred.type === "PACIENTE" ? (
                         <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5 text-xs">
                           Paciente
                         </span>
@@ -139,38 +138,45 @@ export default function CredencialesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">
-                      {cred.nombre}
+                    <td className="px-4 py-3.5 text-sm text-gray-700 font-medium">
+                      {cred.name}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-500">
-                      {cred.habitacion || "—"}
+                      {cred.room || "—"}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-500">
-                      {cred.creadaA}
+                      {new Date(cred.createdAt).toLocaleTimeString("es-ES", {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-500">
-                      {cred.expira}
+                      {cred.expiresAt ? (
+                        new Date(cred.expiresAt).toLocaleDateString("es-ES", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })
+                      ) : (
+                        <span className="text-gray-300">Nunca</span>
+                      )}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-center text-gray-600">
-                      {cred.dispositivos}
+                      {cred.devicesCount} c.
                     </td>
                     <td className="px-4 py-3.5 text-sm">
-                      {cred.estado === "Activo" && (
+                      {cred.status === "Active" && (
                         <span className="bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5 text-xs">
                           Activo
                         </span>
                       )}
-                      {cred.estado === "En uso" && (
-                        <span className="bg-sky-50 text-sky-700 border border-sky-200 rounded-full px-2 py-0.5 text-xs">
-                          En uso
-                        </span>
-                      )}
-                      {cred.estado === "Expirado" && (
+                      {cred.status === "Expired" && (
                         <span className="bg-gray-50 text-gray-500 border border-gray-200 rounded-full px-2 py-0.5 text-xs">
                           Expirado
                         </span>
                       )}
-                      {cred.estado === "Bloqueado" && (
+                      {cred.status === "Blocked" && (
                         <span className="bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5 text-xs">
                           Bloqueado
                         </span>
@@ -192,7 +198,7 @@ export default function CredencialesPage() {
         
         {/* FOOTER DE TABLA */}
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400">
-          Mostrando {filtradas.length} credencial(es) del turno actual
+          Mostrando {items.length} credencial(es) en tiempo real
         </div>
       </div>
 

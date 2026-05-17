@@ -196,11 +196,11 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
         </p>
 
         {/* Selector de tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-col sm:flex-row gap-2 mb-6">
           <button
             type="button"
             onClick={() => setActiveTab("code")}
-            className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+            className={`w-full sm:flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
               activeTab === "code"
                 ? "bg-sky-500 text-white shadow-md"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -214,7 +214,7 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
           <button
             type="button"
             onClick={() => setActiveTab("doctor")}
-            className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+            className={`w-full sm:flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
               activeTab === "doctor"
                 ? "bg-sky-500 text-white shadow-md"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -229,7 +229,7 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
           <button
             type="button"
             onClick={() => setActiveTab("staff")}
-            className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+            className={`w-full sm:flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
               activeTab === "staff"
                 ? "bg-blue-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"

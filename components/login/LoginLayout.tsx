@@ -92,17 +92,15 @@ export function LoginLayout({
           {/* Logo Header (Visible on both Mobile and Desktop) */}
           <div className="flex items-center justify-between lg:justify-start lg:mb-20">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg shadow-sky-500/10 p-1.5 overflow-hidden">
-                <img src="/logo-ieq.png" alt="IEQ Logo" className="h-full w-full object-contain" />
-              </div>
+              <img src="/logo-ieq.png" alt="IEQ Logo" className="h-12 w-auto object-contain" />
               <div>
                 <h1 className="text-base lg:text-lg font-semibold leading-tight text-white">Portal IEQ</h1>
                 <p className="text-[11px] lg:text-sm text-slate-400">Control de acceso WiFi</p>
               </div>
             </div>
             
-            {/* Mobile Badge SSID (Hidden on desktop) */}
-            <div className={`lg:hidden ${badgeWrapperClass}`}>
+            {/* Mobile Badge SSID (Hidden on mobile and desktop, visible on tablet) */}
+            <div className={`hidden sm:flex lg:hidden ${badgeWrapperClass}`}>
               <span className={badgeDotClass} />
               <span className={badgeTextClass}>
                 {badgePrefix}{badgePrefix ? " \u00B7 " : ""}{badgeSSID}
@@ -151,7 +149,7 @@ export function LoginLayout({
       </div>
 
       {/* Right Panel - Login Form / Content */}
-      <div className="flex w-full flex-1 items-center justify-center bg-white px-10 py-10 lg:w-1/2 lg:px-16 lg:py-16">
+      <div className="flex w-full flex-1 items-center justify-center bg-white px-6 py-8 sm:px-10 sm:py-10 lg:w-1/2 lg:px-16 lg:py-16">
         <div className="w-full max-w-sm">
           {children}
         </div>

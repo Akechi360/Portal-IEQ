@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { SessionAccessType } from "@prisma/client";
+import { SessionAccessType, StaffStatus } from "@prisma/client";
+import { db } from "@/lib/db";
+import { authorizeClient } from "@/lib/ruijie";
+import { logAccess } from "@/lib/audit";
 
 export async function POST(req: Request) {
   try {
@@ -12,33 +15,59 @@ export async function POST(req: Request) {
       );
     }
 
-    // Simulación de autenticación (mock)
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simular carga
+    // 1. Buscar el usuario en la base de datos
+    const staffUser = await db.staffUser.findUnique({
+      where: { email: email.toLowerCase().trim() }
+    });
 
-    if (email.includes("notfound@")) {
+    if (!staffUser || staffUser.status !== StaffStatus.ACTIVE) {
+      await logAccess({
+        event: "AUTH_FAIL",
+        actor: email,
+        mac,
+        ssid: "IEQ-Staff",
+        detail: "STAFF_USER_NOT_FOUND_OR_INACTIVE"
+      });
       return NextResponse.json(
-        { success: false, message: "Correo no encontrado en el registro de Staff." },
+        { success: false, message: "Correo no encontrado o inactivo en el registro de Staff." },
         { status: 404 }
       );
     }
 
-    if (email.includes("error@")) {
-      return NextResponse.json(
-        { success: false, message: "Error temporal del sistema. Intenta de nuevo más tarde." },
-        { status: 500 }
-      );
+    // 2. Autorizar MAC en gateway Ruijie (offline: mock/fallback seguro)
+    try {
+      await authorizeClient({ mac, username: email, groupId: "grp-admin" });
+    } catch (e) {
+      console.warn("Fallo al autorizar cliente Staff en Ruijie", e);
     }
 
-    // Simular éxito para cualquier otro correo válido
+    // 3. Registrar la sesión en la base de datos
+    const session = await db.session.create({
+      data: {
+        mac,
+        staffUserId: staffUser.id,
+        ssid: "IEQ-Staff",
+        accessType: SessionAccessType.STAFF
+      }
+    });
+
+    await logAccess({
+      event: "AUTH_SUCCESS",
+      actor: email,
+      mac,
+      ssid: "IEQ-Staff",
+      detail: `session:${session.id}`
+    });
+
     return NextResponse.json({
       success: true,
       message: "Acceso concedido.",
       data: {
-        email: email,
-        nombre: "Staff IEQ", // Nombre mock alineado al schema
+        email: staffUser.email,
+        nombre: staffUser.nombre ?? "Staff IEQ",
         mac: mac,
         accessType: SessionAccessType.STAFF,
-        sessionId: "mock_staff_session_id", // ID de sesión mock
+        sessionId: session.id
       },
     });
   } catch (error) {

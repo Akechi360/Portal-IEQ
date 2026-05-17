@@ -8,6 +8,7 @@ import { issueCredentialSchema } from "@/lib/validators";
 import { generateVoucherCode } from "@/lib/auth";
 import { logAccess } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { createVoucher } from "@/lib/ruijie";
 
 function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Date {
   const now = new Date();
