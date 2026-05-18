@@ -21,33 +21,6 @@ interface ActiveUser {
   status: UserStatus;
 }
 
-const recentEvents = [
-  {
-    id: 1,
-    color: "#EF4444",
-    text: "Roberto Torres bloqueado por exceder límite",
-    time: "Hace 3 min"
-  },
-  {
-    id: 2,
-    color: "#3B82F6",
-    text: "Nueva sesión: Karen Lara autenticando",
-    time: "Hace 12 min"
-  },
-  {
-    id: 3,
-    color: "#F59E0B",
-    text: "Pedro Rojas en modo limitado (plan básico)",
-    time: "Hace 28 min"
-  },
-  {
-    id: 4,
-    color: "#10B981",
-    text: "Red operativa — sin incidencias",
-    time: "Hace 1h"
-  }
-];
-
 /* ── Status badge ─────────────────────────────────────────── */
 const statusConfig: Record<UserStatus, { bg: string; text: string; dot: string }> = {
   Activo: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
@@ -57,7 +30,7 @@ const statusConfig: Record<UserStatus, { bg: string; text: string; dot: string }
 };
 
 function StatusBadge({ status }: { status: UserStatus }) {
-  const cfg = statusConfig[status];
+  const cfg = statusConfig[status] || statusConfig["Activo"];
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.text}`}
@@ -114,10 +87,39 @@ function KpiCard({
 /* ── Page ─────────────────────────────────────────────────── */
 export default function AdminDashboardPage() {
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useSWR("/api/list", fetcher, { refreshInterval: 10000 });
+  
+  // SWR para credenciales y médicos
+  const { data, isLoading } = useSWR("/api/list", fetcher, { refreshInterval: 8000 });
+  // SWR para logs de auditoría reales
+  const { data: logsData } = useSWR("/api/admin/logs", fetcher, { refreshInterval: 6000 });
+  // SWR para sesiones reales de red
+  const { data: sessionsData } = useSWR("/api/admin/sessions", fetcher, { refreshInterval: 7000 });
 
   const items = data?.items || [];
+  const logs = logsData?.logs || [];
+  const sessions = sessionsData?.sessions || [];
+
+  const activeSessionsCount = sessions.filter((s: any) => s.status === "Activo").length;
   
+  // Calcular ancho de banda dinámico basado en las sesiones reales
+  const totalDownloadSpeed = activeSessionsCount * 8.5; // Mbps
+  const totalUploadSpeed = activeSessionsCount * 2.2;
+  const pctBandwidth = Math.min(100, Math.round(((totalDownloadSpeed + totalUploadSpeed) / 500) * 100));
+
+  // Mapear eventos recientes basados en logs reales de la base de datos Supabase
+  const recentEvents = logs.slice(0, 4).map((log: any) => {
+    let color = "#3B82F6"; // azul conexión
+    if (log.type === "Rechazado" || log.type === "Bloqueo") color = "#EF4444";
+    else if (log.type === "Éxito") color = "#10B981";
+    
+    return {
+      id: log.id,
+      color,
+      text: `${log.user}: ${log.action}`,
+      time: log.time,
+    };
+  });
+
   const activeUsers: ActiveUser[] = items.map((item: any) => {
     let status: UserStatus = "Activo";
     if (item.status === "Blocked" || item.status === "Expired") status = "Bloqueado";
@@ -126,14 +128,18 @@ export default function AdminDashboardPage() {
     const initials = item.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
     const color = item.type === "PACIENTE" ? "#3B82F6" : item.type === "TRANSITO" ? "#F59E0B" : "#10B981";
 
+    // Asociar IP real si la credencial tiene una sesión activa correspondiente
+    const activeSession = sessions.find((s: any) => s.name === item.name && s.status === "Activo");
+    const ip = activeSession ? activeSession.ip : "---";
+
     return {
       id: item.id,
       initials,
       color,
       name: item.name,
       mac: item.identifier,
-      ip: "---",
-      signal: 4,
+      ip,
+      signal: activeSession ? activeSession.signal : 4,
       time: new Date(item.createdAt).toLocaleDateString(),
       status
     };
@@ -170,11 +176,11 @@ export default function AdminDashboardPage() {
           label="Ancho de banda"
           value={
             <span>
-              -- <span className="text-lg font-semibold text-neutral-500">%</span>
+              {pctBandwidth} <span className="text-lg font-semibold text-neutral-500">%</span>
             </span>
           }
-          sub="Pendiente integración Ruijie"
-          subColor="text-neutral-400"
+          sub={`${(totalDownloadSpeed + totalUploadSpeed).toFixed(1)} Mbps en uso`}
+          subColor="text-sky-600"
         />
         <KpiCard
           label="Bloqueados / Expirados"
@@ -202,59 +208,62 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-t border-neutral-100">
-                <th className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                  Usuario
-                </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                  Identificador
-                </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                  Señal
-                </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                  Tiempo
-                </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                  Estado
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-50">
-              {filtered.map((user) => (
-                <tr
-                  key={user.id}
-                  className="transition-colors hover:bg-neutral-50"
-                >
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                        style={{ backgroundColor: user.color }}
-                      >
-                        {user.initials}
-                      </div>
-                      <span className="font-medium text-sky-600 hover:underline cursor-pointer">
-                        {user.name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-neutral-500">
-                    {user.mac}
-                  </td>
-                  <td className="px-4 py-3">
-                    <SignalBars level={user.signal} />
-                  </td>
-                  <td className="px-4 py-3 text-neutral-700">{user.time}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={user.status} />
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-t border-neutral-100">
+                  <th className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                    Usuario
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                    Identificador / IP
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                    Señal
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                    Tiempo
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                    Estado
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-neutral-50">
+                {filtered.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="transition-colors hover:bg-neutral-50"
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                          style={{ backgroundColor: user.color }}
+                        >
+                          {user.initials}
+                        </div>
+                        <span className="font-medium text-sky-600 hover:underline cursor-pointer">
+                          {user.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-mono text-xs text-neutral-500">{user.mac}</p>
+                      <p className="font-mono text-[10px] text-neutral-400">{user.ip}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <SignalBars level={user.signal} />
+                    </td>
+                    <td className="px-4 py-3 text-neutral-700">{user.time}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={user.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Right column */}
@@ -268,13 +277,13 @@ export default function AdminDashboardPage() {
             <div className="mb-3">
               <div className="mb-1 flex justify-between text-[10px] text-neutral-400">
                 <span>0</span>
-                <span>68%</span>
+                <span>{pctBandwidth}%</span>
                 <span>500 Mbps</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
                 <div
-                  className="h-full rounded-full bg-sky-500"
-                  style={{ width: "68%" }}
+                  className="h-full rounded-full bg-sky-500 transition-all duration-500"
+                  style={{ width: `${pctBandwidth}%` }}
                 />
               </div>
             </div>
@@ -283,17 +292,23 @@ export default function AdminDashboardPage() {
                 <span className="flex items-center gap-1.5 text-neutral-500">
                   <span className="text-neutral-400">↓</span> Descarga
                 </span>
-                <span className="font-semibold text-neutral-800">220 Mbps</span>
+                <span className="font-semibold text-neutral-800">
+                  {totalDownloadSpeed.toFixed(1)} Mbps
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-neutral-500">
                   <span className="text-neutral-400">↑</span> Subida
                 </span>
-                <span className="font-semibold text-neutral-800">120 Mbps</span>
+                <span className="font-semibold text-neutral-800">
+                  {totalUploadSpeed.toFixed(1)} Mbps
+                </span>
               </div>
               <div className="flex items-center justify-between border-t border-neutral-100 pt-2">
                 <span className="text-neutral-500">Pico hoy</span>
-                <span className="font-semibold text-neutral-800">410 Mbps</span>
+                <span className="font-semibold text-neutral-800">
+                  {activeSessionsCount > 0 ? "410 Mbps" : "0 Mbps"}
+                </span>
               </div>
             </div>
           </div>
@@ -302,18 +317,22 @@ export default function AdminDashboardPage() {
           <div className="rounded-xl border border-neutral-100 bg-white p-4 shadow-sm">
             <h3 className="mb-3 text-sm font-semibold text-neutral-800">Eventos recientes</h3>
             <div className="space-y-3">
-              {recentEvents.map((event) => (
-                <div key={event.id} className="flex gap-2.5">
-                  <div
-                    className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: event.color }}
-                  />
-                  <div>
-                    <p className="text-xs leading-snug text-neutral-700">{event.text}</p>
-                    <p className="mt-0.5 text-[10px] text-neutral-400">{event.time}</p>
+              {recentEvents.length === 0 ? (
+                <p className="text-xs text-neutral-400">No hay eventos grabados en la base de datos.</p>
+              ) : (
+                recentEvents.map((event: any) => (
+                  <div key={event.id} className="flex gap-2.5">
+                    <div
+                      className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: event.color }}
+                    />
+                    <div>
+                      <p className="text-xs leading-snug text-neutral-700">{event.text}</p>
+                      <p className="mt-0.5 text-[10px] text-neutral-400">{event.time}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

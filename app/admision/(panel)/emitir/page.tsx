@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -25,28 +25,72 @@ export default function EmitirCredencialPage() {
   
   const [resultado, setResultado] = useState<{ codigo: string; expira: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [issuerId, setIssuerId] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user?.sub) {
+          setIssuerId(data.user.sub);
+        } else {
+          setIssuerId("admin_operador_fallback");
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching operator details:", err);
+        setIssuerId("admin_operador_fallback");
+      });
+  }, []);
 
   const handleGenerar = async () => {
     if (!nombre.trim()) return;
     setLoading(true);
+    setError("");
 
-    // Simulate API delay
-    await new Promise((r) => setTimeout(r, 1000));
+    try {
+      const res = await fetch("/api/admin/credentials/issue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo: tipo === "Paciente" ? "PACIENTE" : "TRANSITO",
+          nombre: nombre.trim(),
+          habitacion: tipo === "Paciente" && habitacion ? habitacion.trim() : undefined,
+          maxDevices: tipo === "Paciente" ? maxDispositivos : 1,
+          diasEstancia: tipo === "Paciente" ? diasEstancia : undefined,
+          issuerId: issuerId || "admin_operador_fallback",
+        }),
+      });
 
-    // Generar código
-    const codePart1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const codePart2 = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const codigo = `${codePart1}-${codePart2}`;
+      const resData = await res.json();
 
-    let expira = "";
-    if (tipo === "Paciente") {
-      expira = `${diasEstancia * 24 + 2} horas desde la primera conexión`;
-    } else {
-      expira = "30 minutos desde primera conexión";
+      if (res.ok && resData.ok) {
+        let expira = "";
+        if (resData.data?.expireAt) {
+          const expDate = new Date(resData.data.expireAt);
+          expira = expDate.toLocaleString("es-ES", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          }) + " (luego expirará automáticamente)";
+        } else {
+          expira = tipo === "Paciente"
+            ? `${diasEstancia * 24 + 2} horas desde la primera conexión`
+            : "30 minutos desde la primera conexión";
+        }
+
+        setResultado({ codigo: resData.data.voucherCode, expira });
+      } else {
+        setError(resData.message || "Error al emitir la credencial.");
+      }
+    } catch (err) {
+      console.error("Error during voucher issuance:", err);
+      setError("Error de red. Asegúrate de que el servidor está corriendo.");
+    } finally {
+      setLoading(false);
     }
-
-    setResultado({ codigo, expira });
-    setLoading(false);
   };
 
   const resetForm = () => {
@@ -55,6 +99,7 @@ export default function EmitirCredencialPage() {
     setHabitacion("");
     setDiasEstancia(1);
     setMaxDispositivos(1);
+    setError("");
   };
 
   return (
@@ -242,6 +287,12 @@ export default function EmitirCredencialPage() {
                 </div>
               </div>
             </>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-4 text-sm text-red-600">
+              ⚠️ {error}
+            </div>
           )}
 
           {/* BOTÓN GENERAR */}

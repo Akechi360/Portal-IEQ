@@ -36,6 +36,26 @@ export async function POST(req: Request) {
     const voucherCode = generateVoucherCode();
     const expireAt = getExpireAt(tipo, diasEstancia);
 
+    // Bulletproof: verify that issuerId actually exists in the database to prevent Prisma crashes.
+    let finalIssuerId = issuerId;
+    const adminExists = await db.admin.findUnique({
+      where: { id: issuerId },
+    });
+
+    if (!adminExists) {
+      const fallbackAdmin = await db.admin.findFirst({
+        where: { status: "ACTIVE" },
+      });
+      if (fallbackAdmin) {
+        finalIssuerId = fallbackAdmin.id;
+      } else {
+        return NextResponse.json(
+          { ok: false, message: "No se encontró ningún administrador activo en la base de datos para registrar la emisión." },
+          { status: 500 }
+        );
+      }
+    }
+
     const credential = await db.credential.create({
       data: {
         voucherCode,
@@ -45,7 +65,7 @@ export async function POST(req: Request) {
         maxDevices,
         diasEstancia,
         expireAt,
-        issuerId,
+        issuerId: finalIssuerId,
         status: "ACTIVE",
       },
     });

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
+import useSWR from "swr";
 
 /* ── Types ─────────────────────────────────────────────────── */
 type LogType = "Bloqueo" | "Conexión" | "Advertencia" | "Éxito" | "Rechazado" | "Desconexión";
@@ -17,79 +18,7 @@ interface LogEntry {
   time: string;
 }
 
-/* ── Mock Data ─────────────────────────────────────────────── */
-const LOGS: LogEntry[] = [
-  {
-    id: "1",
-    type: "Bloqueo",
-    user: "Roberto Torres",
-    action: "sesión bloqueada por exceder límite de datos",
-    ip: "192.168.1.178",
-    mac: "F7:8A:CC:12:3E:88",
-    ssid: "IEQ-GUEST",
-    time: "10:47:23",
-  },
-  {
-    id: "2",
-    type: "Conexión",
-    user: "Karen Lara",
-    action: "nueva sesión iniciada correctamente",
-    ip: "192.168.1.201",
-    mac: "F7:8A:CC:12:3E:77",
-    ssid: "IEQ-GUEST",
-    time: "10:38:11",
-  },
-  {
-    id: "3",
-    type: "Advertencia",
-    user: "Pedro Rojas",
-    action: "límite de velocidad aplicado (plan básico)",
-    ip: "192.168.1.103",
-    mac: "D5:9F:2B:EA:03:55",
-    ssid: "IEQ-GUEST",
-    time: "09:58:44",
-  },
-  {
-    id: "4",
-    type: "Éxito",
-    user: "María Vega",
-    action: "autenticación exitosa",
-    ip: "192.168.1.55",
-    mac: "C1:3D:88:FA:61:89",
-    ssid: "IEQ-STAFF",
-    time: "07:30:05",
-  },
-  {
-    id: "5",
-    type: "Éxito",
-    user: "Juan Méndez",
-    action: "autenticación exitosa",
-    ip: "192.168.1.42",
-    mac: "A4:C3:F8:12:9E:01",
-    ssid: "IEQ-STAFF",
-    time: "07:14:38",
-  },
-  {
-    id: "6",
-    type: "Rechazado",
-    user: "Dispositivo desconocido",
-    action: "intento de acceso rechazado",
-    ip: "—",
-    mac: "B8:22:99:FF:01:A3",
-    ssid: "IEQ-STAFF",
-    time: "06:52:17",
-  },
-  {
-    id: "7",
-    type: "Desconexión",
-    user: "Laura Castro",
-    action: "sesión cerrada por inactividad",
-    ip: "192.168.1.87",
-    mac: "82:11:44:CC:7A:22",
-    ssid: "IEQ-GUEST",
-    time: "06:40:00",
-  },
-];
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 /* ── Helpers ───────────────────────────────────────────────── */
 const TYPE_STYLES: Record<LogType, { bg: string; text: string; iconBg: string }> = {
@@ -102,13 +31,15 @@ const TYPE_STYLES: Record<LogType, { bg: string; text: string; iconBg: string }>
 };
 
 function LogRow({ log }: { log: LogEntry }) {
-  const styles = TYPE_STYLES[log.type];
+  const styles = TYPE_STYLES[log.type] || TYPE_STYLES["Conexión"];
 
   return (
     <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4 last:border-0 hover:bg-neutral-50 transition-colors">
       <div className="flex items-start gap-4">
         {/* Icon Square */}
-        <div className={`mt-0.5 h-8 w-8 shrink-0 rounded-lg ${styles.iconBg}`} />
+        <div className={`mt-0.5 h-8 w-8 shrink-0 rounded-lg flex items-center justify-center font-bold text-xs ${styles.iconBg} ${styles.text}`}>
+          💡
+        </div>
         
         {/* Text */}
         <div>
@@ -130,7 +61,7 @@ function LogRow({ log }: { log: LogEntry }) {
         <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${styles.bg} ${styles.text}`}>
           {log.type}
         </span>
-        <span className="w-16 text-right text-xs text-neutral-400 font-mono">
+        <span className="w-24 text-right text-xs text-neutral-400 font-mono">
           {log.time}
         </span>
       </div>
@@ -141,9 +72,22 @@ function LogRow({ log }: { log: LogEntry }) {
 /* ── Page ──────────────────────────────────────────────────── */
 export default function LogsPage() {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"Éxito" | "Bloqueo" | "Alerta" | "">("Éxito");
+  const [filter, setFilter] = useState<"ALL" | "AUTH_SUCCESS" | "BLOCKED" | "AUTH_FAIL">("ALL");
 
-  const TOTAL_EVENTS = "1,284";
+  const queryUrl = `/api/admin/logs?search=${encodeURIComponent(search)}&event=${filter}`;
+  const { data, error, isLoading } = useSWR(queryUrl, fetcher, {
+    refreshInterval: 4000,
+  });
+
+  const logs: LogEntry[] = data?.logs || [];
+  const TOTAL_EVENTS = data?.total || 0;
+
+  const filtersMap = [
+    { label: "Todos", value: "ALL" as const },
+    { label: "Éxito", value: "AUTH_SUCCESS" as const },
+    { label: "Bloqueos", value: "BLOCKED" as const },
+    { label: "Rechazos", value: "AUTH_FAIL" as const },
+  ];
 
   return (
     <div className="space-y-4">
@@ -166,7 +110,7 @@ export default function LogsPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
-              placeholder="Buscar por usuario, IP o evento..."
+              placeholder="Buscar por usuario, MAC, IP o evento..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400"
@@ -175,17 +119,17 @@ export default function LogsPage() {
 
           {/* Filter Toggles */}
           <div className="flex items-center rounded-lg border border-neutral-200 bg-white p-0.5 shadow-sm">
-            {(["Éxito", "Bloqueo", "Alerta"] as const).map((f) => (
+            {filtersMap.map((f) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
+                key={f.value}
+                onClick={() => setFilter(f.value)}
                 className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                  filter === f
+                  filter === f.value
                     ? "bg-sky-50 text-sky-600"
                     : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700"
                 }`}
               >
-                {f}
+                {f.label}
               </button>
             ))}
           </div>
@@ -193,30 +137,31 @@ export default function LogsPage() {
 
         {/* Logs List */}
         <div className="flex flex-col">
-          {LOGS.map((log) => (
-            <LogRow key={log.id} log={log} />
-          ))}
+          {isLoading && logs.length === 0 ? (
+            <div className="py-8 text-center text-sm text-gray-500">
+              Cargando logs de auditoría...
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="py-8 text-center text-sm text-gray-500">
+              No se encontraron logs de auditoría para los filtros aplicados.
+            </div>
+          ) : (
+            logs.map((log) => (
+              <LogRow key={log.id} log={log} />
+            ))
+          )}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-neutral-100 px-5 py-3">
           <p className="text-xs text-neutral-400">
-            Mostrando 1–7 de {TOTAL_EVENTS} eventos hoy
+            Mostrando {logs.length} de {TOTAL_EVENTS} eventos hoy
           </p>
 
           <div className="flex items-center gap-1">
-            {[1, 2, 3].map((p) => (
-              <button
-                key={p}
-                className={`flex h-7 w-7 items-center justify-center rounded-md text-sm transition-colors ${
-                  p === 1
-                    ? "bg-sky-500 font-semibold text-white"
-                    : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+            <button className="flex h-7 w-7 items-center justify-center rounded-md text-sm bg-sky-500 font-semibold text-white">
+              1
+            </button>
           </div>
         </div>
         
