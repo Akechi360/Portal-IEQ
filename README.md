@@ -46,36 +46,6 @@ Es la "Splash Page" que intercepta a los usuarios al conectarse a la red WiFi.
 *   **Expiración Inteligente**: Desconexión y caducidad automática de accesos basada en la estancia del paciente.
 *   **Arquitectura Modular**: Separación de las capas de Base de Datos (`lib/db`), Lógica de Acceso (`lib/access.ts`) y Controladores HTTP (`app/api/*`).
 
----
-
-## 🚀 Despliegue Local
-
-Para levantar este proyecto en un entorno de desarrollo local:
-
-1. **Clonar el repositorio**:
-   ```bash
-   git clone <url-del-repo>
-   cd PortalIEQ
-   ```
-
-2. **Instalar dependencias**:
-   ```bash
-   npm install
-   ```
-
-3. **Configurar el entorno**:
-   Crea un archivo `.env` en la raíz (basado en `.env.example`) y configura tu conexión de `DATABASE_URL` hacia tu instancia de PostgreSQL.
-
-4. **Sincronizar la Base de Datos**:
-   ```bash
-   npx prisma db push
-   npx prisma generate
-   ```
-
-5. **Iniciar el servidor**:
-   ```bash
-   npm run dev
-   ```
 
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador para interactuar con la aplicación.
 
