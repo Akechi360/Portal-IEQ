@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 
     // Si no hay voucher, redirigir al portal de login intermedio
     if (!voucherCode) {
-      const loginUrl = new URL("/login/guest", req.url);
+      const loginUrl = new URL("/login", req.url);
       loginUrl.searchParams.set("redirect", redirect);
       loginUrl.searchParams.set("mac", clientMac);
       loginUrl.searchParams.set("ssid", ssid);

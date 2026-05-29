@@ -1,7 +1,6 @@
 // app/api/auth/doctor/route.ts
 // POST — Autenticación de médicos mediante voucher permanente.
-// Modo offline: valida input con Zod, responde sesión mock.
-// TODO Fase 3: conectar doctorLogin() a DB real + authorizeClient() con grupo médicos.
+// Conectado a db real y políticas en Fase 3.
 
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -9,6 +8,8 @@ import { doctorLoginSchema } from "@/lib/validators";
 import { doctorLogin } from "@/lib/access";
 import { authorizeClient } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
+import { evaluatePolicy } from "@/lib/policy";
+import { getSystemConfig } from "@/lib/config";
 
 export async function POST(req: Request) {
   try {
@@ -29,16 +30,22 @@ export async function POST(req: Request) {
       "00:00:00:00:00:00";
     const ip = cookieStore.get("portal_ip")?.value ?? null;
 
-    // 1. Validar voucher médico (mock offline)
+    // 1. Validar voucher médico
     const loginResult = await doctorLogin({ voucherCode: parsed.data.voucherCode, mac });
     if (!loginResult.ok) {
       await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: "IEQ-Medicos" });
       return NextResponse.json({ ok: false, message: loginResult.message }, { status: 401 });
     }
 
-    // 2. Autorizar MAC en gateway con grupo médicos (offline: mock)
-    // TODO Fase 3: usar groupId real desde getSystemConfig("ruijie_group_medicos")
-    await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: "grp-medicos" });
+    // 2. Evaluar políticas de seguridad
+    const policy = await evaluatePolicy({ mac, actor: parsed.data.voucherCode, tipo: "MEDICO", ssid: "IEQ-Medicos" });
+    if (policy.blocked) {
+      return NextResponse.json({ ok: false, message: "Acceso bloqueado por política de seguridad." }, { status: 403 });
+    }
+
+    // 3. Autorizar MAC en gateway con grupo médicos obtenido de configuración
+    const ruijieGroupMedicos = await getSystemConfig("ruijie_group_medicos") || "grp-medicos";
+    await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: ruijieGroupMedicos });
 
     await logAccess({
       event: "AUTH_SUCCESS",
@@ -65,3 +72,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Error interno del servidor" }, { status: 500 });
   }
 }
+

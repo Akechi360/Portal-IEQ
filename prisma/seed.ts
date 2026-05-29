@@ -98,6 +98,21 @@ async function main() {
       value:       "false",
       description: "Activar recepción de webhooks desde el HIS/ADT de la clínica",
     },
+    {
+      key:         "ruijie_gateway_url",
+      value:       "https://cloud-la.ruijienetworks.com",
+      description: "URL del servidor/gateway de Ruijie Cloud",
+    },
+    {
+      key:         "ruijie_group_guest",
+      value:       "grp-guest",
+      description: "Grupo de red en Ruijie para pacientes/invitados",
+    },
+    {
+      key:         "ruijie_group_medicos",
+      value:       "grp-medicos",
+      description: "Grupo de red en Ruijie para médicos",
+    },
   ];
 
   for (const cfg of systemConfigs) {

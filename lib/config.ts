@@ -55,30 +55,87 @@ const DEFAULT_SYSTEM: SystemConfigMap = {
   ruijie_group_medicos: process.env.RUIJIE_GROUP_MEDICOS ?? "grp-medicos",
 };
 
+import { db } from "@/lib/db";
+
 // ─── API pública ──────────────────────────────────────────────────────────────
+
+function parseConfigValue(key: string, value: string): any {
+  if (value === "null") return null;
+  if (
+    key === "guest_session_hours" ||
+    key === "max_devices_guest" ||
+    key === "max_devices_doctor"
+  ) {
+    const num = Number(value);
+    return isNaN(num) ? null : num;
+  }
+  if (key === "doctor_session_hours") {
+    if (value === "null" || value === "") return null;
+    const num = Number(value);
+    return isNaN(num) ? null : num;
+  }
+  if (key === "webhook_clinic_enabled") {
+    return value === "true" || value === "1";
+  }
+  return value;
+}
 
 /**
  * Retorna la configuración del portal cautivo.
- * TODO Fase 3: await db.portalConfig.findFirst() ?? DEFAULT_PORTAL
  */
 export async function getPortalConfig(): Promise<PortalConfigShape> {
-  return DEFAULT_PORTAL;
+  try {
+    const config = await db.portalConfig.findFirst();
+    if (!config) return DEFAULT_PORTAL;
+    return {
+      portalName: config.portalName,
+      slogan: config.slogan,
+      logoUrl: config.logoUrl,
+      bgUrl: config.bgUrl,
+      primaryColor: config.primaryColor,
+      fontFamily: config.fontFamily,
+      loginTitle: config.loginTitle,
+      loginButton: config.loginButton,
+      successMsg: config.successMsg,
+      errorMsg: config.errorMsg,
+    };
+  } catch (error) {
+    console.error("Error getting portal config, using default:", error);
+    return DEFAULT_PORTAL;
+  }
 }
 
 /**
  * Retorna un valor de configuración del sistema por clave.
- * TODO Fase 3: leer db.systemConfig.findUnique({ where: { key } }) y hacer JSON.parse(value)
  */
 export async function getSystemConfig<K extends keyof SystemConfigMap>(
   key: K
 ): Promise<SystemConfigMap[K]> {
-  return DEFAULT_SYSTEM[key];
+  try {
+    const config = await db.systemConfig.findUnique({ where: { key } });
+    if (!config) return DEFAULT_SYSTEM[key];
+    return parseConfigValue(key, config.value) as SystemConfigMap[K];
+  } catch (error) {
+    console.error(`Error getting system config for key ${key}, using fallback:`, error);
+    return DEFAULT_SYSTEM[key];
+  }
 }
 
 /**
  * Retorna toda la configuración del sistema como mapa.
- * TODO Fase 3: await db.systemConfig.findMany() → reducir a objeto
  */
 export async function getAllSystemConfig(): Promise<SystemConfigMap> {
-  return { ...DEFAULT_SYSTEM };
+  try {
+    const configs = await db.systemConfig.findMany();
+    const result = { ...DEFAULT_SYSTEM };
+    for (const config of configs) {
+      if (config.key in result) {
+        (result as any)[config.key] = parseConfigValue(config.key, config.value);
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error("Error getting all system configs, using fallback:", error);
+    return { ...DEFAULT_SYSTEM };
+  }
 }

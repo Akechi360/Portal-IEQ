@@ -10,6 +10,7 @@ import { guestLogin } from "@/lib/access";
 import { evaluatePolicy } from "@/lib/policy";
 import { authorizeClient } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
+import { getSystemConfig } from "@/lib/config";
 
 export async function POST(req: Request) {
   try {
@@ -43,9 +44,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, message: "Acceso bloqueado por política de seguridad." }, { status: 403 });
     }
 
-    // 3. Autorizar MAC en gateway Ruijie (offline: mock)
-    // TODO Fase 3: usar groupId real desde getSystemConfig("ruijie_group_guest")
-    await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: "grp-guest" });
+    // 3. Autorizar MAC en gateway Ruijie
+    const ruijieGroupGuest = await getSystemConfig("ruijie_group_guest") || "grp-guest";
+    await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: ruijieGroupGuest });
 
     await logAccess({
       event: "AUTH_SUCCESS",

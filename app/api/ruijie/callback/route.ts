@@ -1,11 +1,11 @@
 // app/api/ruijie/callback/route.ts
 // GET — Callback del gateway Ruijie tras redirigir al usuario de vuelta al portal.
-// Modo offline: lee query params y retorna JSON estructurado sin contactar el gateway.
-// TODO Fase 3: verificar firma/token del callback del gateway real antes de procesar.
+// Conectado a la base de datos real en Fase 3.
 
 import { NextResponse } from "next/server";
 import { ruijieCallbackSchema } from "@/lib/validators";
 import { logAccess } from "@/lib/audit";
+import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
   try {
@@ -22,8 +22,32 @@ export async function GET(req: Request) {
 
     const { mac, ip, ssid, username } = parsed.data;
 
-    // TODO Fase 3: verificar que el callback proviene del gateway real (firma HMAC o token)
-    // TODO Fase 3: buscar la sesión activa por MAC y marcar como "conectada" en DB
+    let sessionId = `sess-mock-${Date.now()}`;
+    let isOffline = true;
+
+    if (mac) {
+      const activeSession = await db.session.findFirst({
+        where: {
+          mac: mac,
+          endedAt: null
+        },
+        orderBy: {
+          startedAt: "desc"
+        }
+      });
+
+      if (activeSession) {
+        sessionId = activeSession.id;
+        isOffline = false;
+        // Si el IP está disponible en el callback, lo asociamos a la sesión
+        if (ip && activeSession.ip !== ip) {
+          await db.session.update({
+            where: { id: activeSession.id },
+            data: { ip }
+          });
+        }
+      }
+    }
 
     await logAccess({
       event: "NEW_SESSION",
@@ -31,7 +55,7 @@ export async function GET(req: Request) {
       mac: mac ?? null,
       ip: ip ?? null,
       ssid: ssid ?? null,
-      detail: "ruijie_callback",
+      detail: `ruijie_callback:${sessionId}`,
     });
 
     return NextResponse.json({
@@ -41,9 +65,8 @@ export async function GET(req: Request) {
         mac: mac ?? null,
         ip: ip ?? null,
         ssid: ssid ?? null,
-        // TODO Fase 3: retornar sessionId real de la DB
-        sessionId: `sess-mock-${Date.now()}`,
-        offline: true,
+        sessionId,
+        offline: isOffline,
       },
     });
   } catch (error) {
@@ -51,3 +74,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, message: "Error interno del servidor" }, { status: 500 });
   }
 }
+

@@ -3,6 +3,7 @@ import { SessionAccessType, StaffStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { authorizeClient } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
+import { evaluatePolicy } from "@/lib/policy";
 
 export async function POST(req: Request) {
   try {
@@ -34,7 +35,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Autorizar MAC en gateway Ruijie (offline: mock/fallback seguro)
+    // 2. Evaluar políticas de seguridad (ej: accesos nocturnos anómalos)
+    try {
+      const policy = await evaluatePolicy({ mac, actor: email, tipo: "STAFF", ssid: "IEQ-Staff" });
+      if (policy.blocked) {
+        return NextResponse.json(
+          { success: false, message: "Acceso bloqueado por política de seguridad." },
+          { status: 403 }
+        );
+      }
+    } catch (e) {
+      console.warn("Fallo al evaluar políticas para Staff", e);
+    }
+
+    // 3. Autorizar MAC en gateway Ruijie (offline: mock/fallback seguro)
     try {
       await authorizeClient({ mac, username: email, groupId: "grp-admin" });
     } catch (e) {
