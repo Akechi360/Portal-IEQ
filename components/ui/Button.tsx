@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/app/lib/styles";
+import { cn } from "@/lib/styles";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 

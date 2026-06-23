@@ -4,8 +4,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { LogEvent } from "@prisma/client";
+import { requireAdmin } from "@/lib/jwt";
 
 export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";

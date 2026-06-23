@@ -18,6 +18,12 @@ export const doctorLoginSchema = z.object({
   mac: z.string().optional(),
 });
 
+/** POST /api/auth/staff-wifi */
+export const staffLoginSchema = z.object({
+  email: z.string().email("Correo institucional inválido").trim(),
+  mac: z.string().optional(),
+});
+
 // ─── Panel Interno ────────────────────────────────────────────────────────────
 
 /** POST /api/auth/admin (handler existente) */

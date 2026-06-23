@@ -1,7 +1,5 @@
 // ─── lib/access.ts ────────────────────────────────────────────────────────────
 // Lógica de acceso alineada al schema clínico (Admin, Credential, Doctor).
-// Modo offline: los flujos de login retornan mock data sin consultar la DB.
-// TODO Fase 3: descomentar las llamadas a `db.*` y eliminar los bloques MOCK.
 
 import { AdminRole, AdminStatus, SessionAccessType } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -14,10 +12,6 @@ export type AdminLoginResult =
   | { ok: true; adminId: string; role: AdminRole; nombre: string; username: string }
   | { ok: false; message: string };
 
-/**
- * Autentica un Admin del panel interno (admisión / sistemas).
- * TODO Fase 3: reemplazar MOCK_ADMINS con db.admin.findUnique({ where: { username } })
- */
 export async function adminLogin(input: {
   username: string;
   password: string;
@@ -48,8 +42,8 @@ export type GuestLoginResult =
   | { ok: false; message: string };
 
 /**
- * Valida un voucher de paciente / tránsito para el portal WiFi.
- * TODO Fase 3: db.credential.findUnique({ where: { voucherCode } }) + validar status y expiración
+ * Validates a guest voucher without creating a session.
+ * The route handler creates the session after policy evaluation passes.
  */
 export async function guestLogin(input: {
   voucherCode: string;
@@ -62,15 +56,6 @@ export async function guestLogin(input: {
   if (credential.expireAt && credential.expireAt < new Date()) {
     return { ok: false, message: "Código inválido o expirado." };
   }
-  // Registrar sesión
-  await db.session.create({ 
-    data: { 
-      mac: input.mac, 
-      credentialId: credential.id, 
-      ssid: "IEQ-Guest",
-      accessType: SessionAccessType.GUEST 
-    } 
-  });
   return { ok: true, credentialId: credential.id, nombre: credential.nombre, tipo: credential.tipo, expireAt: credential.expireAt };
 }
 
@@ -81,8 +66,8 @@ export type DoctorLoginResult =
   | { ok: false; message: string };
 
 /**
- * Valida el voucher permanente de un médico para el portal WiFi.
- * TODO Fase 3: db.doctor.findUnique({ where: { voucherCode } }) + validar status ACTIVE
+ * Validates a doctor voucher without creating a session.
+ * The route handler creates the session after policy evaluation passes.
  */
 export async function doctorLogin(input: {
   voucherCode: string;
@@ -92,15 +77,5 @@ export async function doctorLogin(input: {
   if (!doctor || doctor.status !== "ACTIVE") {
     return { ok: false, message: "Acceso no autorizado." };
   }
-  await db.session.create({ 
-    data: { 
-      mac: input.mac, 
-      doctorId: doctor.id, 
-      ssid: "IEQ-Medicos",
-      accessType: SessionAccessType.DOCTOR
-    } 
-  });
   return { ok: true, doctorId: doctor.id, nombre: doctor.nombre, especialidad: doctor.especialidad };
 }
-
-

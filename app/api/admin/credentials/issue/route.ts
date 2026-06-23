@@ -9,6 +9,7 @@ import { generateVoucherCode } from "@/lib/auth";
 import { logAccess } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { createVoucher } from "@/lib/ruijie";
+import { requireInternal } from "@/lib/jwt";
 
 function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Date {
   const now = new Date();
@@ -21,6 +22,9 @@ function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Date
 }
 
 export async function POST(req: Request) {
+  const auth = await requireInternal(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const json = await req.json();
     const parsed = issueCredentialSchema.safeParse(json);

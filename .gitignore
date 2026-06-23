@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Dependencias
 node_modules/
 .next/
@@ -23,9 +22,3 @@ Thumbs.db
 
 # Prisma
 /prisma/generated/
-=======
-node_modules
-.next
-.env
-.env.local
->>>>>>> 5592cd8400e5b331bf759e9fe546936949f3a958

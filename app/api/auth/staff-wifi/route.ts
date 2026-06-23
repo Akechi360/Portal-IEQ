@@ -4,21 +4,38 @@ import { db } from "@/lib/db";
 import { authorizeClient } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
 import { evaluatePolicy } from "@/lib/policy";
+import { staffLoginSchema } from "@/lib/validators";
+import { cookies } from "next/headers";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
-  try {
-    const { email, mac } = await req.json();
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const rl = checkRateLimit(`staff-login:${clientIp}`);
+  if (!rl.allowed) {
+    return NextResponse.json({ success: false, message: "Demasiados intentos. Intenta de nuevo más tarde." }, { status: 429 });
+  }
 
-    if (!email || !email.includes("@")) {
+  try {
+    const json = await req.json();
+    const parsed = staffLoginSchema.safeParse(json);
+
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, message: "Correo institucional inválido" },
+        { success: false, message: "Datos inválidos", errors: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    // 1. Buscar el usuario en la base de datos
+    const cookieStore = await cookies();
+    const email = parsed.data.email.toLowerCase();
+    const mac =
+      parsed.data.mac ??
+      cookieStore.get("portal_mac")?.value ??
+      "00:00:00:00:00:00";
+
+    // 1. Validate staff user
     const staffUser = await db.staffUser.findUnique({
-      where: { email: email.toLowerCase().trim() }
+      where: { email }
     });
 
     if (!staffUser || staffUser.status !== StaffStatus.ACTIVE) {
@@ -35,27 +52,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Evaluar políticas de seguridad (ej: accesos nocturnos anómalos)
-    try {
-      const policy = await evaluatePolicy({ mac, actor: email, tipo: "STAFF", ssid: "IEQ-Staff" });
-      if (policy.blocked) {
-        return NextResponse.json(
-          { success: false, message: "Acceso bloqueado por política de seguridad." },
-          { status: 403 }
-        );
-      }
-    } catch (e) {
-      console.warn("Fallo al evaluar políticas para Staff", e);
+    // 2. Evaluate policies BEFORE creating session
+    const policy = await evaluatePolicy({ mac, actor: email, tipo: "STAFF", ssid: "IEQ-Staff" });
+    if (policy.blocked) {
+      return NextResponse.json(
+        { success: false, message: "Acceso bloqueado por política de seguridad." },
+        { status: 403 }
+      );
     }
 
-    // 3. Autorizar MAC en gateway Ruijie (offline: mock/fallback seguro)
-    try {
-      await authorizeClient({ mac, username: email, groupId: "grp-admin" });
-    } catch (e) {
-      console.warn("Fallo al autorizar cliente Staff en Ruijie", e);
+    // 3. Authorize MAC in Ruijie gateway
+    const authResult = await authorizeClient({ mac, username: email, groupId: "grp-admin" });
+    if (!authResult.authorized) {
+      await logAccess({ event: "AUTH_FAIL", actor: email, mac, ssid: "IEQ-Staff", detail: `ruijie-rejected:${authResult.reason}` });
+      return NextResponse.json(
+        { success: false, message: "No se pudo autorizar el dispositivo en la red." },
+        { status: 502 }
+      );
     }
 
-    // 3. Registrar la sesión en la base de datos
+    // 4. Create session only after all checks pass
     const session = await db.session.create({
       data: {
         mac,
@@ -79,7 +95,7 @@ export async function POST(req: Request) {
       data: {
         email: staffUser.email,
         nombre: staffUser.nombre ?? "Staff IEQ",
-        mac: mac,
+        mac,
         accessType: SessionAccessType.STAFF,
         sessionId: session.id
       },

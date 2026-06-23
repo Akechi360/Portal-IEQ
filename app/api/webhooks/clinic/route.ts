@@ -12,10 +12,12 @@ import { createVoucher } from "@/lib/ruijie";
 import crypto from "crypto";
 
 function verifyHmac(body: string, signature: string | null, secret: string): boolean {
-  if (!secret) return true;
+  if (!secret) return false;
   if (!signature) return false;
-  const hash = crypto.createHmac("sha256", secret).update(body).digest("hex");
-  return hash.toLowerCase() === signature.trim().toLowerCase();
+  const expected = crypto.createHmac("sha256", secret).update(body).digest();
+  const received = Buffer.from(signature.trim(), "hex");
+  if (expected.length !== received.length) return false;
+  return crypto.timingSafeEqual(expected, received);
 }
 
 function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Date {
