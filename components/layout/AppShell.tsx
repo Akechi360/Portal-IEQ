@@ -15,7 +15,7 @@ import {
   UserCircle2,
   Stethoscope
 } from "lucide-react";
-import { cn } from "@/app/lib/styles";
+import { cn } from "@/lib/styles";
 
 type NavItem = {
   href: string;

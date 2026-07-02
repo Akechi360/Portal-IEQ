@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/app/lib/styles";
+import { cn } from "@/lib/styles";
 
 const adminLinks = [
   { href: "/admin/dashboard", label: "Dashboard" },

@@ -31,3 +31,50 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
     return null;
   }
 }
+
+/**
+ * Extracts and verifies the session from the ieq_session cookie.
+ * Use in API route handlers that need authentication.
+ * Returns the payload if valid, null otherwise.
+ */
+export async function getSessionFromRequest(req: Request): Promise<SessionPayload | null> {
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const match = cookieHeader.match(/(?:^|;\s*)ieq_session=([^;]+)/);
+  if (!match) return null;
+  return verifyToken(match[1]);
+}
+
+const ADMIN_ROLES = ["SUPERADMIN", "ADMIN"];
+const ALL_INTERNAL_ROLES = ["SUPERADMIN", "ADMIN", "OPERADOR"];
+
+/**
+ * Requires a valid admin session (SUPERADMIN or ADMIN).
+ * Returns the payload or a 401/403 NextResponse.
+ */
+export async function requireAdmin(req: Request): Promise<SessionPayload | Response> {
+  const { NextResponse } = await import("next/server");
+  const session = await getSessionFromRequest(req);
+  if (!session) {
+    return NextResponse.json({ ok: false, message: "No autenticado" }, { status: 401 });
+  }
+  if (!ADMIN_ROLES.includes(session.role)) {
+    return NextResponse.json({ ok: false, message: "Permisos insuficientes" }, { status: 403 });
+  }
+  return session;
+}
+
+/**
+ * Requires any internal role (SUPERADMIN, ADMIN, or OPERADOR).
+ * Returns the payload or a 401/403 NextResponse.
+ */
+export async function requireInternal(req: Request): Promise<SessionPayload | Response> {
+  const { NextResponse } = await import("next/server");
+  const session = await getSessionFromRequest(req);
+  if (!session) {
+    return NextResponse.json({ ok: false, message: "No autenticado" }, { status: 401 });
+  }
+  if (!ALL_INTERNAL_ROLES.includes(session.role)) {
+    return NextResponse.json({ ok: false, message: "Permisos insuficientes" }, { status: 403 });
+  }
+  return session;
+}

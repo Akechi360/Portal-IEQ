@@ -3,8 +3,12 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/jwt";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const sessions = await db.session.findMany({
       orderBy: { startedAt: "desc" },
@@ -45,21 +49,15 @@ export async function GET() {
         }
       }
 
-      // Telemetría simulada/real
-      // Si la DB tiene campos MBs los usamos, si no, generamos un valor aleatorio coherente para simular telemetría viva de red.
-      const download = s.dataDownMB ?? (Math.floor(Math.random() * 85) + 15); // MBs
-      const upload = s.dataUpMB ?? (Math.floor(Math.random() * 25) + 5);
-
       return {
         id: s.id,
         name,
-        ip: s.ip || "192.168.15." + (Math.floor(Math.random() * 150) + 50),
+        ip: s.ip || "—",
         mac: s.mac,
-        ssid: s.ssid || "WiFi-ClinicaIEQ",
-        signal: Math.floor(Math.random() * 2) + 3, // Señal de 3 o 4 barras
+        ssid: s.ssid || "—",
         duration,
-        download,
-        upload,
+        download: s.dataDownMB ?? null,
+        upload: s.dataUpMB ?? null,
         status: s.endedAt ? "Desconectado" : "Activo",
         tipo,
       };

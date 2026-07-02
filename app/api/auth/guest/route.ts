@@ -1,8 +1,3 @@
-// app/api/auth/guest/route.ts
-// POST — Autenticación de invitados (pacientes / tránsito) mediante voucher code.
-// Modo offline: valida input con Zod, responde sesión mock.
-// TODO Fase 3: conectar guestLogin() a DB real y llamar a authorizeClient() del gateway.
-
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { guestLoginSchema } from "@/lib/validators";
@@ -11,8 +6,17 @@ import { evaluatePolicy } from "@/lib/policy";
 import { authorizeClient } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
 import { getSystemConfig } from "@/lib/config";
+import { db } from "@/lib/db";
+import { SessionAccessType } from "@prisma/client";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const rl = checkRateLimit(`guest-login:${clientIp}`);
+  if (!rl.allowed) {
+    return NextResponse.json({ ok: false, message: "Demasiados intentos. Intenta de nuevo más tarde." }, { status: 429 });
+  }
+
   try {
     const json = await req.json();
     const parsed = guestLoginSchema.safeParse(json);
@@ -31,22 +35,37 @@ export async function POST(req: Request) {
       "00:00:00:00:00:00";
     const ip = cookieStore.get("portal_ip")?.value ?? null;
 
-    // 1. Validar voucher (mock offline)
+    // 1. Validate voucher (no session created yet)
     const loginResult = await guestLogin({ voucherCode: parsed.data.voucherCode, mac });
     if (!loginResult.ok) {
       await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: "IEQ-Guest" });
       return NextResponse.json({ ok: false, message: loginResult.message }, { status: 401 });
     }
 
-    // 2. Evaluar políticas (offline: sin bloqueos)
+    // 2. Evaluate policies BEFORE creating session
     const policy = await evaluatePolicy({ mac, actor: parsed.data.voucherCode, tipo: loginResult.tipo, ssid: "IEQ-Guest" });
     if (policy.blocked) {
       return NextResponse.json({ ok: false, message: "Acceso bloqueado por política de seguridad." }, { status: 403 });
     }
 
-    // 3. Autorizar MAC en gateway Ruijie
+    // 3. Authorize MAC in Ruijie gateway
     const ruijieGroupGuest = await getSystemConfig("ruijie_group_guest") || "grp-guest";
-    await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: ruijieGroupGuest });
+    const authResult = await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: ruijieGroupGuest });
+
+    if (!authResult.authorized) {
+      await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: "IEQ-Guest", detail: `ruijie-rejected:${authResult.reason}` });
+      return NextResponse.json({ ok: false, message: "No se pudo autorizar el dispositivo en la red." }, { status: 502 });
+    }
+
+    // 4. Create session only after all checks pass
+    await db.session.create({
+      data: {
+        mac,
+        credentialId: loginResult.credentialId,
+        ssid: "IEQ-Guest",
+        accessType: SessionAccessType.GUEST,
+      },
+    });
 
     await logAccess({
       event: "AUTH_SUCCESS",
@@ -64,7 +83,6 @@ export async function POST(req: Request) {
         nombre: loginResult.nombre,
         tipo: loginResult.tipo,
         expireAt: loginResult.expireAt,
-        // TODO Fase 3: incluir redirectUrl del gateway real
         redirectUrl: "/login/guest?success=1",
       },
     });

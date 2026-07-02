@@ -121,33 +121,46 @@ export async function authorizeClient(payload: {
   const token = await getRuijieToken();
   if (token === "MOCK_TOKEN_OFFLINE") {
     console.warn("[ruijie][offline] authorizeClient — mac:", payload.mac);
-    return { authorized: true };
+    return { authorized: true, reason: "offline-mode" };
   }
 
-  const gatewayUrl = await getSystemConfig("ruijie_gateway_url") || "https://cloud-la.ruijienetworks.com";
-  
+  const networkGroupId = process.env.RUIJIE_GROUP_ID || "9371493";
+
   try {
-    console.log(`[ruijie] Autorizando cliente MAC ${payload.mac} en gateway ${gatewayUrl}`);
-    const res = await fetch(`${gatewayUrl}/authorize`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mac: payload.mac,
-        username: payload.username,
-        groupId: payload.groupId,
-        token: payload.token || token
-      })
-    });
+    console.log(`[ruijie] Autorizando cliente MAC ${payload.mac} via voucher customerCreate`);
+    const res = await fetch(
+      `${RUIJIE_CLOUD_URL}/service/api/open/auth/voucher/customerCreate/${networkGroupId}/${payload.username}?access_token=${token}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupId: networkGroupId,
+          profile: 1,
+          userGroupId: 1,
+        }),
+      }
+    );
 
     if (!res.ok) {
-      console.warn(`Gateway responded with error status ${res.status}`);
-      return { authorized: true, reason: `Gateway responded with status ${res.status}` };
+      console.error(`[ruijie] Gateway HTTP error: ${res.status}`);
+      return { authorized: false, reason: `Gateway HTTP ${res.status}` };
+    }
+
+    const data = await res.json();
+    if (data.code !== 0) {
+      console.error(`[ruijie] Gateway rejected: code=${data.code} msg=${data.msg}`);
+      return { authorized: false, reason: `Ruijie code ${data.code}: ${data.msg}` };
+    }
+
+    if (data.voucherData && data.voucherData.code !== undefined && data.voucherData.code !== 0) {
+      console.warn(`[ruijie] Voucher warning: code=${data.voucherData.code} msg=${data.voucherData.msg}`);
+      return { authorized: true, reason: `voucher-warning: ${data.voucherData.msg}` };
     }
 
     return { authorized: true };
   } catch (e: any) {
-    console.warn(`Fallo de conexión al gateway local en ${gatewayUrl}:`, e.message);
-    return { authorized: true, reason: `Gateway unreachable: ${e.message}` };
+    console.error(`[ruijie] Connection failed:`, e.message);
+    return { authorized: false, reason: `Gateway unreachable: ${e.message}` };
   }
 }
 
@@ -175,58 +188,28 @@ export async function createVoucher(payload: {
 
   const networkGroupId = process.env.RUIJIE_GROUP_ID || "9371493";
 
-  // Resolver el nombre del grupo de usuario a utilizar
-  let targetGroupName = payload.groupId;
-  if (payload.groupId === networkGroupId || /^\d+$/.test(payload.groupId)) {
-    const isDoctor = payload.note && (payload.note.toLowerCase().includes("médico") || payload.note.toLowerCase().includes("doctor"));
-    if (isDoctor) {
-      targetGroupName = await getSystemConfig("ruijie_group_medicos") || "grp-medicos";
-    } else {
-      targetGroupName = await getSystemConfig("ruijie_group_guest") || "grp-guest";
-    }
-  }
-
-  // Obtener la lista de grupos en Ruijie para encontrar el ID del perfil de grupo
-  const groupsUrl = `${RUIJIE_CLOUD_URL}/service/api/intl/usergroup/list/${networkGroupId}?pageIndex=0&pageSize=100&access_token=${token}`;
-  const groupsRes = await fetch(groupsUrl);
-  if (!groupsRes.ok) {
-    throw new Error(`Failed to fetch user groups from Ruijie Cloud: ${groupsRes.statusText}`);
-  }
-  
-  const groupsData = await groupsRes.json();
-  if (groupsData.code !== 0) {
-    throw new Error(`Ruijie error listing groups (code ${groupsData.code}): ${groupsData.msg}`);
-  }
-
-  const groupsList = groupsData.data || [];
-  const group = groupsList.find((g: any) => g.userGroupName === targetGroupName || g.name === targetGroupName);
-
-  if (!group) {
-    throw new Error(`User group "${targetGroupName}" not found in Ruijie Cloud user groups.`);
-  }
-
-  const authProfileId = group.authProfileId;
-  const userGroupId = group.id;
-
-  // Registrar voucher personalizado
   const createUrl = `${RUIJIE_CLOUD_URL}/service/api/open/auth/voucher/customerCreate/${networkGroupId}/${payload.code}?access_token=${token}`;
   const createRes = await fetch(createUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       groupId: networkGroupId.toString(),
-      profile: authProfileId,
-      userGroupId: Number(userGroupId)
-    })
+      profile: 1,
+      userGroupId: 1,
+    }),
   });
 
   if (!createRes.ok) {
-    throw new Error(`Failed to create voucher in Ruijie: ${createRes.statusText}`);
+    throw new Error(`Failed to create voucher in Ruijie: HTTP ${createRes.status}`);
   }
 
   const createData = await createRes.json();
   if (createData.code !== 0) {
-    throw new Error(`Ruijie error creating customized voucher (code ${createData.code}): ${createData.msg}`);
+    throw new Error(`Ruijie error creating voucher (code ${createData.code}): ${createData.msg}`);
+  }
+
+  if (createData.voucherData && createData.voucherData.code !== 0) {
+    console.warn(`[ruijie] Voucher sync warning: code=${createData.voucherData.code} msg=${createData.voucherData.msg}`);
   }
 
   return {

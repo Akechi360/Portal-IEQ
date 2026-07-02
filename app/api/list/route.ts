@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 import { CredentialStatus, DoctorStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { requireInternal } from "@/lib/jwt";
 
 type ListItemType = "PACIENTE" | "TRANSITO" | "MEDICO";
 
@@ -36,6 +37,9 @@ function mapDoctorStatus(status: DoctorStatus): string {
 }
 
 export async function GET(req: Request) {
+  const auth = await requireInternal(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const url = new URL(req.url);
     const type = url.searchParams.get("type"); // "PACIENTE" | "TRANSITO" | "MEDICO" | null

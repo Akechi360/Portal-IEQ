@@ -11,10 +11,14 @@ import { logAccess } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { createVoucher } from "@/lib/ruijie";
 import { getSystemConfig } from "@/lib/config";
+import { requireAdmin } from "@/lib/jwt";
 
 // ─── GET — Listar médicos ─────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const doctors = await db.doctor.findMany({ orderBy: { createdAt: "desc" } });
     return NextResponse.json({ ok: true, data: doctors, total: doctors.length });
@@ -27,6 +31,9 @@ export async function GET() {
 // ─── POST — Crear médico ──────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const json = await req.json();
     const parsed = doctorCreateSchema.safeParse(json);
@@ -88,6 +95,9 @@ export async function POST(req: Request) {
 // ─── PATCH — Actualizar estado del médico ─────────────────────────────────────
 
 export async function PATCH(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const { id, status } = await req.json();
     if (!id || !status) {
