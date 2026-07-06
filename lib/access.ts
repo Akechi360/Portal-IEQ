@@ -73,7 +73,8 @@ export async function doctorLogin(input: {
   voucherCode: string;
   mac: string;
 }): Promise<DoctorLoginResult> {
-  const doctor = await db.doctor.findUnique({ where: { voucherCode: input.voucherCode } });
+  // El portal envía el email del médico en el campo voucherCode
+  const doctor = await db.doctor.findUnique({ where: { email: input.voucherCode } });
   if (!doctor || doctor.status !== "ACTIVE") {
     return { ok: false, message: "Acceso no autorizado." };
   }
