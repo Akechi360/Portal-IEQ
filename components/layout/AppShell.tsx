@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -12,10 +12,13 @@ import {
   FileText,
   ShieldCheck,
   Settings,
-  UserCircle2,
-  Stethoscope
+  Stethoscope,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/styles";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type NavItem = {
   href: string;
@@ -107,6 +110,21 @@ function NavSection({
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: meData } = useSWR("/api/auth/me", fetcher);
+  const { data: trafficData } = useSWR("/api/admin/traffic", fetcher, { refreshInterval: 30000 });
+
+  const adminUser = meData?.user;
+  const adminName: string = adminUser?.nombre || adminUser?.name || "Admin IEQ";
+  const adminRole: string = adminUser?.role || "Superadmin";
+  const initials = adminName.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
+  const activeClients: number = trafficData?.activeClients ?? 0;
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/admin/login");
+  }
+
   const hideShell =
     pathname === "/" || pathname === "/guest" || pathname.startsWith("/guest/") || pathname === "/admin/login" || pathname === "/login";
 
@@ -144,21 +162,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="text-neutral-400">Red activa</span>
             </div>
             <span className="text-neutral-400">
-              Conectados <span className="font-semibold text-white">47 usuarios</span>
+              Conectados <span className="font-semibold text-white">{activeClients} usuarios</span>
             </span>
           </div>
         </div>
 
-        {/* Admin user */}
+        {/* Admin user + logout */}
         <div className="border-t border-white/10 px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white text-xs font-bold">
-              AD
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white text-xs font-bold">
+              {initials}
             </div>
-            <div>
-              <p className="text-sm font-medium text-white">Admin IEQ</p>
-              <p className="text-[11px] text-neutral-400">Superadmin</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-white">{adminName}</p>
+              <p className="text-[11px] text-neutral-400">{adminRole}</p>
             </div>
+            <button
+              onClick={handleLogout}
+              title="Cerrar sesión"
+              className="shrink-0 rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-red-400"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>
