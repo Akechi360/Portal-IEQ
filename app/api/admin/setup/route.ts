@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
+export async function GET() {
+  try {
+    const count = await db.admin.count();
+    const admins = await db.admin.findMany({ select: { username: true, role: true, status: true } });
+    return Response.json({ ok: true, adminCount: count, admins });
+  } catch (e: any) {
+    return Response.json({ ok: false, error: e?.message ?? String(e) }, { status: 500 });
+  }
+}
+
 // One-time setup endpoint — creates default admins if none exist.
 // Only works when no Admin records are in the DB (safe to call multiple times).
 export async function POST(req: Request) {
