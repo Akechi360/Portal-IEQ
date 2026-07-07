@@ -1,131 +1,35 @@
 "use client";
 
-import { Wifi, Laptop, Smartphone, Tablet, Monitor, HelpCircle, RefreshCw, Plus } from "lucide-react";
+import { Wifi, Laptop, Smartphone, Monitor, HelpCircle, RefreshCw } from "lucide-react";
+import useSWR from "swr";
 
-/* ── Types ─────────────────────────────────────────────────── */
-type DeviceStatus = "Activo" | "Sin registrar" | "Bloqueado";
-type DeviceType   = "Access Point" | "Computadora" | "Smartphone" | "Tablet" | "Sin registrar";
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-interface Device {
-  id: string;
-  name: string;
-  type: DeviceType;
-  iconColor: string;         // bg color of the icon square
-  iconTextColor: string;
-  ip: string;
-  mac: string;
-  status: DeviceStatus;
+function fmtBytes(bytes: number) {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
-/* ── Mock data ─────────────────────────────────────────────── */
-const DEVICES: Device[] = [
-  {
-    id: "router",
-    name: "Router Principal",
-    type: "Access Point",
-    iconColor: "bg-sky-100",
-    iconTextColor: "text-sky-600",
-    ip: "192.168.1.1",
-    mac: "00:1A:2B:3C:4D:5E",
-    status: "Activo"
-  },
-  {
-    id: "laptop-juan",
-    name: "Laptop-Juan",
-    type: "Computadora",
-    iconColor: "bg-emerald-100",
-    iconTextColor: "text-emerald-600",
-    ip: "192.168.1.42",
-    mac: "A4:C3:F8:12:9E:01",
-    status: "Activo"
-  },
-  {
-    id: "iphone-maria",
-    name: "iPhone-Maria",
-    type: "Smartphone",
-    iconColor: "bg-violet-100",
-    iconTextColor: "text-violet-600",
-    ip: "192.168.1.55",
-    mac: "C1:30:88:FA:61:89",
-    status: "Activo"
-  },
-  {
-    id: "ipad-recepcion",
-    name: "iPad-Recepción",
-    type: "Tablet",
-    iconColor: "bg-amber-100",
-    iconTextColor: "text-amber-600",
-    ip: "192.168.1.70",
-    mac: "B8:2A:44:8C:90:F1",
-    status: "Activo"
-  },
-  {
-    id: "pc-desconocido",
-    name: "PC-Desconocido",
-    type: "Sin registrar",
-    iconColor: "bg-neutral-100",
-    iconTextColor: "text-neutral-400",
-    ip: "192.168.1.199",
-    mac: "??:??:??:??:??:??",
-    status: "Sin registrar"
-  },
-  {
-    id: "android-roberto",
-    name: "Android-Roberto",
-    type: "Smartphone",
-    iconColor: "bg-rose-100",
-    iconTextColor: "text-rose-500",
-    ip: "—",
-    mac: "F7:84:CC:12:3E:88",
-    status: "Bloqueado"
-  }
-];
-
-/* ── Helpers ───────────────────────────────────────────────── */
-function DeviceIcon({ type, colorClass, textColor }: { type: DeviceType; colorClass: string; textColor: string }) {
-  const cls = `h-5 w-5 ${textColor}`;
-  const icon =
-    type === "Access Point"   ? <Wifi className={cls} />
-    : type === "Computadora"  ? <Laptop className={cls} />
-    : type === "Smartphone"   ? <Smartphone className={cls} />
-    : type === "Tablet"       ? <Tablet className={cls} />
-    : <HelpCircle className={cls} />;
-
-  return (
-    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colorClass}`}>
-      {icon}
-    </div>
-  );
+function guessDeviceType(mac: string): string {
+  const oui = mac.replace(/[^a-fA-F0-9]/g, "").substring(0, 6).toUpperCase();
+  const apOUIs = ["00D0F8", "0026CB", "EC1D72", "48BF6B"];
+  if (apOUIs.includes(oui)) return "Access Point";
+  return "Dispositivo";
 }
 
-const statusCfg: Record<DeviceStatus, { bg: string; text: string; dot: string }> = {
-  Activo:         { bg: "bg-green-50",  text: "text-green-700",  dot: "bg-green-500"  },
-  "Sin registrar":{ bg: "bg-amber-50",  text: "text-amber-700",  dot: "bg-amber-500"  },
-  Bloqueado:      { bg: "bg-red-50",    text: "text-red-600",    dot: "bg-red-500"    }
-};
-
-function StatusBadge({ status }: { status: DeviceStatus }) {
-  const c = statusCfg[status];
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
-      {status}
-    </span>
-  );
+function DeviceIcon({ type }: { type: string }) {
+  const cls = "h-5 w-5";
+  if (type === "Access Point") return <Wifi className={`${cls} text-sky-600`} />;
+  if (type === "Computadora") return <Laptop className={`${cls} text-emerald-600`} />;
+  if (type === "Smartphone") return <Smartphone className={`${cls} text-violet-600`} />;
+  if (type === "Monitor") return <Monitor className={`${cls} text-amber-600`} />;
+  return <HelpCircle className={`${cls} text-neutral-400`} />;
 }
 
-/* ── KPI Card ──────────────────────────────────────────────── */
-function KpiCard({
-  label,
-  value,
-  sub,
-  subColor = "text-neutral-400"
-}: {
-  label: string;
-  value: React.ReactNode;
-  sub: string;
-  subColor?: string;
-}) {
+function KpiCard({ label, value, sub, subColor = "text-neutral-400" }: { label: string; value: React.ReactNode; sub: string; subColor?: string }) {
   return (
     <div className="rounded-xl border border-neutral-100 bg-white px-5 py-4 shadow-sm">
       <p className="text-xs text-neutral-400">{label}</p>
@@ -135,99 +39,130 @@ function KpiCard({
   );
 }
 
-/* ── Device Card ───────────────────────────────────────────── */
-function DeviceCard({ device }: { device: Device }) {
-  const macIsUnknown = device.mac.includes("?");
+function ClientCard({ client }: { client: any }) {
+  const deviceType = guessDeviceType(client.mac);
+  const durationMin = Math.floor(client.durationSeconds / 60);
+  const durationStr = durationMin < 60 ? `${durationMin}m` : `${Math.floor(durationMin / 60)}h ${durationMin % 60}m`;
 
   return (
     <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-      {/* Header */}
       <div className="mb-4 flex items-start gap-3">
-        <DeviceIcon
-          type={device.type}
-          colorClass={device.iconColor}
-          textColor={device.iconTextColor}
-        />
-        <div>
-          <p className="font-semibold text-neutral-800">{device.name}</p>
-          <p className="text-xs text-neutral-400">{device.type}</p>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50">
+          <DeviceIcon type={deviceType} />
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-neutral-800">{client.username}</p>
+          <p className="text-xs text-neutral-400">{client.ssid}</p>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+          Activo
+        </span>
       </div>
-
-      {/* Details */}
-      <div className="space-y-2 text-sm">
+      <div className="space-y-1.5 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-xs text-neutral-400">IP</span>
-          <span className="font-mono text-xs text-neutral-700">{device.ip}</span>
+          <span className="font-mono text-xs text-neutral-700">{client.ip}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-neutral-400">MAC</span>
-          <span
-            className={`font-mono text-xs ${
-              macIsUnknown ? "text-neutral-400" : "text-sky-600"
-            }`}
-          >
-            {device.mac}
-          </span>
+          <span className="font-mono text-xs text-sky-600">{client.mac}</span>
         </div>
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-neutral-400">Estado</span>
-          <StatusBadge status={device.status} />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-neutral-400">Tiempo</span>
+          <span className="text-xs text-neutral-700">{durationStr}</span>
+        </div>
+        <div className="flex items-center justify-between border-t border-neutral-50 pt-1.5">
+          <span className="text-xs text-neutral-400">↓ {fmtBytes(client.bytesDown)}</span>
+          <span className="text-xs text-neutral-400">↑ {fmtBytes(client.bytesUp)}</span>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Page ──────────────────────────────────────────────────── */
+function ApCard({ ap }: { ap: any }) {
+  return (
+    <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-5 shadow-sm">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100">
+          <Wifi className="h-5 w-5 text-sky-600" />
+        </div>
+        <div>
+          <p className="font-semibold text-neutral-800">Access Point</p>
+          <p className="text-xs text-neutral-400">{ap.ssid}</p>
+        </div>
+      </div>
+      <div className="space-y-1.5 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-neutral-400">IP</span>
+          <span className="font-mono text-xs text-neutral-700">{ap.ip}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-neutral-400">MAC</span>
+          <span className="font-mono text-xs text-sky-600">{ap.mac}</span>
+        </div>
+        <div className="flex items-center justify-between border-t border-sky-100 pt-1.5">
+          <span className="text-xs text-neutral-400">↓ {fmtBytes(ap.bytesDown)}</span>
+          <span className="text-xs text-neutral-400">↑ {fmtBytes(ap.bytesUp)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DevicesPage() {
+  const { data, isLoading, mutate } = useSWR("/api/admin/devices", fetcher, { refreshInterval: 15000 });
+
+  const clients: any[] = data?.clients || [];
+  const aps: any[] = data?.aps || [];
+  const kpis = data?.kpis || { totalClients: 0, activeClients: 0, totalAps: 0, totalDownBytes: 0, totalUpBytes: 0 };
+
   return (
     <div className="space-y-5">
-      {/* Top actions */}
       <div className="flex items-center justify-end gap-2">
-        <button className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50">
+        <button
+          onClick={() => mutate()}
+          className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50"
+        >
           <RefreshCw className="h-4 w-4" />
-          Escanear red
-        </button>
-        <button className="flex items-center gap-1.5 rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-sky-600">
-          <Plus className="h-4 w-4" />
-          Registrar
+          Actualizar
         </button>
       </div>
 
-      {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard
-          label="Total dispositivos"
-          value={89}
-          sub="En la red"
-          subColor="text-neutral-400"
-        />
-        <KpiCard
-          label="Conectados"
-          value={74}
-          sub="Activos ahora"
-          subColor="text-green-600"
-        />
-        <KpiCard
-          label="Sin registrar"
-          value={11}
-          sub="Requieren revisión"
-          subColor="text-amber-600"
-        />
-        <KpiCard
-          label="Bloqueados"
-          value={4}
-          sub="Por política"
-          subColor="text-red-500"
-        />
+        <KpiCard label="Clientes conectados" value={isLoading ? "—" : kpis.activeClients} sub="En este momento" subColor="text-green-600" />
+        <KpiCard label="Access Points" value={isLoading ? "—" : kpis.totalAps} sub="Activos en la red" />
+        <KpiCard label="Descarga total" value={isLoading ? "—" : fmtBytes(kpis.totalDownBytes)} sub="Sesiones activas" subColor="text-sky-600" />
+        <KpiCard label="Subida total" value={isLoading ? "—" : fmtBytes(kpis.totalUpBytes)} sub="Sesiones activas" subColor="text-emerald-600" />
       </div>
 
-      {/* Device grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {DEVICES.map((device) => (
-          <DeviceCard key={device.id} device={device} />
-        ))}
+      {aps.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-sm font-semibold text-neutral-500 uppercase tracking-wider">Access Points</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {aps.map((ap) => <ApCard key={ap.mac} ap={ap} />)}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-neutral-500 uppercase tracking-wider">
+          Clientes conectados {isLoading ? "" : `(${clients.length})`}
+        </h2>
+        {isLoading ? (
+          <div className="rounded-xl border border-neutral-100 bg-white p-10 text-center text-sm text-neutral-400 shadow-sm">
+            Consultando Ruijie Cloud…
+          </div>
+        ) : clients.length === 0 ? (
+          <div className="rounded-xl border border-neutral-100 bg-white p-10 text-center text-sm text-neutral-400 shadow-sm">
+            No hay clientes conectados en este momento.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {clients.map((c) => <ClientCard key={c.mac} client={c} />)}
+          </div>
+        )}
       </div>
     </div>
   );

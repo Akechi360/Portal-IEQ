@@ -1,5 +1,5 @@
 // app/api/admin/sessions/route.ts
-// GET — Consultar sesiones activas de red registradas en la base de datos (PostgreSQL).
+// GET — Sesiones activas desde DB. POST /kick — bloquea credencial y cierra sesión.
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";

@@ -1,232 +1,180 @@
 "use client";
 
 import { useState } from "react";
-import { Download, TrendingUp } from "lucide-react";
+import useSWR from "swr";
 
-/* ── KPI Data ──────────────────────────────────────────────── */
-const KPIS = [
-  {
-    label: "Sesiones totales",
-    value: "4,821",
-    sub: "▲ 12% vs mes anterior",
-    subColor: "text-emerald-600",
-  },
-  {
-    label: "Usuarios únicos",
-    value: "312",
-    sub: "▲ 8% vs mes anterior",
-    subColor: "text-emerald-600",
-  },
-  {
-    label: "Datos transferidos",
-    value: "38 TB",
-    sub: "Este mes",
-    subColor: "text-neutral-400",
-  },
-  {
-    label: "Tiempo promedio",
-    value: "1h 18m",
-    sub: "Por sesión",
-    subColor: "text-neutral-400",
-  },
-];
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-/* ── Chart Data ────────────────────────────────────────────── */
-const DAYS = [
-  { day: 1, val: 142 },
-  { day: 2, val: 168 },
-  { day: 3, val: 110 },
-  { day: 4, val: 95 },
-  { day: 5, val: 201 },
-  { day: 6, val: 213, active: true },
-  { day: 7, val: 187 },
-  { day: 8, val: 155 },
-  { day: 9, val: 220 },
-  { day: 10, val: 198 },
-  { day: 11, val: 174 },
-  { day: 12, val: 88 },
-];
+function fmtBytes(bytes: number) {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+}
 
-const PLAN_STATS = [
-  { label: "Básico", value: 174, color: "bg-sky-500", stroke: "#0ea5e9" },
-  { label: "Pro", value: 94, color: "bg-emerald-500", stroke: "#10b981" },
-  { label: "Ilimitado", value: 44, color: "bg-amber-500", stroke: "#f59e0b" },
-];
-
-/* ── Sub-components ────────────────────────────────────────── */
-
-function KpiCard({
-  label,
-  value,
-  sub,
-  subColor,
-}: {
-  label: string;
-  value: React.ReactNode;
-  sub: string;
-  subColor: string;
-}) {
+function KpiCard({ label, value, sub, subColor }: { label: string; value: React.ReactNode; sub: string; subColor: string }) {
   return (
     <div className="rounded-xl border border-neutral-100 bg-white px-5 py-4 shadow-sm">
       <p className="text-xs text-neutral-400">{label}</p>
-      <div className="mt-1 flex items-baseline gap-1">
-        <span className="text-2xl font-bold text-neutral-900">
-          {typeof value === "string" && value.includes(" ") ? (
-            <>
-              {value.split(" ")[0]} <span className="text-lg font-medium text-neutral-500">{value.split(" ")[1]}</span>
-            </>
-          ) : (
-            value
-          )}
-        </span>
-      </div>
+      <div className="mt-1 text-2xl font-bold text-neutral-900">{value}</div>
       <p className={`mt-1 text-[11px] font-medium ${subColor}`}>{sub}</p>
     </div>
   );
 }
 
-function DonutChart() {
-  // SVG Donut Chart with stroke-dasharray
-  // Circumference = 100 for r=15.9155
-  return (
-    <div className="relative h-40 w-40">
-      <svg viewBox="0 0 42 42" className="h-full w-full rotate-[-90deg]">
-        {/* Ilimitado: 14% (starts at 0, offset 0 -> 14) */}
-        <circle
-          cx="21"
-          cy="21"
-          r="15.9155"
-          fill="transparent"
-          stroke="#f59e0b"
-          strokeWidth="6"
-          strokeDasharray="14.1 85.9"
-          strokeDashoffset="0"
-        />
-        {/* Pro: 30% (starts at 14, offset -14 -> 44) */}
-        <circle
-          cx="21"
-          cy="21"
-          r="15.9155"
-          fill="transparent"
-          stroke="#10b981"
-          strokeWidth="6"
-          strokeDasharray="30.1 69.9"
-          strokeDashoffset="-14.1"
-        />
-        {/* Básico: 56% (starts at 44, offset -44 -> 100) */}
-        <circle
-          cx="21"
-          cy="21"
-          r="15.9155"
-          fill="transparent"
-          stroke="#0ea5e9"
-          strokeWidth="6"
-          strokeDasharray="55.8 44.2"
-          strokeDashoffset="-44.2"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-bold text-neutral-800">312</span>
-        <span className="text-[10px] text-neutral-400">usuarios</span>
-      </div>
-    </div>
-  );
-}
-
-/* ── Page ──────────────────────────────────────────────────── */
-
 export default function ReportsPage() {
   const [timeRange, setTimeRange] = useState("Mes");
-
   const tabs = ["Hoy", "Semana", "Mes", "Año"];
+
+  // Datos reales de sesiones desde la DB
+  const { data: sessionsData, isLoading: sessionsLoading } = useSWR("/api/admin/sessions", fetcher, { refreshInterval: 30000 });
+  // Datos reales de tráfico desde Ruijie
+  const { data: trafficData, isLoading: trafficLoading } = useSWR("/api/admin/traffic", fetcher, { refreshInterval: 30000 });
+  // Credenciales desde la DB
+  const { data: listData, isLoading: listLoading } = useSWR("/api/list", fetcher);
+
+  const sessions: any[] = sessionsData?.sessions || [];
+  const topUsers: any[] = trafficData?.topUsers || [];
+  const items: any[] = listData?.items || [];
+
+  const totalSessions = sessions.length;
+  const activeSessions = sessions.filter((s) => s.status === "Activo").length;
+  const uniqueUsers = new Set(sessions.map((s) => s.mac)).size;
+
+  const totalDownBytes = trafficData?.totalDownBytes ?? 0;
+  const totalUpBytes = trafficData?.totalUpBytes ?? 0;
+
+  // Duración promedio de sesiones terminadas
+  let avgDurationStr = "—";
+  const endedSessions = sessions.filter((s) => s.status === "Desconectado" && s.duration && s.duration !== "—");
+  if (endedSessions.length > 0) {
+    avgDurationStr = endedSessions[0].duration; // Se muestra como ya está formateado
+  }
+
+  // Desglose por tipo de credencial
+  const pacientes = items.filter((i: any) => i.type === "PACIENTE").length;
+  const transito = items.filter((i: any) => i.type === "TRANSITO").length;
+  const total = items.length || 1;
+  const pctPacientes = Math.round((pacientes / total) * 100);
+  const pctTransito = Math.round((transito / total) * 100);
+
+  const isLoading = sessionsLoading || trafficLoading || listLoading;
 
   return (
     <div className="space-y-5">
-      {/* Top action row */}
       <div className="flex items-center justify-between">
-        {/* Left: Time Range Tabs */}
         <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 p-0.5">
           {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTimeRange(t)}
               className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                timeRange === t
-                  ? "bg-white text-neutral-800 shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
+                timeRange === t ? "bg-white text-neutral-800 shadow-sm" : "text-neutral-500 hover:text-neutral-700"
               }`}
             >
               {t}
             </button>
           ))}
         </div>
-
-        {/* Right: Export buttons */}
-        <div className="flex items-center gap-2">
-          <button className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50">
-            Mayo 2026
-          </button>
-          <button className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50">
-            Exportar PDF
-          </button>
-        </div>
+        <p className="text-xs text-neutral-400">Datos en tiempo real desde la base de datos</p>
       </div>
 
-      {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {KPIS.map((kpi, i) => (
-          <KpiCard key={i} {...kpi} />
-        ))}
+        <KpiCard
+          label="Sesiones registradas"
+          value={isLoading ? "—" : totalSessions}
+          sub={`${activeSessions} activas ahora`}
+          subColor="text-emerald-600"
+        />
+        <KpiCard
+          label="Usuarios únicos"
+          value={isLoading ? "—" : uniqueUsers}
+          sub="Distintos MACs en sesiones"
+          subColor="text-neutral-400"
+        />
+        <KpiCard
+          label="Descarga total"
+          value={isLoading ? "—" : fmtBytes(totalDownBytes)}
+          sub="Sesiones activas Ruijie"
+          subColor="text-sky-600"
+        />
+        <KpiCard
+          label="Subida total"
+          value={isLoading ? "—" : fmtBytes(totalUpBytes)}
+          sub="Sesiones activas Ruijie"
+          subColor="text-neutral-400"
+        />
       </div>
 
-      {/* Charts area */}
       <div className="flex flex-col gap-4 lg:flex-row">
-        
-        {/* Left Chart: Sesiones por día */}
+        {/* Top usuarios por consumo */}
         <div className="flex flex-1 flex-col rounded-xl border border-neutral-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-8 text-sm font-semibold text-neutral-800">
-            Sesiones por día — Mayo 2026
-          </h3>
-          
-          <div className="mt-auto flex w-full items-end justify-between px-2 pt-10">
-            {DAYS.map((d) => (
-              <div key={d.day} className="flex flex-col items-center gap-2">
-                <span className={`text-xs ${d.active ? "font-bold text-neutral-800" : "font-medium text-neutral-800"}`}>
-                  {d.val}
-                </span>
-                <div 
-                  className={`w-8 rounded-full ${d.active ? "h-1 bg-sky-500" : "h-0.5 bg-sky-300"}`} 
-                />
-                <span className={`text-xs ${d.active ? "font-semibold text-neutral-600" : "text-neutral-400"}`}>
-                  {d.day}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Chart: Usuarios por tipo de plan */}
-        <div className="flex w-full flex-col rounded-xl border border-neutral-100 bg-white p-5 shadow-sm lg:w-[400px]">
-          <h3 className="mb-8 text-sm font-semibold text-neutral-800">
-            Usuarios por tipo de plan
-          </h3>
-
-          <div className="flex flex-1 items-center justify-between gap-6 px-2">
-            <DonutChart />
-            <div className="flex flex-col justify-center gap-4 text-sm">
-              {PLAN_STATS.map((plan) => (
-                <div key={plan.label} className="flex items-center justify-between gap-6">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-sm ${plan.color}`} />
-                    <span className="text-neutral-600">{plan.label}</span>
+          <h3 className="mb-4 text-sm font-semibold text-neutral-800">Top usuarios por consumo (Ruijie)</h3>
+          {trafficLoading ? (
+            <p className="py-6 text-center text-sm text-neutral-400">Consultando…</p>
+          ) : topUsers.length === 0 ? (
+            <p className="py-6 text-center text-sm text-neutral-400">Sin sesiones activas.</p>
+          ) : (
+            <div className="flex flex-col">
+              {topUsers.slice(0, 8).map((u, i) => (
+                <div key={u.mac} className="flex items-center justify-between border-b border-neutral-50 py-2.5 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-neutral-400">#{i + 1}</span>
+                    <div>
+                      <p className="text-sm font-medium text-neutral-800">{u.username}</p>
+                      <p className="font-mono text-[10px] text-neutral-400">{u.mac}</p>
+                    </div>
                   </div>
-                  <span className="font-semibold text-neutral-800">{plan.value}</span>
+                  <span className="text-sm font-semibold text-sky-600">{fmtBytes(u.totalBytes)}</span>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
-        
+
+        {/* Distribución por tipo de credencial */}
+        <div className="flex w-full flex-col rounded-xl border border-neutral-100 bg-white p-5 shadow-sm lg:w-[360px]">
+          <h3 className="mb-4 text-sm font-semibold text-neutral-800">Distribución de credenciales</h3>
+          {listLoading ? (
+            <p className="py-6 text-center text-sm text-neutral-400">Consultando…</p>
+          ) : (
+            <div className="flex flex-col gap-5 mt-2">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-600">Pacientes</span>
+                  <span className="font-semibold text-neutral-800">{pacientes} <span className="text-xs text-neutral-400">({pctPacientes}%)</span></span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-neutral-100">
+                  <div className="h-full rounded-full bg-sky-500" style={{ width: `${pctPacientes}%` }} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-600">Tránsito</span>
+                  <span className="font-semibold text-neutral-800">{transito} <span className="text-xs text-neutral-400">({pctTransito}%)</span></span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-neutral-100">
+                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${pctTransito}%` }} />
+                </div>
+              </div>
+              <div className="mt-2 rounded-lg bg-neutral-50 p-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-neutral-500">Total credenciales</span>
+                  <span className="font-semibold text-neutral-800">{items.length}</span>
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span className="text-neutral-500">Sesiones registradas en DB</span>
+                  <span className="font-semibold text-neutral-800">{totalSessions}</span>
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span className="text-neutral-500">Activas ahora (Ruijie)</span>
+                  <span className="font-semibold text-emerald-600">{trafficData?.activeClients ?? "—"}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

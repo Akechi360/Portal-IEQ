@@ -94,17 +94,26 @@ export default function AdminDashboardPage() {
   const { data: logsData } = useSWR("/api/admin/logs", fetcher, { refreshInterval: 6000 });
   // SWR para sesiones reales de red
   const { data: sessionsData } = useSWR("/api/admin/sessions", fetcher, { refreshInterval: 7000 });
+  // SWR para tráfico real de Ruijie
+  const { data: trafficData } = useSWR("/api/admin/traffic", fetcher, { refreshInterval: 15000 });
 
   const items = data?.items || [];
   const logs = logsData?.logs || [];
   const sessions = sessionsData?.sessions || [];
 
-  const activeSessionsCount = sessions.filter((s: any) => s.status === "Activo").length;
-  
-  // Calcular ancho de banda dinámico basado en las sesiones reales
-  const totalDownloadSpeed = activeSessionsCount * 8.5; // Mbps
-  const totalUploadSpeed = activeSessionsCount * 2.2;
-  const pctBandwidth = Math.min(100, Math.round(((totalDownloadSpeed + totalUploadSpeed) / 500) * 100));
+  const activeSessionsCount = trafficData?.activeClients ?? sessions.filter((s: any) => s.status === "Activo").length;
+  const totalDownBytes: number = trafficData?.totalDownBytes ?? 0;
+  const totalUpBytes: number = trafficData?.totalUpBytes ?? 0;
+
+  function fmtBytes(bytes: number) {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+  }
+
+  const totalBytes = totalDownBytes + totalUpBytes;
 
   // Mapear eventos recientes basados en logs reales de la base de datos Supabase
   const recentEvents = logs.slice(0, 4).map((log: any) => {
@@ -173,13 +182,9 @@ export default function AdminDashboardPage() {
           subColor="text-green-600"
         />
         <KpiCard
-          label="Ancho de banda"
-          value={
-            <span>
-              {pctBandwidth} <span className="text-lg font-semibold text-neutral-500">%</span>
-            </span>
-          }
-          sub={`${(totalDownloadSpeed + totalUploadSpeed).toFixed(1)} Mbps en uso`}
+          label="Consumo total (Ruijie)"
+          value={fmtBytes(totalBytes)}
+          sub={`${activeSessionsCount} clientes activos`}
           subColor="text-sky-600"
         />
         <KpiCard
@@ -273,42 +278,22 @@ export default function AdminDashboardPage() {
             <h3 className="mb-3 text-sm font-semibold text-neutral-800">
               Uso de ancho de banda
             </h3>
-            {/* Progress bar */}
-            <div className="mb-3">
-              <div className="mb-1 flex justify-between text-[10px] text-neutral-400">
-                <span>0</span>
-                <span>{pctBandwidth}%</span>
-                <span>500 Mbps</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div
-                  className="h-full rounded-full bg-sky-500 transition-all duration-500"
-                  style={{ width: `${pctBandwidth}%` }}
-                />
-              </div>
-            </div>
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-neutral-500">
                   <span className="text-neutral-400">↓</span> Descarga
                 </span>
-                <span className="font-semibold text-neutral-800">
-                  {totalDownloadSpeed.toFixed(1)} Mbps
-                </span>
+                <span className="font-semibold text-neutral-800">{fmtBytes(totalDownBytes)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-neutral-500">
                   <span className="text-neutral-400">↑</span> Subida
                 </span>
-                <span className="font-semibold text-neutral-800">
-                  {totalUploadSpeed.toFixed(1)} Mbps
-                </span>
+                <span className="font-semibold text-neutral-800">{fmtBytes(totalUpBytes)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-neutral-100 pt-2">
-                <span className="text-neutral-500">Pico hoy</span>
-                <span className="font-semibold text-neutral-800">
-                  {activeSessionsCount > 0 ? "410 Mbps" : "0 Mbps"}
-                </span>
+                <span className="text-neutral-500">Clientes activos</span>
+                <span className="font-semibold text-sky-600">{activeSessionsCount}</span>
               </div>
             </div>
           </div>

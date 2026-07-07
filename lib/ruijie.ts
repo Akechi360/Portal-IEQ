@@ -31,8 +31,13 @@ export interface RuijieSession {
   id: string;
   mac: string;
   username: string;
+  ip: string;
+  ssid: string;
+  apMac: string;
   startedAt: string;
   durationSeconds: number;
+  bytesDown: number;
+  bytesUp: number;
 }
 
 export interface RuijieUserGroup {
@@ -281,15 +286,25 @@ export async function getSessions(): Promise<RuijieSession[]> {
         id: "sess-mock-001",
         mac: "00:1a:c2:7b:00:47",
         username: "paciente_demo",
+        ip: "192.168.110.101",
+        ssid: "WiFi Clinica IEQ Los Mangos",
+        apMac: "00:d0:f8:aa:bb:cc",
         startedAt: new Date(Date.now() - 3_600_000).toISOString(),
         durationSeconds: 3_600,
+        bytesDown: 52_428_800,
+        bytesUp: 10_485_760,
       },
       {
         id: "sess-mock-002",
         mac: "9c:3d:cf:2f:bc:11",
         username: "dr.demo",
+        ip: "192.168.110.102",
+        ssid: "WiFi Clinica IEQ Los Mangos",
+        apMac: "00:d0:f8:aa:bb:cc",
         startedAt: new Date(Date.now() - 86_400_000).toISOString(),
         durationSeconds: 86_400,
+        bytesDown: 209_715_200,
+        bytesUp: 41_943_040,
       },
     ];
   }
@@ -319,10 +334,15 @@ export async function getSessions(): Promise<RuijieSession[]> {
     const mac = u.mac ? normalizeMac(u.mac) : "00:00:00:00:00:00";
     return {
       id: mac,
-      mac: mac,
+      mac,
       username: u.userName || u.username || "Unknown",
+      ip: u.ip || u.ipAddress || u.staIp || "—",
+      ssid: u.ssid || u.ssidName || "—",
+      apMac: u.apMac ? normalizeMac(u.apMac) : "—",
       startedAt: u.onlineTime ? new Date(u.onlineTime).toISOString() : new Date().toISOString(),
       durationSeconds: u.activeTime ? Math.floor(u.activeTime / 1000) : 0,
+      bytesDown: u.downFlow || u.flowDown || u.rxBytes || 0,
+      bytesUp: u.upFlow || u.flowUp || u.txBytes || 0,
     };
   });
 }

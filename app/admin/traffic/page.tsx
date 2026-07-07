@@ -1,71 +1,19 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
+import useSWR from "swr";
 
-/* ── KPI Data ──────────────────────────────────────────────── */
-const KPIS = [
-  {
-    label: "Descarga actual",
-    value: "220",
-    unit: "Mbps",
-    sub: "Pico: 410 Mbps",
-    subColor: "text-neutral-400",
-  },
-  {
-    label: "Subida actual",
-    value: "120",
-    unit: "Mbps",
-    sub: "Pico: 185 Mbps",
-    subColor: "text-neutral-400",
-  },
-  {
-    label: "Uso del canal",
-    value: "68",
-    unit: "%",
-    sub: "De 500 Mbps total",
-    subColor: "text-neutral-400",
-  },
-  {
-    label: "Latencia",
-    value: "12",
-    unit: "ms",
-    sub: "Excelente",
-    subColor: "text-emerald-600",
-  },
-];
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-/* ── Protocol Data ─────────────────────────────────────────── */
-const PROTOCOLS = [
-  { label: "HTTPS", percent: 74, color: "bg-sky-500" },
-  { label: "HTTP", percent: 12, color: "bg-sky-300" },
-  { label: "Streaming", percent: 8, color: "bg-emerald-500" },
-  { label: "Gaming", percent: 4, color: "bg-amber-500" },
-  { label: "Otro", percent: 2, color: "bg-neutral-200" },
-];
+function fmtBytes(bytes: number) {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
 
-/* ── Top Users Data ────────────────────────────────────────── */
-const TOP_USERS = [
-  { rank: 1, name: "María Vega", usage: "42 GB" },
-  { rank: 2, name: "Juan Méndez", usage: "38 GB" },
-  { rank: 3, name: "Carlos Mora", usage: "27 GB" },
-  { rank: 4, name: "Laura Castro", usage: "19 GB" },
-  { rank: 5, name: "Pedro Rojas", usage: "14 GB" },
-];
-
-/* ── Sub-components ────────────────────────────────────────── */
-function KpiCard({
-  label,
-  value,
-  unit,
-  sub,
-  subColor,
-}: {
-  label: string;
-  value: string;
-  unit: string;
-  sub: string;
-  subColor: string;
-}) {
+function KpiCard({ label, value, unit, sub, subColor }: { label: string; value: string; unit: string; sub: string; subColor: string }) {
   return (
     <div className="rounded-xl border border-neutral-100 bg-white px-5 py-4 shadow-sm">
       <p className="text-xs text-neutral-400">{label}</p>
@@ -78,151 +26,102 @@ function KpiCard({
   );
 }
 
-function AreaChart() {
-  return (
-    <div className="relative h-[220px] w-full pt-4">
-      <svg
-        viewBox="0 0 1000 200"
-        preserveAspectRatio="none"
-        className="absolute bottom-6 left-0 h-[160px] w-full"
-      >
-        <defs>
-          <linearGradient id="grad-blue" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-
-        {/* Green Area (Subida) */}
-        <path
-          d="M0,140 C150,140 250,110 350,130 C450,150 550,160 650,120 C750,80 850,100 1000,90 L1000,200 L0,200 Z"
-          fill="url(#grad-green)"
-        />
-        <path
-          d="M0,140 C150,140 250,110 350,130 C450,150 550,160 650,120 C750,80 850,100 1000,90"
-          fill="none"
-          stroke="#10b981"
-          strokeWidth="2"
-        />
-
-        {/* Blue Area (Descarga) */}
-        <path
-          d="M0,100 C150,100 250,60 350,100 C450,140 550,140 650,60 C750,-20 850,60 1000,50 L1000,200 L0,200 Z"
-          fill="url(#grad-blue)"
-        />
-        <path
-          d="M0,100 C150,100 250,60 350,100 C450,140 550,140 650,60 C750,-20 850,60 1000,50"
-          fill="none"
-          stroke="#0ea5e9"
-          strokeWidth="2"
-        />
-      </svg>
-      
-      {/* X-axis labels */}
-      <div className="absolute bottom-0 left-0 flex w-full justify-between text-[10px] text-neutral-400 px-1">
-        <span>-60m</span>
-        <span>-50m</span>
-        <span>-40m</span>
-        <span>-30m</span>
-        <span>-20m</span>
-        <span>-10m</span>
-        <span>Ahora</span>
-      </div>
-    </div>
-  );
-}
-
-/* ── Page ──────────────────────────────────────────────────── */
 export default function TrafficPage() {
+  const { data, isLoading, mutate } = useSWR("/api/admin/traffic", fetcher, { refreshInterval: 15000 });
+
+  const activeClients: number = data?.activeClients ?? 0;
+  const totalDownBytes: number = data?.totalDownBytes ?? 0;
+  const totalUpBytes: number = data?.totalUpBytes ?? 0;
+  const totalBytes: number = data?.totalBytes ?? 0;
+  const topUsers: any[] = data?.topUsers ?? [];
+
   return (
     <div className="space-y-5">
-      {/* Top action row */}
       <div className="flex items-center justify-end gap-3">
         <div className="flex items-center gap-1.5 text-xs font-medium text-green-600">
-          <span className="h-2 w-2 rounded-full bg-green-500 inline-block animate-pulse" />
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-green-500" />
           En vivo
         </div>
-        <button className="rounded-lg border border-neutral-200 bg-white px-4 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
+        <button
+          onClick={() => mutate()}
+          className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-4 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
         </button>
       </div>
 
-      {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {KPIS.map((kpi, i) => (
-          <KpiCard key={i} {...kpi} />
-        ))}
+        <KpiCard
+          label="Clientes activos"
+          value={isLoading ? "—" : String(activeClients)}
+          unit=""
+          sub="Conectados ahora"
+          subColor="text-emerald-600"
+        />
+        <KpiCard
+          label="Descarga total"
+          value={isLoading ? "—" : fmtBytes(totalDownBytes)}
+          unit=""
+          sub="Sesiones activas"
+          subColor="text-sky-600"
+        />
+        <KpiCard
+          label="Subida total"
+          value={isLoading ? "—" : fmtBytes(totalUpBytes)}
+          unit=""
+          sub="Sesiones activas"
+          subColor="text-neutral-400"
+        />
+        <KpiCard
+          label="Consumo total"
+          value={isLoading ? "—" : fmtBytes(totalBytes)}
+          unit=""
+          sub="Down + Up combinado"
+          subColor="text-neutral-400"
+        />
       </div>
 
-      {/* Main Chart */}
       <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-800">
-            Ancho de banda — última hora
-          </h3>
-          <div className="flex items-center gap-4 text-xs font-medium text-neutral-600">
-            <div className="flex items-center gap-1.5">
-              <span className="h-0.5 w-3 bg-sky-500 rounded-full" />
-              Descarga
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="h-0.5 w-3 bg-emerald-500 rounded-full" />
-              Subida
-            </div>
+        <h3 className="mb-4 text-sm font-semibold text-neutral-800">
+          Top usuarios por consumo
+        </h3>
+        {isLoading ? (
+          <p className="py-8 text-center text-sm text-neutral-400">Consultando Ruijie Cloud…</p>
+        ) : topUsers.length === 0 ? (
+          <p className="py-8 text-center text-sm text-neutral-400">No hay sesiones activas en este momento.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-100">
+                  <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">#</th>
+                  <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Usuario</th>
+                  <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">MAC</th>
+                  <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">IP</th>
+                  <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">SSID</th>
+                  <th className="pb-2 text-right text-[11px] font-semibold uppercase tracking-wider text-neutral-400">↓ Descarga</th>
+                  <th className="pb-2 text-right text-[11px] font-semibold uppercase tracking-wider text-neutral-400">↑ Subida</th>
+                  <th className="pb-2 text-right text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-50">
+                {topUsers.map((u, i) => (
+                  <tr key={u.mac} className="hover:bg-neutral-50">
+                    <td className="py-2.5 text-xs text-neutral-400">#{i + 1}</td>
+                    <td className="py-2.5 font-medium text-neutral-800">{u.username}</td>
+                    <td className="py-2.5 font-mono text-xs text-sky-600">{u.mac}</td>
+                    <td className="py-2.5 font-mono text-xs text-neutral-500">{u.ip}</td>
+                    <td className="py-2.5 text-xs text-neutral-500">{u.ssid}</td>
+                    <td className="py-2.5 text-right text-xs font-medium text-sky-600">{fmtBytes(u.bytesDown)}</td>
+                    <td className="py-2.5 text-right text-xs font-medium text-emerald-600">{fmtBytes(u.bytesUp)}</td>
+                    <td className="py-2.5 text-right text-xs font-semibold text-neutral-800">{fmtBytes(u.totalBytes)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-        <AreaChart />
-      </div>
-
-      {/* Bottom panels */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Tráfico por protocolo */}
-        <div className="flex flex-col rounded-xl border border-neutral-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-6 text-sm font-semibold text-neutral-800">
-            Tráfico por protocolo
-          </h3>
-          <div className="flex flex-col gap-4 text-sm">
-            {PROTOCOLS.map((p) => (
-              <div key={p.label} className="flex items-center gap-4">
-                <span className="w-20 shrink-0 text-neutral-600">{p.label}</span>
-                <div className="h-1.5 flex-1 rounded-full bg-neutral-50">
-                  <div
-                    className={`h-full rounded-full ${p.color}`}
-                    style={{ width: `${p.percent}%` }}
-                  />
-                </div>
-                <span className="w-8 shrink-0 text-right font-medium text-neutral-800">
-                  {p.percent}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Top usuarios */}
-        <div className="flex flex-col rounded-xl border border-neutral-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 text-sm font-semibold text-neutral-800">
-            Top usuarios por consumo
-          </h3>
-          <div className="flex flex-col">
-            {TOP_USERS.map((u) => (
-              <div
-                key={u.rank}
-                className="flex items-center justify-between border-b border-neutral-50 py-3 last:border-0"
-              >
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-xs text-neutral-400">#{u.rank}</span>
-                  <span className="font-medium text-neutral-700">{u.name}</span>
-                </div>
-                <span className="text-sm font-medium text-sky-500">{u.usage}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
