@@ -7,17 +7,17 @@ import { NextResponse } from "next/server";
 // Reenviamos todos los parámetros a la página de login del portal.
 export async function GET(req: Request) {
   const incoming = new URL(req.url);
-  const login = new URL("/login", incoming.origin);
-
-  incoming.searchParams.forEach((value, key) => {
-    login.searchParams.set(key, value);
-  });
+  const params = new URLSearchParams(incoming.searchParams);
 
   // La página /login espera el destino original como "redirect"
   const originalUrl = incoming.searchParams.get("url");
   if (originalUrl) {
-    login.searchParams.set("redirect", originalUrl);
+    params.set("redirect", originalUrl);
   }
 
-  return NextResponse.redirect(login, 302);
+  // Location relativo: detrás del proxy el contenedor no conoce su dominio público
+  return new NextResponse(null, {
+    status: 302,
+    headers: { Location: `/login?${params.toString()}` },
+  });
 }
