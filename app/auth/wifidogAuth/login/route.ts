@@ -16,8 +16,32 @@ export async function GET(req: Request) {
   }
 
   // Location relativo: detrás del proxy el contenedor no conoce su dominio público
-  return new NextResponse(null, {
+  const res = new NextResponse(null, {
     status: 302,
     headers: { Location: `/login?${params.toString()}` },
   });
+
+  // Guardar los parámetros técnicos del gateway en cookies para el flujo de auth
+  const cookieOpts = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax" as const,
+    maxAge: 300,
+  };
+  const mac = incoming.searchParams.get("mac");
+  const ip = incoming.searchParams.get("ip");
+  const ssid = incoming.searchParams.get("ssid");
+  const gwAddress = incoming.searchParams.get("gw_address");
+  const gwPort = incoming.searchParams.get("gw_port");
+  const gwId = incoming.searchParams.get("gw_id");
+
+  if (mac) res.cookies.set("portal_mac", mac, cookieOpts);
+  if (ip) res.cookies.set("portal_ip", ip, cookieOpts);
+  if (originalUrl) res.cookies.set("portal_redirect", originalUrl, cookieOpts);
+  if (ssid) res.cookies.set("portal_ssid", ssid, cookieOpts);
+  if (gwAddress) res.cookies.set("portal_gw_address", gwAddress, cookieOpts);
+  if (gwPort) res.cookies.set("portal_gw_port", gwPort, cookieOpts);
+  if (gwId) res.cookies.set("portal_gw_id", gwId, cookieOpts);
+
+  return res;
 }
