@@ -105,10 +105,10 @@ export async function getRuijieToken(): Promise<string> {
     const token = data.accessToken || data.access_token || (data.data && data.data.accessToken) || "";
     if (!token) throw new Error("Ruijie OAuth response did not contain access token");
 
-    // Guardar en cache por 7000 segundos (~2 horas)
+    // Cache por 25 min — Ruijie invalida el token a los 30 min de inactividad
     globalAny.ruijieTokenCache = {
       token,
-      expiresAt: now + 7000 * 1000
+      expiresAt: now + 25 * 60 * 1000
     };
 
     return token;
@@ -116,6 +116,19 @@ export async function getRuijieToken(): Promise<string> {
     console.error("Error fetching Ruijie token:", error);
     return "MOCK_TOKEN_OFFLINE";
   }
+}
+
+/**
+ * Códigos de Ruijie que indican token inválido/expirado. Ruijie expira el
+ * token a los 30 min de inactividad y lo invalida al emitir uno nuevo, así
+ * que el cache local puede quedar obsoleto — hay que renovar y reintentar.
+ */
+function isStaleTokenCode(code: number): boolean {
+  return code === 3 || code === 4;
+}
+
+function invalidateRuijieToken() {
+  globalAny.ruijieTokenCache = null;
 }
 
 /**
@@ -135,10 +148,9 @@ export async function authorizeClient(payload: {
 
   const networkGroupId = process.env.RUIJIE_GROUP_ID || "9371493";
 
-  try {
-    console.log(`[ruijie] Autorizando cliente MAC ${payload.mac} via voucher customerCreate`);
+  const attempt = async (accessToken: string) => {
     const res = await fetch(
-      `${RUIJIE_CLOUD_URL}/service/api/open/auth/voucher/customerCreate/${networkGroupId}/${payload.username}?access_token=${token}`,
+      `${RUIJIE_CLOUD_URL}/service/api/open/auth/voucher/customerCreate/${networkGroupId}/${payload.username}?access_token=${accessToken}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -149,13 +161,34 @@ export async function authorizeClient(payload: {
         }),
       }
     );
+    return res;
+  };
+
+  try {
+    console.log(`[ruijie] Autorizando cliente MAC ${payload.mac} via voucher customerCreate`);
+    let res = await attempt(token);
 
     if (!res.ok) {
       console.error(`[ruijie] Gateway HTTP error: ${res.status}`);
       return { authorized: false, reason: `Gateway HTTP ${res.status}` };
     }
 
-    const data = await res.json();
+    let data = await res.json();
+
+    // Token vencido — renovar y reintentar una vez
+    if (data.code !== 0 && isStaleTokenCode(data.code)) {
+      console.warn(`[ruijie] Token vencido (code=${data.code}) — renovando y reintentando`);
+      invalidateRuijieToken();
+      const freshToken = await getRuijieToken();
+      if (freshToken !== "MOCK_TOKEN_OFFLINE") {
+        res = await attempt(freshToken);
+        if (!res.ok) {
+          return { authorized: false, reason: `Gateway HTTP ${res.status} (retry)` };
+        }
+        data = await res.json();
+      }
+    }
+
     if (data.code !== 0) {
       console.error(`[ruijie] Gateway rejected: code=${data.code} msg=${data.msg}`);
       return { authorized: false, reason: `Ruijie code ${data.code}: ${data.msg}` };
@@ -197,22 +230,37 @@ export async function createVoucher(payload: {
 
   const networkGroupId = process.env.RUIJIE_GROUP_ID || "9371493";
 
-  const createUrl = `${RUIJIE_CLOUD_URL}/service/api/open/auth/voucher/customerCreate/${networkGroupId}/${payload.code}?access_token=${token}`;
-  const createRes = await fetch(createUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      groupId: networkGroupId.toString(),
-      profile: RUIJIE_PROFILE_ID,
-      userGroupId: RUIJIE_USER_GROUP_ID,
-    }),
-  });
+  const attempt = async (accessToken: string) => {
+    const res = await fetch(
+      `${RUIJIE_CLOUD_URL}/service/api/open/auth/voucher/customerCreate/${networkGroupId}/${payload.code}?access_token=${accessToken}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupId: networkGroupId.toString(),
+          profile: RUIJIE_PROFILE_ID,
+          userGroupId: RUIJIE_USER_GROUP_ID,
+        }),
+      }
+    );
+    if (!res.ok) {
+      throw new Error(`Failed to create voucher in Ruijie: HTTP ${res.status}`);
+    }
+    return res.json();
+  };
 
-  if (!createRes.ok) {
-    throw new Error(`Failed to create voucher in Ruijie: HTTP ${createRes.status}`);
+  let createData = await attempt(token);
+
+  // Token vencido — renovar y reintentar una vez
+  if (createData.code !== 0 && isStaleTokenCode(createData.code)) {
+    console.warn(`[ruijie] Token vencido (code=${createData.code}) — renovando y reintentando createVoucher`);
+    invalidateRuijieToken();
+    const freshToken = await getRuijieToken();
+    if (freshToken !== "MOCK_TOKEN_OFFLINE") {
+      createData = await attempt(freshToken);
+    }
   }
 
-  const createData = await createRes.json();
   if (createData.code !== 0) {
     throw new Error(`Ruijie error creating voucher (code ${createData.code}): ${createData.msg}`);
   }
