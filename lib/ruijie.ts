@@ -8,6 +8,10 @@ import { getSystemConfig } from "./config";
 const RUIJIE_CLOUD_URL = process.env.RUIJIE_CLOUD_URL || "https://cloud-la.ruijienetworks.com";
 const RUIJIE_APP_ID = process.env.RUIJIE_APP_ID || "";
 const RUIJIE_SECRET = process.env.RUIJIE_SECRET || "";
+// Valores reales del tenant gerencia_sistemas (grupo "Clinica IEQ Network"):
+// userGroup "VIP_Group" id=115094, authProfileId largo. Ver API 2.7.1 Get User Group List.
+const RUIJIE_USER_GROUP_ID = Number(process.env.RUIJIE_USER_GROUP_ID || "115094");
+const RUIJIE_PROFILE_ID = process.env.RUIJIE_PROFILE_ID || "62573683689951241348214573646843";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -140,8 +144,8 @@ export async function authorizeClient(payload: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           groupId: networkGroupId,
-          profile: 1,
-          userGroupId: 1,
+          profile: RUIJIE_PROFILE_ID,
+          userGroupId: RUIJIE_USER_GROUP_ID,
         }),
       }
     );
@@ -199,8 +203,8 @@ export async function createVoucher(payload: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       groupId: networkGroupId.toString(),
-      profile: 1,
-      userGroupId: 1,
+      profile: RUIJIE_PROFILE_ID,
+      userGroupId: RUIJIE_USER_GROUP_ID,
     }),
   });
 
