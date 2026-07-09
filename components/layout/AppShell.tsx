@@ -109,7 +109,7 @@ function NavSection({
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const router = useRouter();
   const { data: meData } = useSWR("/api/auth/me", fetcher);
   const { data: trafficData } = useSWR("/api/admin/traffic", fetcher, { refreshInterval: 30000 });

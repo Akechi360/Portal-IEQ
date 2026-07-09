@@ -21,13 +21,13 @@ import {
 function SuccessContent() {
   const searchParams = useSearchParams();
   
-  const ssid = searchParams.get("ssid") || "WiFi Clinica IEQ Los Mangos";
-  const plan = searchParams.get("plan");
-  const nombre = searchParams.get("nombre");
-  const devicesUsed = searchParams.get("devicesUsed");
-  const maxDevices = searchParams.get("maxDevices");
-  const timeLeft = searchParams.get("timeLeft");
-  const habitacion = searchParams.get("habitacion");
+  const ssid = searchParams?.get("ssid") || "WiFi Clinica IEQ Los Mangos";
+  const plan = searchParams?.get("plan");
+  const nombre = searchParams?.get("nombre");
+  const devicesUsed = searchParams?.get("devicesUsed");
+  const maxDevices = searchParams?.get("maxDevices");
+  const timeLeft = searchParams?.get("timeLeft");
+  const habitacion = searchParams?.get("habitacion");
 
   const [animate, setAnimate] = useState(true);
 

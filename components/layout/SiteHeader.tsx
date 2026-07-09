@@ -13,7 +13,7 @@ const adminLinks = [
 ];
 
 export function SiteHeader() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const isAdminArea = pathname.startsWith("/admin") || pathname.startsWith("/user") || pathname.startsWith("/doctor");
   const isGuest = pathname.startsWith("/guest");
 
