@@ -10,11 +10,20 @@ import { db } from "@/lib/db";
 //   GET auth/?stage=counters&...   → refresco periódico de sesión
 // Respuesta texto plano: "Auth: 1" (permitir) / "Auth: 0" (denegar).
 
-const text = (body: string) =>
-  new NextResponse(body, {
+// Respuesta con Content-Length explícito y body binario: Next streamea las
+// respuestas como Transfer-Encoding: chunked por defecto y el parser HTTP
+// embebido del gateway no entiende chunks (verificado con captura pktmon).
+const text = (body: string) => {
+  const buf = new TextEncoder().encode(body);
+  return new NextResponse(buf, {
     status: 200,
-    headers: { "Content-Type": "text/plain" },
+    headers: {
+      "Content-Type": "text/plain",
+      "Content-Length": String(buf.byteLength),
+      Connection: "close",
+    },
   });
+};
 
 async function hasActiveSessionForMac(mac: string): Promise<boolean> {
   try {
