@@ -45,7 +45,10 @@ async function isValidToken(token: string): Promise<boolean> {
 }
 
 function sendAuth(res: NextApiResponse, allowed: boolean) {
-  // res crudo de Node: preserva "Auth" con mayúscula y no agrega Vary.
+  // Respuesta byte-idéntica al ejemplo de Ruijie: sin Date, sin Vary.
+  res.sendDate = false;
+  res.removeHeader("Vary");
+  res.removeHeader("Date");
   res.writeHead(200, {
     "Content-Type": "text/plain",
     "Content-Length": "0",
@@ -65,6 +68,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log(`[wd] ${req.method} /${segs.join("/")}?${new URLSearchParams(q as any).toString()}`);
 
   if (last === "ping") {
+    res.sendDate = false;
+    res.removeHeader("Vary");
+    res.removeHeader("Date");
     res.writeHead(200, {
       "Content-Type": "text/plain",
       "Content-Length": "4",

@@ -4,6 +4,9 @@ import path from "path";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.join(__dirname),
+  // Sin compresión gzip de Next → evita el header "Vary: Accept-Encoding"
+  // en las respuestas WiFiDog. Cloudflare comprime el tráfico público igual.
+  compress: false,
   // El gateway Reyee (EG1510XS) llama /auth/wifidogAuth/ping/ y
   // /auth/wifidogAuth/auth/ CON barra final y su cliente HTTP no sigue
   // redirects — el 308 de normalización de Next rompía el heartbeat WiFiDog
