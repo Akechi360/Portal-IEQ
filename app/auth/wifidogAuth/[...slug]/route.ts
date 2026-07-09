@@ -89,7 +89,9 @@ async function handle(
     }
 
     console.log(`[wifidogAuth] auth stage=${stage} mac=${mac} token=${token ? "sí" : "no"} → Auth: ${allowed ? 1 : 0}`);
-    return text(`Auth: ${allowed ? 1 : 0}`);
+    // El "\n" final es obligatorio: el parser del gateway es estricto con
+    // el formato original de wifidog-auth ("Auth: N\n").
+    return text(`Auth: ${allowed ? 1 : 0}\n`);
   }
 
   // Portal/mensajes u otras rutas — mandar al login conservando parámetros
