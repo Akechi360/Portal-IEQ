@@ -10,6 +10,22 @@ export async function middleware(request: NextRequest) {
     console.log(`[req] ${request.method} ${path}${request.nextUrl.search}`);
   }
 
+  // Con skipTrailingSlashRedirect activo manejamos las barras finales aquí.
+  // Rutas WiFiDog del gateway (llegan con "/" final y su cliente HTTP no
+  // sigue redirects): reescribir internamente para responder 200 directo.
+  if (path.length > 1 && path.endsWith("/")) {
+    const normalized = path.slice(0, -1);
+    if (normalized.startsWith("/auth/wifidogAuth") || normalized.startsWith("/wifidog")) {
+      const url = request.nextUrl.clone();
+      url.pathname = normalized;
+      return NextResponse.rewrite(url);
+    }
+    // Resto de rutas: conservar el comportamiento estándar de Next (308)
+    const url = request.nextUrl.clone();
+    url.pathname = normalized;
+    return NextResponse.redirect(url, 308);
+  }
+
   // Rutas de autenticación internas
   const isAdminLogin = path === "/admin/login";
   const isAdmisionLogin = path === "/admision/login";
