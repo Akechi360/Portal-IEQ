@@ -14,14 +14,20 @@ import { db } from "@/lib/db";
 //   - Sin redirect 3xx en las respuestas de auth
 
 function authResponse(allowed: boolean) {
-  return new NextResponse(null, {
+  // Respuesta EXACTA al ejemplo funcional de Ruijie: headers mínimos,
+  // Content-Type text/plain, cuerpo vacío, Auth como header. Se elimina el
+  // header "Vary" que Next.js inyecta (puede romper el parser del gateway).
+  const res = new NextResponse(null, {
     status: 200,
     headers: {
-      Auth: allowed ? "1" : "0",
+      "Content-Type": "text/plain",
       "Content-Length": "0",
+      Auth: allowed ? "1" : "0",
       Connection: "close",
     },
   });
+  res.headers.delete("Vary");
+  return res;
 }
 
 function pong() {

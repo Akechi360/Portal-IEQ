@@ -61,15 +61,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Authorize MAC in Ruijie gateway
-    const authResult = await authorizeClient({ mac, username: email, groupId: "grp-admin" });
-    if (!authResult.authorized) {
-      await logAccess({ event: "AUTH_FAIL", actor: email, mac, ssid: "IEQ-Staff", detail: `ruijie-rejected:${authResult.reason}` });
-      return NextResponse.json(
-        { success: false, message: "No se pudo autorizar el dispositivo en la red." },
-        { status: 502 }
-      );
-    }
+    // 3. Sin authorizeClient() (API Ruijie Cloud): la autorización la hace el
+    // gateway local vía WiFiDog, no la nube. Evita la doble autorización.
 
     // 4. Create session only after all checks pass
     const session = await db.session.create({

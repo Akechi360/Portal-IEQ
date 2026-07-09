@@ -1,17 +1,24 @@
 import { NextResponse } from "next/server";
 
-// WiFiDog auth check — AP validates client token at http://{ip}:{port}/wifidog/auth?stage=...&ip=...&mac=...&token=...&incoming=...&outgoing=...
-// Response must be plain text: "Auth: 1" (allow) or "Auth: 0" (deny) or "Auth: 6" (error)
+// Ruta alterna WiFiDog (por si el gateway usa /wifidog/auth sin prefijo).
+// Formato Reyee: resultado en el HEADER "Auth: 1"/"Auth: 0", cuerpo vacío,
+// Content-Length: 0, sin chunked. Ver app/auth/wifidogAuth/[...slug]/route.ts.
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token") ?? "";
+  const allowed = token.length > 0 ? "1" : "0";
 
-  console.log(`[wifidog/auth] ${searchParams.toString()}`);
+  console.log(`[wifidog/auth] ${searchParams.toString()} → Auth: ${allowed}`);
 
-  const allowed = token.length > 0 ? 1 : 0;
-
-  return new NextResponse(`Auth: ${allowed}`, {
+  const res = new NextResponse(null, {
     status: 200,
-    headers: { "Content-Type": "text/plain" },
+    headers: {
+      "Content-Type": "text/plain",
+      "Content-Length": "0",
+      Auth: allowed,
+      Connection: "close",
+    },
   });
+  res.headers.delete("Vary");
+  return res;
 }

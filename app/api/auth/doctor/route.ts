@@ -48,14 +48,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, message: "Acceso bloqueado por política de seguridad." }, { status: 403 });
     }
 
-    // 3. Authorize MAC in Ruijie gateway
-    const ruijieGroupMedicos = await getSystemConfig("ruijie_group_medicos") || "grp-medicos";
-    const authResult = await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: ruijieGroupMedicos });
-
-    if (!authResult.authorized) {
-      await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: "IEQ-Medicos", detail: `ruijie-rejected:${authResult.reason}` });
-      return NextResponse.json({ ok: false, message: "No se pudo autorizar el dispositivo en la red." }, { status: 502 });
-    }
+    // 3. Sin authorizeClient() (API Ruijie Cloud): la autorización la hace el
+    // gateway local vía WiFiDog, no la nube. Evita la doble autorización.
 
     // 4. Create session only after all checks pass
     await db.session.create({
