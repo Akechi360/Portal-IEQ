@@ -22,9 +22,12 @@ export async function GET(req: Request) {
   });
 
   // Guardar los parámetros técnicos del gateway en cookies para el flujo de auth
+  // secure:false — el popup del portal navega por HTTP (IP directa del
+  // servidor); con secure:true el navegador descarta las cookies y el flujo
+  // pierde gw_address/gw_port (el cliente nunca vuelve al gateway).
   const cookieOpts = {
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "lax" as const,
     maxAge: 300,
   };
