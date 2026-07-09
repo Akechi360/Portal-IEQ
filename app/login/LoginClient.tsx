@@ -124,7 +124,13 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
         successUrl.searchParams.set("nombre", data.data?.nombre || "");
         successUrl.searchParams.set("timeLeft", "permanente");
         successUrl.searchParams.set("ssid", displaySsid);
-        
+
+        // WiFiDog: pasar por el gateway para que abra el acceso a internet
+        if (data.data?.gatewayAuthUrl) {
+          window.location.href = `${data.data.gatewayAuthUrl}&url=${encodeURIComponent(successUrl.toString())}`;
+          return;
+        }
+
         router.push(successUrl.toString());
       } else {
         setDoctorStatus("error");
@@ -169,7 +175,13 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
         successUrl.searchParams.set("nombre", data.data?.nombre || "");
         successUrl.searchParams.set("timeLeft", "permanente");
         successUrl.searchParams.set("ssid", displaySsid);
-        
+
+        // WiFiDog: pasar por el gateway para que abra el acceso a internet
+        if (data.data?.gatewayAuthUrl) {
+          window.location.href = `${data.data.gatewayAuthUrl}&url=${encodeURIComponent(successUrl.toString())}`;
+          return;
+        }
+
         router.push(successUrl.toString());
       } else {
         setStaffStatus("error");

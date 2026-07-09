@@ -67,11 +67,14 @@ async function handle(
 ) {
   const { slug } = await params;
   const url = new URL(req.url);
-  const path = slug.join("/");
+  // Con skipTrailingSlashRedirect el gateway llega con "/" final y el slug
+  // puede traer un segmento vacío al final — filtrarlo.
+  const segments = slug.filter(Boolean);
+  const path = segments.join("/");
 
   console.log(`[wifidogAuth] ${req.method} /${path}?${url.searchParams.toString()}`);
 
-  const last = slug[slug.length - 1]?.toLowerCase() ?? "";
+  const last = segments[segments.length - 1]?.toLowerCase() ?? "";
 
   // Heartbeat del gateway — responder Pong o entra en fail-closed
   if (last === "ping") {

@@ -89,6 +89,14 @@ export async function POST(req: Request) {
       detail: `session:${session.id}`
     });
 
+    // WiFiDog: el cliente debe volver al gateway para que abra el acceso
+    const gwAddress = cookieStore.get("portal_gw_address")?.value;
+    const gwPort = cookieStore.get("portal_gw_port")?.value;
+    const gatewayAuthUrl =
+      gwAddress && gwPort
+        ? `http://${gwAddress}:${gwPort}/wifidog/auth?token=${encodeURIComponent(email)}`
+        : null;
+
     return NextResponse.json({
       success: true,
       message: "Acceso concedido.",
@@ -97,7 +105,8 @@ export async function POST(req: Request) {
         nombre: staffUser.nombre ?? "Staff IEQ",
         mac,
         accessType: SessionAccessType.STAFF,
-        sessionId: session.id
+        sessionId: session.id,
+        gatewayAuthUrl
       },
     });
   } catch (error) {

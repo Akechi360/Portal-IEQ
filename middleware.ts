@@ -5,24 +5,19 @@ import { verifyToken } from '@/lib/jwt';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // Log temporal de diagnóstico WiFiDog: registrar toda petición no estática
+  // Log temporal de diagnóstico: registrar peticiones no estáticas.
+  // IMPORTANTE: las rutas WiFiDog del gateway están EXCLUIDAS del matcher —
+  // cualquier respuesta que pase por middleware sale como Transfer-Encoding:
+  // chunked y el parser HTTP embebido del EG1510XS no entiende chunks.
   if (!path.startsWith("/_next") && !path.includes(".")) {
     console.log(`[req] ${request.method} ${path}${request.nextUrl.search}`);
   }
 
-  // Con skipTrailingSlashRedirect activo manejamos las barras finales aquí.
-  // Rutas WiFiDog del gateway (llegan con "/" final y su cliente HTTP no
-  // sigue redirects): reescribir internamente para responder 200 directo.
+  // Con skipTrailingSlashRedirect activo, conservar el 308 estándar para el
+  // resto de rutas (las WiFiDog no pasan por aquí y se manejan en su route).
   if (path.length > 1 && path.endsWith("/")) {
-    const normalized = path.slice(0, -1);
-    if (normalized.startsWith("/auth/wifidogAuth") || normalized.startsWith("/wifidog")) {
-      const url = request.nextUrl.clone();
-      url.pathname = normalized;
-      return NextResponse.rewrite(url);
-    }
-    // Resto de rutas: conservar el comportamiento estándar de Next (308)
     const url = request.nextUrl.clone();
-    url.pathname = normalized;
+    url.pathname = path.slice(0, -1);
     return NextResponse.redirect(url, 308);
   }
 
@@ -99,9 +94,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Matcher amplio TEMPORAL para diagnóstico WiFiDog (log de toda petición).
-  // Al terminar el diagnóstico, volver a ["/admin/:path*", "/admision/:path*"].
+  // Excluir del middleware TODO el tráfico WiFiDog del gateway (wifidog y
+  // auth/wifidogAuth): el middleware fuerza respuestas chunked que el
+  // parser del EG no puede leer. Esas rutas manejan su barra final solas.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|wifidog|auth/wifidogAuth).*)",
   ],
 };

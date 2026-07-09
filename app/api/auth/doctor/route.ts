@@ -76,6 +76,14 @@ export async function POST(req: Request) {
       detail: `doctor:${loginResult.doctorId}`,
     });
 
+    // WiFiDog: el cliente debe volver al gateway para que abra el acceso
+    const gwAddress = cookieStore.get("portal_gw_address")?.value;
+    const gwPort = cookieStore.get("portal_gw_port")?.value;
+    const gatewayAuthUrl =
+      gwAddress && gwPort
+        ? `http://${gwAddress}:${gwPort}/wifidog/auth?token=${encodeURIComponent(parsed.data.voucherCode)}`
+        : null;
+
     return NextResponse.json({
       ok: true,
       message: "Acceso médico concedido",
@@ -84,6 +92,7 @@ export async function POST(req: Request) {
         especialidad: loginResult.especialidad,
         expireAt: null,
         redirectUrl: "/login/medicos?success=1",
+        gatewayAuthUrl,
       },
     });
   } catch (error) {
