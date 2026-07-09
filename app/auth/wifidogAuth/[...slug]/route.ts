@@ -1,29 +1,28 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-// Catch-all WiFiDog para el gateway Reyee (EG1510XS).
-// El EG construye sus rutas bajo /auth/wifidogAuth/* (con barra final; el
-// middleware las reescribe sin barra). Protocolo observado por captura:
-//   GET ping/?gw_sn=...            → "Pong" (heartbeat; sin esto deniega todo)
-//   GET auth/?stage=query&mac=...  → ¿esta MAC tiene acceso? (sin token)
-//   GET auth/?stage=login&token=.. → validar token (voucher) del cliente
-//   GET auth/?stage=counters&...   → refresco periódico de sesión
-// Respuesta texto plano: "Auth: 1" (permitir) / "Auth: 0" (denegar).
+// Protocolo WiFiDog del gateway Reyee EG1510XS (ReyeeOS 2.x = wifidog-ng).
+// Formato de respuesta REPLICADO byte a byte de la implementación de
+// referencia zhaojh329/wifidog-ng-authserver (main.go):
+//   /ping                 → "Pong"          (sin salto de línea)
+//   /auth?stage=login     → "Auth: 1" / "Auth: 0"   (SIN "\n")
+//   /auth?stage=counters  → {"resp":[]}     (JSON, no "Auth: N")
+//   /auth?stage=roam      → "deny" (o "token=...")
+//   /auth (otro stage)    → "OK"
+// Content-Length explícito (sin chunked) porque el parser HTTP embebido del
+// gateway no soporta Transfer-Encoding: chunked (verificado con pktmon).
 
-// Respuesta con Content-Length explícito y body binario: Next streamea las
-// respuestas como Transfer-Encoding: chunked por defecto y el parser HTTP
-// embebido del gateway no entiende chunks (verificado con captura pktmon).
-const text = (body: string) => {
+function raw(body: string, contentType = "text/plain") {
   const buf = new TextEncoder().encode(body);
   return new NextResponse(buf, {
     status: 200,
     headers: {
-      "Content-Type": "text/plain",
+      "Content-Type": contentType,
       "Content-Length": String(buf.byteLength),
       Connection: "close",
     },
   });
-};
+}
 
 async function hasActiveSessionForMac(mac: string): Promise<boolean> {
   try {
@@ -32,13 +31,8 @@ async function hasActiveSessionForMac(mac: string): Promise<boolean> {
       include: { credential: true },
     });
     if (!session) return false;
-    // Si la sesión es de un voucher, verificar que no haya expirado
-    if (session.credential?.expireAt && session.credential.expireAt < new Date()) {
-      return false;
-    }
-    if (session.credential && session.credential.status !== "ACTIVE") {
-      return false;
-    }
+    if (session.credential?.expireAt && session.credential.expireAt < new Date()) return false;
+    if (session.credential && session.credential.status !== "ACTIVE") return false;
     return true;
   } catch (e) {
     console.error("[wifidogAuth] Error consultando sesión:", e);
@@ -46,15 +40,16 @@ async function hasActiveSessionForMac(mac: string): Promise<boolean> {
   }
 }
 
-async function isValidVoucherToken(token: string): Promise<boolean> {
+async function isValidToken(token: string): Promise<boolean> {
   try {
-    const cred = await db.credential.findUnique({
-      where: { voucherCode: token },
-    });
-    if (!cred) return false;
-    if (cred.status !== "ACTIVE") return false;
-    if (cred.expireAt && cred.expireAt < new Date()) return false;
-    return true;
+    // El token que el gateway trae es el voucher que emitimos en el redirect.
+    const cred = await db.credential.findUnique({ where: { voucherCode: token } });
+    if (cred) {
+      if (cred.status !== "ACTIVE") return false;
+      if (cred.expireAt && cred.expireAt < new Date()) return false;
+      return true;
+    }
+    return false;
   } catch (e) {
     console.error("[wifidogAuth] Error consultando voucher:", e);
     return false;
@@ -67,18 +62,15 @@ async function handle(
 ) {
   const { slug } = await params;
   const url = new URL(req.url);
-  // Con skipTrailingSlashRedirect el gateway llega con "/" final y el slug
-  // puede traer un segmento vacío al final — filtrarlo.
   const segments = slug.filter(Boolean);
   const path = segments.join("/");
+  const last = segments[segments.length - 1]?.toLowerCase() ?? "";
 
   console.log(`[wifidogAuth] ${req.method} /${path}?${url.searchParams.toString()}`);
 
-  const last = segments[segments.length - 1]?.toLowerCase() ?? "";
-
-  // Heartbeat del gateway — responder Pong o entra en fail-closed
+  // Heartbeat
   if (last === "ping") {
-    return text("Pong");
+    return raw("Pong");
   }
 
   if (last === "auth") {
@@ -86,24 +78,32 @@ async function handle(
     const token = url.searchParams.get("token") ?? "";
     const mac = url.searchParams.get("mac") ?? "";
 
-    let allowed = false;
-
-    if (token) {
-      // stage=login / counters con token: validar voucher contra la DB;
-      // si el token no es un voucher (médico/staff), aceptar si la MAC
-      // tiene sesión activa.
-      allowed =
-        (await isValidVoucherToken(token)) ||
+    if (stage === "login") {
+      const ok =
+        (token && (await isValidToken(token))) ||
         (mac ? await hasActiveSessionForMac(mac) : false);
-    } else if (mac) {
-      // stage=query sin token: el gateway pregunta por la MAC
-      allowed = await hasActiveSessionForMac(mac);
+      console.log(`[wifidogAuth] login mac=${mac} token=${token ? "sí" : "no"} → Auth: ${ok ? 1 : 0}`);
+      return raw(`Auth: ${ok ? 1 : 0}`);
     }
 
-    console.log(`[wifidogAuth] auth stage=${stage} mac=${mac} token=${token ? "sí" : "no"} → Auth: ${allowed ? 1 : 0}`);
-    // El "\n" final es obligatorio: el parser del gateway es estricto con
-    // el formato original de wifidog-auth ("Auth: N\n").
-    return text(`Auth: ${allowed ? 1 : 0}\n`);
+    if (stage === "counters") {
+      // Refresco periódico de sesiones activas — formato JSON de wifidog-ng
+      return raw('{"resp":[]}', "application/json");
+    }
+
+    if (stage === "roam") {
+      return raw("deny");
+    }
+
+    // stage=query u otros: responder según sesión de la MAC.
+    // El gateway usa esto para saber si dejar pasar a un cliente ya visto.
+    if (stage === "query") {
+      const ok = mac ? await hasActiveSessionForMac(mac) : false;
+      console.log(`[wifidogAuth] query mac=${mac} → Auth: ${ok ? 1 : 0}`);
+      return raw(`Auth: ${ok ? 1 : 0}`);
+    }
+
+    return raw("OK");
   }
 
   // Portal/mensajes u otras rutas — mandar al login conservando parámetros
