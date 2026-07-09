@@ -1,9 +1,57 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
 // Catch-all WiFiDog para el gateway Reyee (EG1510XS).
-// El EG construye sus rutas bajo /auth/wifidogAuth/* (igual que la de login).
-// Aquí atendemos el resto del protocolo: ping (heartbeat), auth (validación
-// de token) y cualquier variante — y registramos cada llamada para diagnóstico.
+// El EG construye sus rutas bajo /auth/wifidogAuth/* (con barra final; el
+// middleware las reescribe sin barra). Protocolo observado por captura:
+//   GET ping/?gw_sn=...            → "Pong" (heartbeat; sin esto deniega todo)
+//   GET auth/?stage=query&mac=...  → ¿esta MAC tiene acceso? (sin token)
+//   GET auth/?stage=login&token=.. → validar token (voucher) del cliente
+//   GET auth/?stage=counters&...   → refresco periódico de sesión
+// Respuesta texto plano: "Auth: 1" (permitir) / "Auth: 0" (denegar).
+
+const text = (body: string) =>
+  new NextResponse(body, {
+    status: 200,
+    headers: { "Content-Type": "text/plain" },
+  });
+
+async function hasActiveSessionForMac(mac: string): Promise<boolean> {
+  try {
+    const session = await db.session.findFirst({
+      where: { mac: { equals: mac, mode: "insensitive" }, endedAt: null },
+      include: { credential: true },
+    });
+    if (!session) return false;
+    // Si la sesión es de un voucher, verificar que no haya expirado
+    if (session.credential?.expireAt && session.credential.expireAt < new Date()) {
+      return false;
+    }
+    if (session.credential && session.credential.status !== "ACTIVE") {
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[wifidogAuth] Error consultando sesión:", e);
+    return false;
+  }
+}
+
+async function isValidVoucherToken(token: string): Promise<boolean> {
+  try {
+    const cred = await db.credential.findUnique({
+      where: { voucherCode: token },
+    });
+    if (!cred) return false;
+    if (cred.status !== "ACTIVE") return false;
+    if (cred.expireAt && cred.expireAt < new Date()) return false;
+    return true;
+  } catch (e) {
+    console.error("[wifidogAuth] Error consultando voucher:", e);
+    return false;
+  }
+}
+
 async function handle(
   req: Request,
   { params }: { params: Promise<{ slug: string[] }> }
@@ -16,22 +64,32 @@ async function handle(
 
   const last = slug[slug.length - 1]?.toLowerCase() ?? "";
 
-  // Heartbeat del gateway — responder Pong o entra en fail-open
+  // Heartbeat del gateway — responder Pong o entra en fail-closed
   if (last === "ping") {
-    return new NextResponse("Pong", {
-      status: 200,
-      headers: { "Content-Type": "text/plain" },
-    });
+    return text("Pong");
   }
 
-  // Validación de token del cliente (stage=login) y contadores (stage=counters)
   if (last === "auth") {
+    const stage = url.searchParams.get("stage") ?? "";
     const token = url.searchParams.get("token") ?? "";
-    const allowed = token.length > 0 ? 1 : 0;
-    return new NextResponse(`Auth: ${allowed}`, {
-      status: 200,
-      headers: { "Content-Type": "text/plain" },
-    });
+    const mac = url.searchParams.get("mac") ?? "";
+
+    let allowed = false;
+
+    if (token) {
+      // stage=login / counters con token: validar voucher contra la DB;
+      // si el token no es un voucher (médico/staff), aceptar si la MAC
+      // tiene sesión activa.
+      allowed =
+        (await isValidVoucherToken(token)) ||
+        (mac ? await hasActiveSessionForMac(mac) : false);
+    } else if (mac) {
+      // stage=query sin token: el gateway pregunta por la MAC
+      allowed = await hasActiveSessionForMac(mac);
+    }
+
+    console.log(`[wifidogAuth] auth stage=${stage} mac=${mac} token=${token ? "sí" : "no"} → Auth: ${allowed ? 1 : 0}`);
+    return text(`Auth: ${allowed ? 1 : 0}`);
   }
 
   // Portal/mensajes u otras rutas — mandar al login conservando parámetros
