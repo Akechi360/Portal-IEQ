@@ -44,17 +44,21 @@ async function isValidToken(token: string): Promise<boolean> {
   }
 }
 
-function sendAuth(res: NextApiResponse, allowed: boolean) {
+function sendAuth(res: NextApiResponse, allowed: boolean, gwId: string) {
   // Respuesta byte-idéntica al ejemplo de Ruijie: sin Date, sin Vary.
+  // ECO del gw_id: soporte Ruijie indica que el portal debe devolver el
+  // gw_id sin cambios; no hacerlo es causa conocida de message=denied.
   res.sendDate = false;
   res.removeHeader("Vary");
   res.removeHeader("Date");
-  res.writeHead(200, {
+  const headers: Record<string, string> = {
     "Content-Type": "text/plain",
     "Content-Length": "0",
     Auth: allowed ? "1" : "0",
     Connection: "close",
-  });
+  };
+  if (gwId) headers["Gw-Id"] = gwId;
+  res.writeHead(200, headers);
   res.end();
 }
 
@@ -84,22 +88,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const stage = get("stage");
     const token = get("token");
     const mac = get("mac");
+    const gwId = get("gw_id");
 
     if (stage === "login") {
       const ok = (token && (await isValidToken(token))) || (mac ? await hasActiveSessionForMac(mac) : false);
-      console.log(`[wd] login mac=${mac} token=${token ? "sí" : "no"} → Auth: ${ok ? 1 : 0}`);
-      return sendAuth(res, !!ok);
+      console.log(`[wd] login mac=${mac} token=${token ? "sí" : "no"} gw_id=${gwId} → Auth: ${ok ? 1 : 0}`);
+      return sendAuth(res, !!ok, gwId);
     }
     if (stage === "counters") {
       const ok = mac ? await hasActiveSessionForMac(mac) : true;
-      return sendAuth(res, ok);
+      return sendAuth(res, ok, gwId);
     }
     if (stage === "query") {
       const ok = mac ? await hasActiveSessionForMac(mac) : false;
-      console.log(`[wd] query mac=${mac} → Auth: ${ok ? 1 : 0}`);
-      return sendAuth(res, ok);
+      console.log(`[wd] query mac=${mac} gw_id=${gwId} → Auth: ${ok ? 1 : 0}`);
+      return sendAuth(res, ok, gwId);
     }
-    return sendAuth(res, false);
+    return sendAuth(res, false, gwId);
   }
 
   res.writeHead(404, { "Content-Length": "0", Connection: "close" });
