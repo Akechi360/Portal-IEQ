@@ -42,6 +42,7 @@ export interface RuijieSession {
   durationSeconds: number;
   bytesDown: number;
   bytesUp: number;
+  rssi: number | null;
 }
 
 export interface RuijieUserGroup {
@@ -344,6 +345,7 @@ export async function getSessions(): Promise<RuijieSession[]> {
         startedAt: new Date(Date.now() - 3_600_000).toISOString(),
         durationSeconds: 3_600,
         bytesDown: 52_428_800,
+        rssi: -60,
         bytesUp: 10_485_760,
       },
       {
@@ -356,6 +358,7 @@ export async function getSessions(): Promise<RuijieSession[]> {
         startedAt: new Date(Date.now() - 86_400_000).toISOString(),
         durationSeconds: 86_400,
         bytesDown: 209_715_200,
+        rssi: -70,
         bytesUp: 41_943_040,
       },
     ];
@@ -393,8 +396,9 @@ export async function getSessions(): Promise<RuijieSession[]> {
       apMac: u.apMac ? normalizeMac(u.apMac) : "—",
       startedAt: u.onlineTime ? new Date(u.onlineTime).toISOString() : new Date().toISOString(),
       durationSeconds: u.activeTime ? Math.floor(u.activeTime / 1000) : 0,
-      bytesDown: u.downFlow || u.flowDown || u.rxBytes || 0,
-      bytesUp: u.upFlow || u.flowUp || u.txBytes || 0,
+      bytesDown: u.flowDown || u.downFlow || u.wifiDown || u.rxBytes || 0,
+      bytesUp: u.flowUp || u.upFlow || u.wifiUp || u.txBytes || 0,
+      rssi: typeof u.rssiInt === "number" ? u.rssiInt : u.rssi ? Number(u.rssi) : null,
     };
   });
 }

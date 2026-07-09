@@ -34,16 +34,20 @@ export async function POST(req: Request) {
       cookieStore.get("portal_mac")?.value ??
       "00:00:00:00:00:00";
     const ip = cookieStore.get("portal_ip")?.value ?? null;
+    // El gateway manda el nombre de VLAN (p.ej. VLAN233) — mapear al SSID real
+    const rawSsid = cookieStore.get("portal_ssid")?.value;
+    const ssid =
+      rawSsid && !/^vlan/i.test(rawSsid) ? rawSsid : "WiFi Clinica IEQ Los Mangos";
 
     // 1. Validate voucher (no session created yet)
     const loginResult = await guestLogin({ voucherCode: parsed.data.voucherCode, mac });
     if (!loginResult.ok) {
-      await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: "IEQ-Guest" });
+      await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: ssid });
       return NextResponse.json({ ok: false, message: loginResult.message }, { status: 401 });
     }
 
     // 2. Evaluate policies BEFORE creating session
-    const policy = await evaluatePolicy({ mac, actor: parsed.data.voucherCode, tipo: loginResult.tipo, ssid: "IEQ-Guest" });
+    const policy = await evaluatePolicy({ mac, actor: parsed.data.voucherCode, tipo: loginResult.tipo, ssid: ssid });
     if (policy.blocked) {
       return NextResponse.json({ ok: false, message: "Acceso bloqueado por política de seguridad." }, { status: 403 });
     }
@@ -53,7 +57,7 @@ export async function POST(req: Request) {
     const authResult = await authorizeClient({ mac, username: parsed.data.voucherCode, groupId: ruijieGroupGuest });
 
     if (!authResult.authorized) {
-      await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: "IEQ-Guest", detail: `ruijie-rejected:${authResult.reason}` });
+      await logAccess({ event: "AUTH_FAIL", actor: parsed.data.voucherCode, mac, ip, ssid: ssid, detail: `ruijie-rejected:${authResult.reason}` });
       return NextResponse.json({ ok: false, message: "No se pudo autorizar el dispositivo en la red." }, { status: 502 });
     }
 
@@ -62,7 +66,7 @@ export async function POST(req: Request) {
       data: {
         mac,
         credentialId: loginResult.credentialId,
-        ssid: "IEQ-Guest",
+        ssid: ssid,
         accessType: SessionAccessType.GUEST,
       },
     });
@@ -72,7 +76,7 @@ export async function POST(req: Request) {
       actor: parsed.data.voucherCode,
       mac,
       ip,
-      ssid: "IEQ-Guest",
+      ssid: ssid,
       detail: `credential:${loginResult.credentialId}`,
     });
 
