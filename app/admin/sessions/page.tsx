@@ -66,13 +66,14 @@ function SignalBars({ level }: { level: number }) {
 }
 
 /** Tiny inline bar under the speed value */
-function SpeedCell({ mbps, max }: { mbps: number; max: number }) {
-  const pct = Math.min(100, Math.round((mbps / max) * 100));
+function SpeedCell({ mbps, max }: { mbps: number | null | undefined; max: number }) {
+  const value = mbps ?? 0;
+  const pct = Math.min(100, Math.round((value / max) * 100)) || 0;
   const color = pct > 60 ? "#3B82F6" : pct > 30 ? "#10B981" : "#F59E0B";
   return (
     <div>
       <span className="text-sm font-medium text-neutral-800">
-        {mbps < 1 ? mbps.toFixed(1) : mbps} MB
+        {value < 1 ? value.toFixed(1) : Math.round(value)} MB
       </span>
       <div className="mt-0.5 h-[3px] w-16 overflow-hidden rounded-full bg-neutral-100">
         <div style={{ width: `${pct}%`, backgroundColor: color, height: "100%", borderRadius: "999px" }} />
@@ -137,8 +138,8 @@ export default function SessionsPage() {
   const totalSessionsCount = sessions.length;
 
   // Calcular MB/GB consumidos
-  const totalDownMB = sessions.reduce((acc, s) => acc + s.download, 0);
-  const totalUpMB = sessions.reduce((acc, s) => acc + s.upload, 0);
+  const totalDownMB = sessions.reduce((acc, s) => acc + (s.download ?? 0), 0);
+  const totalUpMB = sessions.reduce((acc, s) => acc + (s.upload ?? 0), 0);
   const totalGB = ((totalDownMB + totalUpMB) / 1024).toFixed(2);
 
   // Desconectar o cerrar sesión

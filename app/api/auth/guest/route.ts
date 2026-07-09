@@ -76,6 +76,15 @@ export async function POST(req: Request) {
       detail: `credential:${loginResult.credentialId}`,
     });
 
+    // WiFiDog: el cliente debe volver al gateway para que este abra el acceso.
+    // El gateway valida el token llamando a nuestro /wifidog/auth (Auth: 1).
+    const gwAddress = cookieStore.get("portal_gw_address")?.value;
+    const gwPort = cookieStore.get("portal_gw_port")?.value;
+    const gatewayAuthUrl =
+      gwAddress && gwPort
+        ? `http://${gwAddress}:${gwPort}/wifidog/auth?token=${encodeURIComponent(parsed.data.voucherCode)}`
+        : null;
+
     return NextResponse.json({
       ok: true,
       message: "Acceso concedido",
@@ -84,6 +93,7 @@ export async function POST(req: Request) {
         tipo: loginResult.tipo,
         expireAt: loginResult.expireAt,
         redirectUrl: "/login/guest?success=1",
+        gatewayAuthUrl,
       },
     });
   } catch (error) {

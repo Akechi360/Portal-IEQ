@@ -21,7 +21,7 @@ import {
 function SuccessContent() {
   const searchParams = useSearchParams();
   
-  const ssid = searchParams.get("ssid") || "WiFi-ClinicaIEQ";
+  const ssid = searchParams.get("ssid") || "WiFi Clinica IEQ Los Mangos";
   const plan = searchParams.get("plan");
   const nombre = searchParams.get("nombre");
   const devicesUsed = searchParams.get("devicesUsed");
@@ -38,8 +38,8 @@ function SuccessContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Determinar el nombre del SSID a mostrar
-  const displaySsid = ssid === "WiFi-ClinicaIEQ" ? "WiFi-ClinicaIEQ" : ssid;
+  // El gateway puede mandar el nombre de VLAN en lugar del SSID real
+  const displaySsid = /^vlan/i.test(ssid) ? "WiFi Clinica IEQ Los Mangos" : ssid;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-sky-50 flex items-center justify-center p-4 font-sans">
@@ -169,11 +169,11 @@ function SuccessContent() {
 
         {/* 6. BOTÓN PRINCIPAL */}
         <button
-          onClick={() => (window.location.href = "https://www.ieq.com/bienvenida")}
+          onClick={() => (window.location.href = "https://www.clinicaieq.com")}
           className="mt-6 w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
         >
           <ExternalLink className="w-4 h-4" />
-          Ir a www.ieq.com/bienvenida
+          Ir a www.clinicaieq.com
         </button>
 
         {/* 7. TEXTO SECUNDARIO */}

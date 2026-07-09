@@ -21,6 +21,9 @@ type StatusType = "idle" | "loading" | "success" | "error";
 
 export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
   const router = useRouter();
+  // El gateway manda el nombre de la VLAN (p.ej. "VLAN233"), no el SSID real
+  const displaySsid =
+    ssid && !/^vlan/i.test(ssid) ? ssid : "WiFi Clinica IEQ Los Mangos";
   const [activeTab, setActiveTab] = useState<TabType>("code");
   
   // Formulario de código (PACIENTE / TRANSITO)
@@ -74,8 +77,15 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
         if (data.data?.habitacion) {
           successUrl.searchParams.set("habitacion", data.data.habitacion);
         }
-        successUrl.searchParams.set("ssid", "WiFi-ClinicaIEQ");
-        
+        successUrl.searchParams.set("ssid", displaySsid);
+
+        // WiFiDog: pasar por el gateway para que abra el acceso a internet;
+        // el gateway luego redirige a la página de éxito (param url).
+        if (data.data?.gatewayAuthUrl) {
+          window.location.href = `${data.data.gatewayAuthUrl}&url=${encodeURIComponent(successUrl.toString())}`;
+          return;
+        }
+
         router.push(successUrl.toString());
       } else {
         setCodeStatus("error");
@@ -113,7 +123,7 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
         successUrl.searchParams.set("plan", "Medico");
         successUrl.searchParams.set("nombre", data.data?.nombre || "");
         successUrl.searchParams.set("timeLeft", "permanente");
-        successUrl.searchParams.set("ssid", "WiFi-ClinicaIEQ");
+        successUrl.searchParams.set("ssid", displaySsid);
         
         router.push(successUrl.toString());
       } else {
@@ -158,7 +168,7 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
         successUrl.searchParams.set("plan", "Staff");
         successUrl.searchParams.set("nombre", data.data?.nombre || "");
         successUrl.searchParams.set("timeLeft", "permanente");
-        successUrl.searchParams.set("ssid", "WiFi-ClinicaIEQ");
+        successUrl.searchParams.set("ssid", displaySsid);
         
         router.push(successUrl.toString());
       } else {
@@ -176,9 +186,12 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
   // Helper para calcular tiempo restante
   function calculateTimeLeft(expireAt: string): string {
     const diff = new Date(expireAt).getTime() - Date.now();
-    if (diff <= 0) return "0h";
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    return `${hours}h`;
+    if (diff <= 0) return "expirado";
+    const totalMinutes = Math.floor(diff / (1000 * 60));
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
   }
 
   return (
@@ -187,7 +200,7 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
       leftTitle="Bienvenido a\nClínica IEQ"
       leftDescription="Conéctate a nuestra red WiFi institucional de forma segura y rápida."
       leftFeatures={leftFeatures}
-      badgeSSID="WiFi-ClinicaIEQ"
+      badgeSSID={displaySsid}
     >
       <div className="max-w-sm w-full mx-auto">
         <h2 className="text-2xl font-bold text-gray-900">Acceso WiFi</h2>
