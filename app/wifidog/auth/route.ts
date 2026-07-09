@@ -6,6 +6,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token") ?? "";
 
+  console.log(`[wifidog/auth] ${searchParams.toString()}`);
+
   const allowed = token.length > 0 ? 1 : 0;
 
   return new NextResponse(`Auth: ${allowed}`, {
