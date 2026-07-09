@@ -1,23 +1,35 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-// Protocolo WiFiDog del gateway Reyee EG1510XS (ReyeeOS 2.x = wifidog-ng).
-// Formato de respuesta REPLICADO byte a byte de la implementación de
-// referencia zhaojh329/wifidog-ng-authserver (main.go):
-//   /ping                 → "Pong"          (sin salto de línea)
-//   /auth?stage=login     → "Auth: 1" / "Auth: 0"   (SIN "\n")
-//   /auth?stage=counters  → {"resp":[]}     (JSON, no "Auth: N")
-//   /auth?stage=roam      → "deny" (o "token=...")
-//   /auth (otro stage)    → "OK"
-// Content-Length explícito (sin chunked) porque el parser HTTP embebido del
-// gateway no soporta Transfer-Encoding: chunked (verificado con pktmon).
+// Protocolo WiFiDog del gateway Reyee EG1510XS (ReyeeOS 2.x).
+// CLAVE (confirmado por soporte Ruijie 2026-07-09): el resultado va en el
+// HEADER "Auth: 1" / "Auth: 0", con CUERPO VACÍO (Content-Length: 0), NO en
+// el body. El fork de Reyee difiere del wifidog-ng público (que usa body).
+// Requisitos exactos:
+//   - HTTP 200 OK
+//   - Header "Auth: N" (case-sensitive, sin espacios extra)
+//   - Cuerpo vacío, Content-Length: 0
+//   - NUNCA Transfer-Encoding: chunked (rompe el parser → message=denied)
+//   - /wifidog/ping → body "Pong", Content-Length: 4, en < 3s
+//   - Sin redirect 3xx en las respuestas de auth
 
-function raw(body: string, contentType = "text/plain") {
-  const buf = new TextEncoder().encode(body);
+function authResponse(allowed: boolean) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      Auth: allowed ? "1" : "0",
+      "Content-Length": "0",
+      Connection: "close",
+    },
+  });
+}
+
+function pong() {
+  const buf = new TextEncoder().encode("Pong");
   return new NextResponse(buf, {
     status: 200,
     headers: {
-      "Content-Type": contentType,
+      "Content-Type": "text/plain",
       "Content-Length": String(buf.byteLength),
       Connection: "close",
     },
@@ -42,14 +54,11 @@ async function hasActiveSessionForMac(mac: string): Promise<boolean> {
 
 async function isValidToken(token: string): Promise<boolean> {
   try {
-    // El token que el gateway trae es el voucher que emitimos en el redirect.
     const cred = await db.credential.findUnique({ where: { voucherCode: token } });
-    if (cred) {
-      if (cred.status !== "ACTIVE") return false;
-      if (cred.expireAt && cred.expireAt < new Date()) return false;
-      return true;
-    }
-    return false;
+    if (!cred) return false;
+    if (cred.status !== "ACTIVE") return false;
+    if (cred.expireAt && cred.expireAt < new Date()) return false;
+    return true;
   } catch (e) {
     console.error("[wifidogAuth] Error consultando voucher:", e);
     return false;
@@ -68,9 +77,8 @@ async function handle(
 
   console.log(`[wifidogAuth] ${req.method} /${path}?${url.searchParams.toString()}`);
 
-  // Heartbeat
   if (last === "ping") {
-    return raw("Pong");
+    return pong();
   }
 
   if (last === "auth") {
@@ -83,27 +91,23 @@ async function handle(
         (token && (await isValidToken(token))) ||
         (mac ? await hasActiveSessionForMac(mac) : false);
       console.log(`[wifidogAuth] login mac=${mac} token=${token ? "sí" : "no"} → Auth: ${ok ? 1 : 0}`);
-      return raw(`Auth: ${ok ? 1 : 0}`);
+      return authResponse(!!ok);
     }
 
     if (stage === "counters") {
-      // Refresco periódico de sesiones activas — formato JSON de wifidog-ng
-      return raw('{"resp":[]}', "application/json");
+      // Sesión sigue activa mientras la MAC tenga sesión en DB.
+      const ok = mac ? await hasActiveSessionForMac(mac) : true;
+      return authResponse(ok);
     }
 
-    if (stage === "roam") {
-      return raw("deny");
-    }
-
-    // stage=query u otros: responder según sesión de la MAC.
-    // El gateway usa esto para saber si dejar pasar a un cliente ya visto.
     if (stage === "query") {
       const ok = mac ? await hasActiveSessionForMac(mac) : false;
       console.log(`[wifidogAuth] query mac=${mac} → Auth: ${ok ? 1 : 0}`);
-      return raw(`Auth: ${ok ? 1 : 0}`);
+      return authResponse(ok);
     }
 
-    return raw("OK");
+    // stage desconocido — denegar por defecto
+    return authResponse(false);
   }
 
   // Portal/mensajes u otras rutas — mandar al login conservando parámetros
