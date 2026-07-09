@@ -5,6 +5,11 @@ import { verifyToken } from '@/lib/jwt';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
+  // Log temporal de diagnóstico WiFiDog: registrar toda petición no estática
+  if (!path.startsWith("/_next") && !path.includes(".")) {
+    console.log(`[req] ${request.method} ${path}${request.nextUrl.search}`);
+  }
+
   // Rutas de autenticación internas
   const isAdminLogin = path === "/admin/login";
   const isAdmisionLogin = path === "/admision/login";
@@ -78,9 +83,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Configurar las rutas donde aplica el middleware para optimizar el rendimiento
+  // Matcher amplio TEMPORAL para diagnóstico WiFiDog (log de toda petición).
+  // Al terminar el diagnóstico, volver a ["/admin/:path*", "/admision/:path*"].
   matcher: [
-    "/admin/:path*",
-    "/admision/:path*",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

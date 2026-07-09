@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // El EG construye sus rutas bajo /auth/wifidogAuth/* (igual que la de login).
 // Aquí atendemos el resto del protocolo: ping (heartbeat), auth (validación
 // de token) y cualquier variante — y registramos cada llamada para diagnóstico.
-export async function GET(
+async function handle(
   req: Request,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
@@ -12,7 +12,7 @@ export async function GET(
   const url = new URL(req.url);
   const path = slug.join("/");
 
-  console.log(`[wifidogAuth] GET /${path}?${url.searchParams.toString()}`);
+  console.log(`[wifidogAuth] ${req.method} /${path}?${url.searchParams.toString()}`);
 
   const last = slug[slug.length - 1]?.toLowerCase() ?? "";
 
@@ -44,3 +44,7 @@ export async function GET(
     headers: { Location: `/login?${params2.toString()}` },
   });
 }
+
+export const GET = handle;
+export const POST = handle;
+export const HEAD = handle;
