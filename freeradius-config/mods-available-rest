@@ -1,0 +1,17 @@
+rest {
+    connect_uri = "http://portal.clinicaieq.com/api/radius/verify"
+
+    authenticate {
+        uri = "${..connect_uri}"
+        method = "post"
+        body = "json"
+        data = '{"username": "%{User-Name}", "password": "%{User-Password}"}'
+    }
+
+    authorize {
+        uri = "${..connect_uri}"
+        method = "post"
+        body = "json"
+        data = '{"username": "%{User-Name}", "password": "%{User-Password}"}'
+    }
+}
