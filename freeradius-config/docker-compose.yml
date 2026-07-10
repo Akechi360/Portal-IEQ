@@ -18,7 +18,7 @@ services:
         cat > $$CONF/clients.conf << 'CLIENTS_EOF'
         client gateway_reyee {
             ipaddr = 0.0.0.0/0
-            secret = IEQ_Radius_Secret_2026
+            secret = Rgeg1510xs*2026*
             require_message_authenticator = no
         }
         CLIENTS_EOF
@@ -71,6 +71,14 @@ services:
                 Auth-Type rest {
                     rest
                 }
+            }
+
+            preacct {
+                ok
+            }
+
+            accounting {
+                ok
             }
         }
         SITES_EOF
