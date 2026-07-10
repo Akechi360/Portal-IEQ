@@ -196,7 +196,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Main grid: table + right panels */}
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row">
         {/* Usuarios activos table */}
         <div className="min-w-0 flex-1 rounded-xl border border-neutral-100 bg-white shadow-sm">
           <div className="flex items-center justify-between px-5 py-4">
@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Right column */}
-        <div className="flex w-64 shrink-0 flex-col gap-4">
+        <div className="flex w-full shrink-0 flex-col gap-4 lg:w-64">
           {/* Bandwidth usage */}
           <div className="rounded-xl border border-neutral-100 bg-white p-4 shadow-sm">
             <h3 className="mb-3 text-sm font-semibold text-neutral-800">

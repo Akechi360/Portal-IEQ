@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -13,7 +14,9 @@ import {
   ShieldCheck,
   Settings,
   Stethoscope,
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/styles";
 import useSWR from "swr";
@@ -114,6 +117,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: meData } = useSWR("/api/auth/me", fetcher);
   const { data: trafficData } = useSWR("/api/admin/traffic", fetcher, { refreshInterval: 30000 });
 
+  // Drawer móvil: abierto/cerrado. Se cierra solo al navegar.
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   const adminUser = meData?.user;
   const adminName: string = adminUser?.nombre || adminUser?.name || "Admin IEQ";
   const adminRole: string = adminUser?.role || "Superadmin";
@@ -136,15 +145,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-[#f0f4f8] text-neutral-900">
+      {/* ── Overlay (solo móvil, al abrir el drawer) ──────────── */}
+      {mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          aria-hidden="true"
+        />
+      )}
+
       {/* ── Sidebar ──────────────────────────────────────────── */}
-      <aside className="flex w-[220px] shrink-0 flex-col bg-[#111827] text-white">
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-[220px] shrink-0 flex-col bg-[#111827] text-white transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
           <img src="/logo-ieq.png" alt="IEQ" className="h-9 w-auto object-contain" />
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold leading-tight text-white">Portal IEQ</p>
             <p className="text-[11px] text-neutral-400">Control de acceso</p>
           </div>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="shrink-0 rounded-md p-1 text-neutral-400 hover:bg-neutral-800 hover:text-white lg:hidden"
+            aria-label="Cerrar menú"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Nav sections */}
@@ -191,10 +221,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Main area ─────────────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top header */}
-        <header className="flex h-14 items-center justify-between border-b border-neutral-200 bg-white px-6">
-          <p className="text-sm text-neutral-500">{breadcrumb}</p>
+        <header className="flex h-14 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="shrink-0 rounded-md p-1.5 text-neutral-600 hover:bg-neutral-100 lg:hidden"
+              aria-label="Abrir menú"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <p className="truncate text-sm text-neutral-500">{breadcrumb}</p>
+          </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+            <div className="hidden items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700 sm:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500 inline-block" />
               Red operativa
             </div>
@@ -207,7 +246,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );

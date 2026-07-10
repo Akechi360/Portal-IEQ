@@ -32,6 +32,8 @@ export async function GET(req: Request) {
         mac: ap.mac,
         ip: ap.ip,
         ssid: ap.ssid,
+        name: ap.name,
+        model: ap.model,
         connectedAt: ap.connectedAt,
         bytesDown: ap.bytesDown,
         bytesUp: ap.bytesUp,

@@ -26,6 +26,8 @@ export interface RuijieDevice {
   mac: string;
   ip: string;
   ssid: string;
+  name: string | null;
+  model: string | null;
   connectedAt: string;
   bytesDown: number;
   bytesUp: number;
@@ -347,6 +349,8 @@ export async function getDevices(): Promise<RuijieDevice[]> {
         mac: "00:1a:c2:7b:00:47",
         ip: "192.168.10.101",
         ssid: "IEQ-Guest",
+        name: "AP Recepción (demo)",
+        model: "RAP2260(G)",
         connectedAt: new Date(Date.now() - 3600_000).toISOString(),
         bytesDown: 1_048_576,
         bytesUp: 204_800,
@@ -355,6 +359,8 @@ export async function getDevices(): Promise<RuijieDevice[]> {
         mac: "9c:3d:cf:2f:bc:11",
         ip: "192.168.10.102",
         ssid: "IEQ-Medicos",
+        name: "AP Consultorios (demo)",
+        model: "RAP2260(G)",
         connectedAt: new Date(Date.now() - 7_200_000).toISOString(),
         bytesDown: 5_242_880,
         bytesUp: 1_048_576,
@@ -377,6 +383,9 @@ export async function getDevices(): Promise<RuijieDevice[]> {
     mac: d.mac || d.deviceMac || d.serialNumber,
     ip: d.localIp || d.ip || "0.0.0.0",
     ssid: d.ssid || "IEQ-Guest",
+    // Nombre/alias real del equipo en Ruijie Cloud (varía el campo según versión API)
+    name: d.name || d.deviceName || d.alias || d.hostname || d.sn || d.serialNumber || null,
+    model: d.deviceType || d.model || d.type || null,
     connectedAt: d.lastOnline ? new Date(d.lastOnline).toISOString() : new Date().toISOString(),
     bytesDown: d.flowDown || 0,
     bytesUp: d.flowUp || 0,
