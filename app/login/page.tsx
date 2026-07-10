@@ -13,10 +13,19 @@ export default async function LoginPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const params = await searchParams
-  const mac = typeof params.mac === 'string' ? params.mac : undefined
-  const ip = typeof params.ip === 'string' ? params.ip : undefined
-  const redirect = typeof params.redirect === 'string' ? params.redirect : undefined
-  const ssid = typeof params.ssid === 'string' ? params.ssid : undefined
+  const str = (v: string | string[] | undefined) =>
+    typeof v === 'string' ? v : undefined
+
+  // WiFiDog usa mac/ip/redirect; WISPr (preset "Ruijie") usa
+  // client_mac/nas_ip/url + login_url/logout_url. Aceptamos ambos.
+  const mac = str(params.mac) ?? str(params.client_mac)
+  const ip = str(params.ip) ?? str(params.nas_ip)
+  const redirect = str(params.redirect) ?? str(params.url)
+  const ssid = str(params.ssid)
+
+  // WISPr: URL del gateway donde el portal envía las credenciales
+  const loginUrl = str(params.login_url)
+  const logoutUrl = str(params.logout_url)
 
   return (
     <LoginClient
@@ -24,6 +33,8 @@ export default async function LoginPage({
       ip={ip || ''}
       redirect={redirect || ''}
       ssid={ssid || 'WiFi-ClinicaIEQ'}
+      loginUrl={loginUrl || ''}
+      logoutUrl={logoutUrl || ''}
     />
   )
 }

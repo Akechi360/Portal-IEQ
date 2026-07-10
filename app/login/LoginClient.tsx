@@ -14,16 +14,29 @@ interface LoginClientProps {
   ip: string;
   redirect: string;
   ssid: string;
+  loginUrl?: string;
+  logoutUrl?: string;
 }
 
 type TabType = "code" | "doctor" | "staff";
 type StatusType = "idle" | "loading" | "success" | "error";
 
-export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
+export function LoginClient({ mac, ip, redirect, ssid, loginUrl = "", logoutUrl = "" }: LoginClientProps) {
   const router = useRouter();
   // El gateway manda el nombre de la VLAN (p.ej. "VLAN233"), no el SSID real
   const displaySsid =
     ssid && !/^vlan/i.test(ssid) ? ssid : "WiFi Clinica IEQ Los Mangos";
+
+  // WISPr: si el gateway mandó login_url, tras validar el voucher redirigimos
+  // al gateway con las credenciales para que él conceda el acceso a internet.
+  // El voucher se usa como username y password (Cuenta local / RADIUS PAP).
+  function redirectToWisprLogin(credential: string, successUrl: string) {
+    const url = new URL(loginUrl);
+    url.searchParams.set("username", credential);
+    url.searchParams.set("password", credential);
+    url.searchParams.set("next_url", successUrl);
+    window.location.href = url.toString();
+  }
   const [activeTab, setActiveTab] = useState<TabType>("code");
   
   // Formulario de código (PACIENTE / TRANSITO)
@@ -78,6 +91,12 @@ export function LoginClient({ mac, ip, redirect, ssid }: LoginClientProps) {
           successUrl.searchParams.set("habitacion", data.data.habitacion);
         }
         successUrl.searchParams.set("ssid", displaySsid);
+
+        // WISPr: pasar por el login del gateway con las credenciales (RADIUS/Cuenta local)
+        if (loginUrl) {
+          redirectToWisprLogin(code.trim().toUpperCase(), successUrl.toString());
+          return;
+        }
 
         // WiFiDog: pasar por el gateway para que abra el acceso a internet;
         // el gateway luego redirige a la página de éxito (param url).
