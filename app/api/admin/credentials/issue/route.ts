@@ -8,7 +8,7 @@ import { issueCredentialSchema } from "@/lib/validators";
 import { generateVoucherCode } from "@/lib/auth";
 import { logAccess } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { createVoucher } from "@/lib/ruijie";
+import { createVoucher, createAccount } from "@/lib/ruijie";
 import { requireInternal } from "@/lib/jwt";
 
 function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Date {
@@ -79,6 +79,19 @@ export async function POST(req: Request) {
       await createVoucher({ code: voucherCode, groupId, maxDevices, expireAt, note: nombre });
     } catch (e) {
       console.warn("Fallo al crear voucher en Ruijie (es posible que estés en local sin credenciales)", e);
+    }
+
+    // Además del voucher, creamos una CUENTA con el mismo código como
+    // usuario/contraseña — necesaria para el portal WISPr con
+    // "Tipo de Auten: Cuenta local", que valida contra account/create,
+    // no contra voucher/customerCreate.
+    try {
+      const accountResult = await createAccount({ username: voucherCode, password: voucherCode });
+      if (!accountResult.ok) {
+        console.warn(`No se pudo crear cuenta Ruijie para ${voucherCode}: ${accountResult.reason}`);
+      }
+    } catch (e) {
+      console.warn("Fallo al crear cuenta en Ruijie", e);
     }
 
     await logAccess({

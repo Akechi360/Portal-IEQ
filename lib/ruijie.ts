@@ -280,6 +280,62 @@ export async function createVoucher(payload: {
 }
 
 /**
+ * Crea una CUENTA en Ruijie Cloud (distinto de un voucher). Necesaria cuando
+ * el portal WISPr usa "Tipo de Auten: Cuenta local" — ese modo valida contra
+ * la tabla de cuentas (account/create), no contra la de vouchers
+ * (voucher/customerCreate). Usamos el mismo código de voucher como
+ * username/password para no duplicar identificadores.
+ */
+export async function createAccount(payload: {
+  username: string;
+  password: string;
+}): Promise<{ ok: boolean; reason?: string }> {
+  const token = await getRuijieToken();
+  if (token === "MOCK_TOKEN_OFFLINE") {
+    console.warn("[ruijie][offline] createAccount — username:", payload.username);
+    return { ok: true, reason: "offline-mode" };
+  }
+
+  const networkGroupId = process.env.RUIJIE_GROUP_ID || "9371493";
+
+  const attempt = async (accessToken: string) => {
+    const res = await fetch(
+      `${RUIJIE_CLOUD_URL}/service/api/open/auth/account/create/${networkGroupId}?access_token=${accessToken}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: payload.username,
+          password: payload.password,
+          profileId: RUIJIE_PROFILE_ID,
+          userGroupId: RUIJIE_USER_GROUP_ID,
+          vpnEnable: false,
+        }),
+      }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  };
+
+  try {
+    let data = await attempt(token);
+    if (data.code !== 0 && isStaleTokenCode(data.code)) {
+      invalidateRuijieToken();
+      const fresh = await getRuijieToken();
+      if (fresh !== "MOCK_TOKEN_OFFLINE") data = await attempt(fresh);
+    }
+    if (data.code !== 0) {
+      console.error(`[ruijie] createAccount rechazado: code=${data.code} msg=${data.msg}`);
+      return { ok: false, reason: `code ${data.code}: ${data.msg}` };
+    }
+    return { ok: true };
+  } catch (e: any) {
+    console.error("[ruijie] createAccount falló:", e.message);
+    return { ok: false, reason: e.message };
+  }
+}
+
+/**
  * Lista los dispositivos conectados actualmente al gateway (AP/Switch).
  */
 export async function getDevices(): Promise<RuijieDevice[]> {
