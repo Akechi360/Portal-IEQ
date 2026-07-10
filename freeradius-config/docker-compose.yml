@@ -8,9 +8,81 @@ services:
     ports:
       - "1812:1812/udp"
       - "1813:1813/udp"
-    volumes:
-      - ./clients.conf:/etc/raddb/clients.conf:ro
-      - ./mods-available-rest:/etc/raddb/mods-available/rest:ro
-      - ./mods-available-rest:/etc/raddb/mods-enabled/rest:ro
-      - ./sites-available-default:/etc/raddb/sites-available/default:ro
-      - ./sites-available-default:/etc/raddb/sites-enabled/default:ro
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        # Detect config dir (Alpine=/etc/raddb, Debian=/etc/freeradius)
+        if [ -d /etc/raddb ]; then CONF=/etc/raddb; else CONF=/etc/freeradius; fi
+
+        cat > $$CONF/clients.conf << 'CLIENTS_EOF'
+        client gateway_reyee {
+            ipaddr = 0.0.0.0/0
+            secret = IEQ_Radius_Secret_2026
+        }
+        CLIENTS_EOF
+
+        cat > $$CONF/mods-available/rest << 'REST_EOF'
+        rest {
+            connect_uri = "http://portal.clinicaieq.com/api/radius/verify"
+
+            authenticate {
+                uri = "$${..connect_uri}"
+                method = "post"
+                body = "json"
+                data = '{"username": "%{User-Name}", "password": "%{User-Password}"}'
+            }
+
+            authorize {
+                uri = "$${..connect_uri}"
+                method = "post"
+                body = "json"
+                data = '{"username": "%{User-Name}", "password": "%{User-Password}"}'
+            }
+        }
+        REST_EOF
+
+        ln -sf $$CONF/mods-available/rest $$CONF/mods-enabled/rest
+
+        cat > $$CONF/sites-available/default << 'SITES_EOF'
+        server default {
+            listen {
+                type = auth
+                ipaddr = *
+                port = 0
+            }
+            listen {
+                type = acct
+                ipaddr = *
+                port = 0
+            }
+
+            authorize {
+                rest
+                if (ok) {
+                    update control {
+                        Auth-Type := rest
+                    }
+                }
+            }
+
+            authenticate {
+                Auth-Type rest {
+                    rest
+                }
+            }
+        }
+        SITES_EOF
+
+        ln -sf $$CONF/sites-available/default $$CONF/sites-enabled/default
+
+        # Find the correct binary
+        if [ -x /usr/sbin/radiusd ]; then
+          exec /usr/sbin/radiusd -X
+        elif [ -x /usr/sbin/freeradius ]; then
+          exec /usr/sbin/freeradius -X
+        else
+          echo "ERROR: No radiusd or freeradius binary found"
+          ls -la /usr/sbin/
+          exit 1
+        fi
