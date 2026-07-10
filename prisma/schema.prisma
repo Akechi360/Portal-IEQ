@@ -49,21 +49,22 @@ model StaffUser {
 }
 
 model Session {
-  id           String            @id @default(cuid())
-  mac          String
-  ip           String?
-  ssid         String?
-  credentialId String?
-  doctorId     String?
-  startedAt    DateTime          @default(now())
-  endedAt      DateTime?
-  dataDownMB   Float?
-  dataUpMB     Float?
-  accessType   SessionAccessType
-  staffUserId  String?
-  credential   Credential?       @relation(fields: [credentialId], references: [id])
-  doctor       Doctor?           @relation(fields: [doctorId], references: [id])
-  staffUser    StaffUser?        @relation(fields: [staffUserId], references: [id])
+  id            String            @id @default(cuid())
+  acctSessionId String?           @unique
+  mac           String
+  ip            String?
+  ssid          String?
+  credentialId  String?
+  doctorId      String?
+  startedAt     DateTime          @default(now())
+  endedAt       DateTime?
+  dataDownMB    Float?
+  dataUpMB      Float?
+  accessType    SessionAccessType
+  staffUserId   String?
+  credential    Credential?       @relation(fields: [credentialId], references: [id])
+  doctor        Doctor?           @relation(fields: [doctorId], references: [id])
+  staffUser     StaffUser?        @relation(fields: [staffUserId], references: [id])
 
   @@index([mac])
   @@index([startedAt])

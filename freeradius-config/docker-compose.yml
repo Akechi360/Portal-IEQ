@@ -40,6 +40,13 @@ services:
                 body = "json"
                 data = '{"username": "%{User-Name}", "password": "%{User-Password}"}'
             }
+
+            accounting {
+                uri = "http://portal.clinicaieq.com/api/radius/acct"
+                method = "post"
+                body = "json"
+                data = '{"status_type": "%{Acct-Status-Type}", "username": "%{User-Name}", "mac": "%{Calling-Station-Id}", "ip": "%{Framed-IP-Address}", "nas_port": "%{Called-Station-Id}", "session_id": "%{Acct-Session-Id}", "session_time": "%{Acct-Session-Time}", "input_octets": "%{Acct-Input-Octets}", "output_octets": "%{Acct-Output-Octets}", "input_gigawords": "%{Acct-Input-Gigawords}", "output_gigawords": "%{Acct-Output-Gigawords}", "terminate_cause": "%{Acct-Terminate-Cause}"}'
+            }
         }
         REST_EOF
 
@@ -78,7 +85,7 @@ services:
             }
 
             accounting {
-                ok
+                rest
             }
         }
         SITES_EOF

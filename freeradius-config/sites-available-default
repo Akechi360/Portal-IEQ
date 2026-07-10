@@ -24,4 +24,12 @@ server default {
             rest
         }
     }
+
+    preacct {
+        ok
+    }
+
+    accounting {
+        rest
+    }
 }

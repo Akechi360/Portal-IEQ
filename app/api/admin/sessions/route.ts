@@ -56,10 +56,11 @@ export async function GET(req: Request) {
         tipo = "Staff / Gerencia";
       }
 
-      // Calcular duración
+      // Calcular duración (hasta endedAt si la sesión ya cerró)
       let duration = "—";
       if (s.startedAt) {
-        const diff = Date.now() - new Date(s.startedAt).getTime();
+        const end = s.endedAt ? new Date(s.endedAt).getTime() : Date.now();
+        const diff = end - new Date(s.startedAt).getTime();
         const mins = Math.floor(diff / 60000);
         if (mins < 60) {
           duration = `${mins}m`;
