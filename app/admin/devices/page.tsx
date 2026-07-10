@@ -90,7 +90,7 @@ function ApCard({ ap }: { ap: any }) {
         </div>
         <div className="min-w-0">
           <p className="truncate font-semibold text-neutral-800">{ap.name || "Access Point"}</p>
-          <p className="truncate text-xs text-neutral-400">{ap.model ? `${ap.model} · ${ap.ssid}` : ap.ssid}</p>
+          <p className="truncate text-xs text-neutral-400">{ap.model || "Punto de acceso"}</p>
         </div>
       </div>
       <div className="space-y-1.5 text-sm">

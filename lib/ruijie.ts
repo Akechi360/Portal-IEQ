@@ -382,10 +382,13 @@ export async function getDevices(): Promise<RuijieDevice[]> {
   return data.map((d: any) => ({
     mac: d.mac || d.deviceMac || d.serialNumber,
     ip: d.localIp || d.ip || "0.0.0.0",
-    ssid: d.ssid || "IEQ-Guest",
+    // SSID no es una propiedad de un AP en el inventario (un AP emite varias),
+    // así que no inventamos un fallback: queda vacío si la API no lo trae.
+    ssid: d.ssid || "",
     // Nombre/alias real del equipo en Ruijie Cloud (varía el campo según versión API)
     name: d.name || d.deviceName || d.alias || d.hostname || d.sn || d.serialNumber || null,
-    model: d.deviceType || d.model || d.type || null,
+    // Modelo real del equipo (p. ej. "RAP2260(G)")
+    model: d.model || d.productModel || d.deviceModel || d.deviceType || d.hwVersion || null,
     connectedAt: d.lastOnline ? new Date(d.lastOnline).toISOString() : new Date().toISOString(),
     bytesDown: d.flowDown || 0,
     bytesUp: d.flowUp || 0,
