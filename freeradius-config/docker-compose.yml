@@ -19,6 +19,7 @@ services:
         client gateway_reyee {
             ipaddr = 0.0.0.0/0
             secret = IEQ_Radius_Secret_2026
+            require_message_authenticator = no
         }
         CLIENTS_EOF
 
