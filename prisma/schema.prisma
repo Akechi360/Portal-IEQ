@@ -21,8 +21,20 @@ model Credential {
   status       CredentialStatus @default(ACTIVE)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
-  issuer       Admin            @relation("AdminToCredentials", fields: [issuerId], references: [id])
-  sessions     Session[]
+  issuer         Admin           @relation("AdminToCredentials", fields: [issuerId], references: [id])
+  sessions       Session[]
+  deviceBindings DeviceBinding[]
+}
+
+model DeviceBinding {
+  id           String     @id @default(cuid())
+  credentialId String
+  mac          String
+  boundAt      DateTime   @default(now())
+  credential   Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@unique([credentialId, mac])
+  @@index([credentialId])
 }
 
 model Doctor {

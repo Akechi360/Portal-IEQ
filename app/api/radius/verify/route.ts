@@ -12,15 +12,24 @@ import { db } from "@/lib/db";
  * - Accept: { "control:Auth-Type": "Accept" }
  * - Reject: { "reply:Reply-Message": "Invalid credentials" } (no Auth-Type)
  */
+/** Normaliza el MAC a "aa:bb:cc:dd:ee:ff" (el gateway lo manda con guiones). */
+function normalizeMac(raw: string): string {
+  const clean = (raw || "").replace(/[^a-fA-F0-9]/g, "").toLowerCase();
+  if (clean.length !== 12) return "";
+  return clean.match(/.{2}/g)!.join(":");
+}
+
 export async function POST(req: Request) {
   let username = "";
   let password = "";
+  let rawMac = "";
 
   try {
     // Try JSON first (our config sends JSON)
     const body = await req.json();
     username = body.username || "";
     password = body.password || "";
+    rawMac = body.mac || "";
   } catch {
     // If JSON parsing fails, try form-urlencoded
     try {
@@ -28,6 +37,7 @@ export async function POST(req: Request) {
       const params = new URLSearchParams(text);
       username = params.get("username") || "";
       password = params.get("password") || "";
+      rawMac = params.get("mac") || "";
     } catch {
       console.error("[RADIUS Verify] Could not parse request body");
       return NextResponse.json(
@@ -36,6 +46,8 @@ export async function POST(req: Request) {
       );
     }
   }
+
+  const mac = normalizeMac(rawMac);
 
   console.log(`[RADIUS Verify] Checking user: ${username}`);
 
@@ -56,6 +68,36 @@ export async function POST(req: Request) {
     if (credential && credential.status === "ACTIVE") {
       // Check expiration
       if (!credential.expireAt || credential.expireAt > new Date()) {
+        // ── Device binding: casa el voucher con el/los MAC del dispositivo ──
+        // Si el MAC ya está casado -> pasa. Si es nuevo y hay cupo
+        // (< maxDevices) -> lo casa. Si no hay cupo -> rechaza (otro equipo
+        // ya usa este voucher).
+        if (mac) {
+          const bindings = await db.deviceBinding.findMany({
+            where: { credentialId: credential.id },
+          });
+          const alreadyBound = bindings.some((b) => b.mac === mac);
+          if (!alreadyBound) {
+            if (bindings.length >= credential.maxDevices) {
+              console.log(
+                `[RADIUS Verify] REJECT device-limit: ${username} mac=${mac} (max ${credential.maxDevices})`
+              );
+              return NextResponse.json(
+                { "reply:Reply-Message": "Voucher en uso en otro dispositivo" },
+                { status: 200 }
+              );
+            }
+            try {
+              await db.deviceBinding.create({
+                data: { credentialId: credential.id, mac },
+              });
+              console.log(`[RADIUS Verify] Bound ${username} -> ${mac}`);
+            } catch {
+              // Carrera con otra request que casó el mismo MAC: inofensivo.
+            }
+          }
+        }
+
         console.log(`[RADIUS Verify] ACCEPT voucher: ${username}`);
         return NextResponse.json({
           "control:Auth-Type": "Accept",

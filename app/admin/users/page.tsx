@@ -10,7 +10,8 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  RotateCcw
 } from "lucide-react";
 
 // Predefined colors for avatars
@@ -85,12 +86,37 @@ export default function AdminListPage() {
 
   const apiStatus = tab === "activos" ? "Active" : tab === "bloqueados" ? "Blocked" : undefined;
 
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     `/api/list?page=${page}&limit=${limit}${apiStatus ? `&status=${apiStatus}` : ""}${
       search ? `&search=${search}` : ""
     }`,
     (url) => fetch(url).then((res) => res.json())
   );
+
+  const [resettingId, setResettingId] = useState<string | null>(null);
+
+  async function handleResetBinding(id: string, name: string) {
+    if (
+      !confirm(
+        `¿Liberar el dispositivo casado al voucher de ${name}?\nEl próximo equipo que use el voucher quedará casado en su lugar.`
+      )
+    )
+      return;
+    setResettingId(id);
+    try {
+      const res = await fetch(`/api/admin/credentials/${id}/bindings`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.ok) {
+        await mutate();
+      } else {
+        alert(json.message || "No se pudo liberar el dispositivo.");
+      }
+    } catch {
+      alert("Error de red al liberar el dispositivo.");
+    } finally {
+      setResettingId(null);
+    }
+  }
 
   const items = data?.items || [];
   const total = data?.total || 0;
@@ -171,12 +197,15 @@ export default function AdminListPage() {
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
                 Fecha Registro
               </th>
+              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-sm text-neutral-400">
+                <td colSpan={7} className="px-5 py-10 text-center text-sm text-neutral-400">
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
                     Cargando usuarios de la red...
@@ -185,7 +214,7 @@ export default function AdminListPage() {
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-sm text-neutral-400">
+                <td colSpan={7} className="px-5 py-10 text-center text-sm text-neutral-400">
                   No se encontraron usuarios activos en la base de datos.
                 </td>
               </tr>
@@ -237,6 +266,25 @@ export default function AdminListPage() {
                         hour: "2-digit",
                         minute: "2-digit"
                       })}
+                    </td>
+
+                    {/* ACCIONES */}
+                    <td className="px-4 py-3 text-right">
+                      {item.type !== "MEDICO" && (
+                        <button
+                          onClick={() => handleResetBinding(item.id, item.name)}
+                          disabled={resettingId === item.id}
+                          title="Liberar el dispositivo casado a este voucher"
+                          className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-600 transition-colors hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50"
+                        >
+                          {resettingId === item.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          )}
+                          Liberar
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
