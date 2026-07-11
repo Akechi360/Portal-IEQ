@@ -6,8 +6,6 @@ import { authorizeClient } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
 import { evaluatePolicy } from "@/lib/policy";
 import { getSystemConfig } from "@/lib/config";
-import { db } from "@/lib/db";
-import { SessionAccessType } from "@prisma/client";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
@@ -51,15 +49,7 @@ export async function POST(req: Request) {
     // 3. Sin authorizeClient() (API Ruijie Cloud): la autorización la hace el
     // gateway local vía WiFiDog, no la nube. Evita la doble autorización.
 
-    // 4. Create session only after all checks pass
-    await db.session.create({
-      data: {
-        mac,
-        doctorId: loginResult.doctorId,
-        ssid: "IEQ-Medicos",
-        accessType: SessionAccessType.DOCTOR,
-      },
-    });
+    // 4. La sesión la crea/cierra el accounting de RADIUS, no el login.
 
     await logAccess({
       event: "AUTH_SUCCESS",

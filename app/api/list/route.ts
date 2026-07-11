@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     if (includeCredentials) {
       const credentials = await db.credential.findMany({
         where: type && type !== "MEDICO" ? { tipo: type as "PACIENTE" | "TRANSITO" } : undefined,
-        include: { _count: { select: { sessions: true } } },
+        include: { _count: { select: { sessions: { where: { endedAt: null } } } } },
         orderBy: { createdAt: "desc" },
       });
       items.push(
@@ -76,7 +76,7 @@ export async function GET(req: Request) {
 
     if (includeDoctors) {
       const doctors = await db.doctor.findMany({
-        include: { _count: { select: { sessions: true } } },
+        include: { _count: { select: { sessions: { where: { endedAt: null } } } } },
         orderBy: { createdAt: "desc" },
       });
       items.push(

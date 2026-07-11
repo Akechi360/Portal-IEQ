@@ -6,8 +6,6 @@ import { evaluatePolicy } from "@/lib/policy";
 import { authorizeClient } from "@/lib/ruijie";
 import { logAccess } from "@/lib/audit";
 import { getSystemConfig } from "@/lib/config";
-import { db } from "@/lib/db";
-import { SessionAccessType } from "@prisma/client";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
@@ -57,15 +55,9 @@ export async function POST(req: Request) {
     // token contra nuestro /auth/wifidogAuth/auth. Llamar además a la nube
     // crea una doble autorización que confunde al gateway.
 
-    // 4. Create session only after all checks pass
-    await db.session.create({
-      data: {
-        mac,
-        credentialId: loginResult.credentialId,
-        ssid: ssid,
-        accessType: SessionAccessType.GUEST,
-      },
-    });
+    // 4. La sesión ya NO se crea aquí: el accounting de RADIUS es el dueño
+    // del ciclo de vida (Start la crea, Stop la cierra con endedAt + tráfico).
+    // Crearla aquí generaba una sesión "fantasma" que nunca cerraba.
 
     await logAccess({
       event: "AUTH_SUCCESS",

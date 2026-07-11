@@ -64,22 +64,14 @@ export async function POST(req: Request) {
     // 3. Sin authorizeClient() (API Ruijie Cloud): la autorización la hace el
     // gateway local vía WiFiDog, no la nube. Evita la doble autorización.
 
-    // 4. Create session only after all checks pass
-    const session = await db.session.create({
-      data: {
-        mac,
-        staffUserId: staffUser.id,
-        ssid: "IEQ-Staff",
-        accessType: SessionAccessType.STAFF
-      }
-    });
+    // 4. La sesión la crea/cierra el accounting de RADIUS, no el login.
 
     await logAccess({
       event: "AUTH_SUCCESS",
       actor: email,
       mac,
       ssid: "IEQ-Staff",
-      detail: `session:${session.id}`
+      detail: `staff:${staffUser.id}`
     });
 
     // WiFiDog: el cliente debe volver al gateway para que abra el acceso
@@ -98,7 +90,6 @@ export async function POST(req: Request) {
         nombre: staffUser.nombre ?? "Staff IEQ",
         mac,
         accessType: SessionAccessType.STAFF,
-        sessionId: session.id,
         gatewayAuthUrl
       },
     });

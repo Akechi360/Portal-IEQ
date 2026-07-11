@@ -1,34 +1,51 @@
+// app/api/admin/traffic/route.ts
+// GET — Tráfico de las sesiones ACTIVAS (RADIUS accounting), desde la DB.
+
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/jwt";
-import { getSessions } from "@/lib/ruijie";
+import { db } from "@/lib/db";
+
+const MB = 1_048_576;
 
 export async function GET(req: Request) {
   const auth = await requireAdmin(req);
   if (auth instanceof Response) return auth;
 
   try {
-    const sessions = await getSessions();
+    const openSessions = await db.session.findMany({
+      where: { endedAt: null },
+      include: { credential: true, doctor: true, staffUser: true },
+    });
 
-    const totalDownBytes = sessions.reduce((s, c) => s + c.bytesDown, 0);
-    const totalUpBytes = sessions.reduce((s, c) => s + c.bytesUp, 0);
+    const toBytes = (mb: number | null | undefined) => Math.round((mb ?? 0) * MB);
 
-    // Top usuarios por consumo total (down + up)
-    const topUsers = [...sessions]
-      .sort((a, b) => (b.bytesDown + b.bytesUp) - (a.bytesDown + a.bytesUp))
+    const totalDownBytes = openSessions.reduce((a, s) => a + toBytes(s.dataDownMB), 0);
+    const totalUpBytes = openSessions.reduce((a, s) => a + toBytes(s.dataUpMB), 0);
+
+    const topUsers = [...openSessions]
+      .sort(
+        (a, b) =>
+          (b.dataDownMB ?? 0) + (b.dataUpMB ?? 0) - ((a.dataDownMB ?? 0) + (a.dataUpMB ?? 0))
+      )
       .slice(0, 10)
       .map((s) => ({
-        username: s.username,
+        username:
+          s.credential?.nombre ||
+          s.doctor?.nombre ||
+          s.staffUser?.nombre ||
+          s.staffUser?.email ||
+          "Invitado",
         mac: s.mac,
-        ip: s.ip,
-        ssid: s.ssid,
-        bytesDown: s.bytesDown,
-        bytesUp: s.bytesUp,
-        totalBytes: s.bytesDown + s.bytesUp,
+        ip: s.ip ?? "—",
+        ssid: s.ssid ?? "—",
+        bytesDown: toBytes(s.dataDownMB),
+        bytesUp: toBytes(s.dataUpMB),
+        totalBytes: toBytes(s.dataDownMB) + toBytes(s.dataUpMB),
       }));
 
     return NextResponse.json({
       ok: true,
-      activeClients: sessions.length,
+      activeClients: openSessions.length,
       totalDownBytes,
       totalUpBytes,
       totalBytes: totalDownBytes + totalUpBytes,
@@ -36,6 +53,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error("GET /api/admin/traffic error:", error);
-    return NextResponse.json({ ok: false, message: "Error al obtener tráfico de Ruijie." }, { status: 500 });
+    return NextResponse.json({ ok: false, message: "Error al obtener tráfico." }, { status: 500 });
   }
 }
