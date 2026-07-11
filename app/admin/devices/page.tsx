@@ -22,7 +22,7 @@ function guessDeviceType(mac: string): string {
 
 function DeviceIcon({ type }: { type: string }) {
   const cls = "h-5 w-5";
-  if (type === "Access Point") return <Wifi className={`${cls} text-sky-600`} />;
+  if (type === "Access Point") return <Wifi className={`${cls} text-primary-600`} />;
   if (type === "Computadora") return <Laptop className={`${cls} text-emerald-600`} />;
   if (type === "Smartphone") return <Smartphone className={`${cls} text-violet-600`} />;
   if (type === "Monitor") return <Monitor className={`${cls} text-amber-600`} />;
@@ -47,7 +47,7 @@ function ClientCard({ client }: { client: any }) {
   return (
     <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="mb-4 flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50">
           <DeviceIcon type={deviceType} />
         </div>
         <div className="min-w-0 flex-1">
@@ -66,7 +66,7 @@ function ClientCard({ client }: { client: any }) {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-neutral-400">MAC</span>
-          <span className="font-mono text-xs text-sky-600">{client.mac}</span>
+          <span className="font-mono text-xs text-primary-600">{client.mac}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-neutral-400">Tiempo</span>
@@ -83,10 +83,10 @@ function ClientCard({ client }: { client: any }) {
 
 function ApCard({ ap }: { ap: any }) {
   return (
-    <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-5 shadow-sm">
+    <div className="rounded-xl border border-primary-100 bg-primary-50/50 p-5 shadow-sm">
       <div className="mb-4 flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100">
-          <Wifi className="h-5 w-5 text-sky-600" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100">
+          <Wifi className="h-5 w-5 text-primary-600" />
         </div>
         <div className="min-w-0">
           <p className="truncate font-semibold text-neutral-800">{ap.name || "Access Point"}</p>
@@ -100,9 +100,9 @@ function ApCard({ ap }: { ap: any }) {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-neutral-400">MAC</span>
-          <span className="font-mono text-xs text-sky-600">{ap.mac}</span>
+          <span className="font-mono text-xs text-primary-600">{ap.mac}</span>
         </div>
-        <div className="flex items-center justify-between border-t border-sky-100 pt-1.5">
+        <div className="flex items-center justify-between border-t border-primary-100 pt-1.5">
           <span className="text-xs text-neutral-400">↓ {fmtBytes(ap.bytesDown)}</span>
           <span className="text-xs text-neutral-400">↑ {fmtBytes(ap.bytesUp)}</span>
         </div>
@@ -133,7 +133,7 @@ export default function DevicesPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard label="Clientes conectados" value={isLoading ? "—" : kpis.activeClients} sub="En este momento" subColor="text-green-600" />
         <KpiCard label="Access Points" value={isLoading ? "—" : kpis.totalAps} sub="Activos en la red" />
-        <KpiCard label="Descarga total" value={isLoading ? "—" : fmtBytes(kpis.totalDownBytes)} sub="Sesiones activas" subColor="text-sky-600" />
+        <KpiCard label="Descarga total" value={isLoading ? "—" : fmtBytes(kpis.totalDownBytes)} sub="Sesiones activas" subColor="text-primary-600" />
         <KpiCard label="Subida total" value={isLoading ? "—" : fmtBytes(kpis.totalUpBytes)} sub="Sesiones activas" subColor="text-emerald-600" />
       </div>
 

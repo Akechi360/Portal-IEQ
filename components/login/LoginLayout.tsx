@@ -30,7 +30,7 @@ export function LoginLayout({
   
   // Helper for rendering icons
   const renderIcon = (iconName: string) => {
-    const props = { className: "h-4 w-4 text-sky-400" };
+    const props = { className: "h-4 w-4 text-primary-400" };
     switch (iconName) {
       case "shield": return <Shield {...props} />;
       case "zap": return <Zap {...props} />;
@@ -52,7 +52,7 @@ export function LoginLayout({
           {words.map((word, wIdx) => {
             const isIEQ = word.includes("IEQ");
             return (
-              <span key={wIdx} className={isIEQ ? "text-sky-400" : ""}>
+              <span key={wIdx} className={isIEQ ? "text-primary-400" : ""}>
                 {word}{wIdx < words.length - 1 ? " " : ""}
               </span>
             );
@@ -121,7 +121,7 @@ export function LoginLayout({
             <div className="flex flex-col gap-4">
               {leftFeatures.map((feat, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500/20 p-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-500/20 p-2">
                     {renderIcon(feat.icon)}
                   </div>
                   <p className="text-sm">

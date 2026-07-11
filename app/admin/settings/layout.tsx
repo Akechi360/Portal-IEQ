@@ -27,7 +27,7 @@ export default function SettingsLayout({
         <button className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
           Restaurar
         </button>
-        <button className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-600">
+        <button className="rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600">
           Guardar cambios
         </button>
       </div>
@@ -44,7 +44,7 @@ export default function SettingsLayout({
                   href={tab.href}
                   className={`text-left px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                     isActive
-                      ? "bg-sky-50 text-sky-600"
+                      ? "bg-primary-50 text-primary-600"
                       : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700"
                   }`}
                 >

@@ -15,7 +15,7 @@ export default function AdmisionLayout({
           <img src="/logo-ieq.png" alt="IEQ" className="h-8 w-auto object-contain" />
           <span className="font-semibold text-gray-900 text-sm">Portal IEQ</span>
           <div className="hidden sm:block w-px h-4 bg-gray-300" />
-          <span className="hidden sm:inline bg-sky-50 text-sky-700 border border-sky-200 rounded-full px-2.5 py-0.5 text-xs font-medium">
+          <span className="hidden sm:inline bg-primary-50 text-primary-700 border border-primary-200 rounded-full px-2.5 py-0.5 text-xs font-medium">
             Admisión
           </span>
         </div>

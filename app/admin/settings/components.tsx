@@ -7,7 +7,7 @@ export function Switch({ enabled, onChange }: { enabled: boolean; onChange?: () 
     <div
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out ${
-        enabled ? "bg-sky-500" : "bg-neutral-200"
+        enabled ? "bg-primary-500" : "bg-neutral-200"
       }`}
     >
       <span
@@ -37,7 +37,7 @@ export function InputField({
         type="text"
         defaultValue={defaultValue}
         readOnly={readOnly}
-        className={`w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-800 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 ${
+        className={`w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 ${
           readOnly ? "bg-neutral-50 text-neutral-500 cursor-not-allowed" : "bg-white"
         }`}
       />
@@ -58,7 +58,7 @@ export function ColorPickerField({ label, defaultValue }: { label: string; defau
         <input
           type="text"
           defaultValue={defaultValue}
-          className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-800 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 uppercase"
+          className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 uppercase"
         />
       </div>
     </div>
@@ -71,7 +71,7 @@ export function SelectField({ label, defaultValue, options = [] }: { label: stri
       <label className="text-xs font-medium text-neutral-500">{label}</label>
       <select
         defaultValue={defaultValue}
-        className="w-full appearance-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400"
+        className="w-full appearance-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
           backgroundPosition: `right 0.5rem center`,

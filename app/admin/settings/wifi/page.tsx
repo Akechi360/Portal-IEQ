@@ -43,8 +43,8 @@ export default function WifiSettingsPage() {
         ) : (
           <div className="flex flex-wrap gap-2">
             {ssids.map((ssid) => (
-              <span key={ssid} className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 border border-sky-100 px-3 py-1 text-xs font-medium text-sky-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-sky-500 animate-pulse" />
+              <span key={ssid} className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 border border-primary-100 px-3 py-1 text-xs font-medium text-primary-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse" />
                 {ssid}
               </span>
             ))}

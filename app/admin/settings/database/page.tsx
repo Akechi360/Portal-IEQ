@@ -71,7 +71,7 @@ export default function DatabaseSettingsPage() {
                 <input
                   type="text"
                   defaultValue="90"
-                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-center text-neutral-800 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400"
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-center text-neutral-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
                 />
               </div>
               <button className="rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100">
@@ -84,7 +84,7 @@ export default function DatabaseSettingsPage() {
             <button className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
               Exportar copia de seguridad
             </button>
-            <button className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100">
+            <button className="rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100">
               Probar conexión
             </button>
           </div>

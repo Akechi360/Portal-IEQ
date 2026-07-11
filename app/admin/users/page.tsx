@@ -146,7 +146,7 @@ export default function AdminListPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400"
+              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
             />
           </div>
           <button className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50">
@@ -165,7 +165,7 @@ export default function AdminListPage() {
                 }}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors capitalize ${
                   tab === t
-                    ? "bg-white text-sky-600 shadow-sm"
+                    ? "bg-white text-primary-600 shadow-sm"
                     : "text-neutral-500 hover:text-neutral-700"
                 }`}
               >
@@ -207,7 +207,7 @@ export default function AdminListPage() {
               <tr>
                 <td colSpan={7} className="px-5 py-10 text-center text-sm text-neutral-400">
                   <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+                    <Loader2 className="h-4 w-4 animate-spin text-primary-500" />
                     Cargando usuarios de la red...
                   </div>
                 </td>
@@ -313,7 +313,7 @@ export default function AdminListPage() {
                 onClick={() => setPage(p)}
                 className={`flex h-7 w-7 items-center justify-center rounded-md text-sm transition-colors ${
                   page === p
-                    ? "bg-sky-500 font-semibold text-white"
+                    ? "bg-primary-500 font-semibold text-white"
                     : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
                 }`}
               >

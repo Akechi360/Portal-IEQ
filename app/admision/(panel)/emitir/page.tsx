@@ -144,7 +144,7 @@ export default function EmitirCredencialPage() {
 
           <button
             onClick={resetForm}
-            className="text-sky-500 font-medium text-sm hover:underline"
+            className="text-primary-500 font-medium text-sm hover:underline"
           >
             Emitir otra credencial
           </button>
@@ -170,7 +170,7 @@ export default function EmitirCredencialPage() {
                 onClick={() => setTipo("Paciente")}
                 className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 px-4 text-sm font-medium transition-all ${
                   tipo === "Paciente"
-                    ? "bg-sky-500 text-white border-sky-500"
+                    ? "bg-primary-500 text-white border-primary-500"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -181,7 +181,7 @@ export default function EmitirCredencialPage() {
                 onClick={() => setTipo("Transito")}
                 className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 px-4 text-sm font-medium transition-all ${
                   tipo === "Transito"
-                    ? "bg-sky-500 text-white border-sky-500"
+                    ? "bg-primary-500 text-white border-primary-500"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -211,7 +211,7 @@ export default function EmitirCredencialPage() {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder={tipo === "Paciente" ? "Ej: Juan Pérez" : "Ej: Carlos Mendoza"}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
 
@@ -230,7 +230,7 @@ export default function EmitirCredencialPage() {
                     value={habitacion}
                     onChange={(e) => setHabitacion(e.target.value)}
                     placeholder="Ej: 302-A"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function EmitirCredencialPage() {
                       onClick={() => setMaxDispositivos(num)}
                       className={`rounded-xl py-2 text-sm font-semibold transition-colors ${
                         maxDispositivos === num
-                          ? "bg-sky-500 text-white"
+                          ? "bg-primary-500 text-white"
                           : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                       }`}
                     >
@@ -299,7 +299,7 @@ export default function EmitirCredencialPage() {
           <button
             onClick={handleGenerar}
             disabled={!nombre.trim() || loading}
-            className="w-full mt-6 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
+            className="w-full mt-6 py-3 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>

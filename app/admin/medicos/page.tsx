@@ -125,7 +125,7 @@ export default function MedicosPage() {
         </div>
         <button
           onClick={() => setModalAbierto(true)}
-          className="bg-sky-500 hover:bg-sky-600 transition-colors text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2"
+          className="bg-primary-500 hover:bg-primary-600 transition-colors text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2"
         >
           <UserPlus className="w-[18px] h-[18px]" />
           Registrar médico
@@ -152,7 +152,7 @@ export default function MedicosPage() {
             placeholder="Buscar por nombre, especialidad o correo..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-72 pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            className="w-72 pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
 
@@ -165,7 +165,7 @@ export default function MedicosPage() {
                 filtro === f
                   ? f === "pendiente"
                     ? "bg-amber-500 text-white border-amber-500"
-                    : "bg-sky-500 text-white border-sky-500"
+                    : "bg-primary-500 text-white border-primary-500"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -195,7 +195,7 @@ export default function MedicosPage() {
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-sm text-gray-400">
                     <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+                      <Loader2 className="h-4 w-4 animate-spin text-primary-500" />
                       Cargando listado de médicos...
                     </div>
                   </td>
@@ -217,8 +217,8 @@ export default function MedicosPage() {
                     {/* COLUMNA "Médico" */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="bg-sky-100 rounded-full w-9 h-9 shrink-0 flex items-center justify-center">
-                          <span className="text-sky-700 text-xs font-bold">{iniciales}</span>
+                        <div className="bg-primary-100 rounded-full w-9 h-9 shrink-0 flex items-center justify-center">
+                          <span className="text-primary-700 text-xs font-bold">{iniciales}</span>
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900 leading-tight">{m.nombre}</p>
@@ -366,7 +366,7 @@ export default function MedicosPage() {
                   value={modalMedico.nombre}
                   onChange={(e) => setModalMedico({ ...modalMedico, nombre: e.target.value })}
                   placeholder="Dr. Juan García"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -376,7 +376,7 @@ export default function MedicosPage() {
                   value={modalMedico.especialidad}
                   onChange={(e) => setModalMedico({ ...modalMedico, especialidad: e.target.value })}
                   placeholder="Cardiología"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -386,7 +386,7 @@ export default function MedicosPage() {
                   value={modalMedico.email}
                   onChange={(e) => setModalMedico({ ...modalMedico, email: e.target.value })}
                   placeholder="dr.garcia@ieq.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -396,7 +396,7 @@ export default function MedicosPage() {
                   value={modalMedico.telefono}
                   onChange={(e) => setModalMedico({ ...modalMedico, telefono: e.target.value })}
                   placeholder="+58 412 000 0000"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -411,7 +411,7 @@ export default function MedicosPage() {
               <button
                 onClick={handleRegistrar}
                 disabled={!modalMedico.nombre || !modalMedico.email}
-                className="bg-sky-500 hover:bg-sky-600 text-white transition-colors rounded-xl px-4 py-2.5 text-sm font-medium flex-1 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="bg-primary-500 hover:bg-primary-600 text-white transition-colors rounded-xl px-4 py-2.5 text-sm font-medium flex-1 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 Registrar y activar
               </button>

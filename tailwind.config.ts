@@ -9,17 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Marca Clínica IEQ (teal). 500 = teal brillante, 600 = teal profundo.
         primary: {
-          50: "#E0F2FE",
-          100: "#BAE6FD",
-          200: "#7DD3FC",
-          300: "#38BDF8",
-          400: "#0EA5E9",
-          500: "#0284C7",
-          600: "#0369A1",
-          700: "#075985",
-          800: "#0C4A6E",
-          900: "#082F49"
+          50: "#e7f9fa",
+          100: "#c5f0f2",
+          200: "#98e4e8",
+          300: "#5bd3d9",
+          400: "#22bcc3",
+          500: "#12aeb4",
+          600: "#0d6f78",
+          700: "#0c5a62",
+          800: "#0b4a51",
+          900: "#093b41"
         },
         accent: {
           DEFAULT: "#10B981",
@@ -50,7 +51,7 @@ const config: Config = {
         "2xl": "20px"
       },
       fontFamily: {
-        sans: ["Inter", "Plus Jakarta Sans", "sans-serif"]
+        sans: ["Outfit", "Inter", "Plus Jakarta Sans", "sans-serif"]
       },
       boxShadow: {
         card: "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04)",

@@ -64,7 +64,7 @@ export default function TrafficPage() {
           value={isLoading ? "—" : fmtBytes(totalDownBytes)}
           unit=""
           sub="Sesiones activas"
-          subColor="text-sky-600"
+          subColor="text-primary-600"
         />
         <KpiCard
           label="Subida total"
@@ -110,10 +110,10 @@ export default function TrafficPage() {
                   <tr key={u.mac} className="hover:bg-neutral-50">
                     <td className="py-2.5 text-xs text-neutral-400">#{i + 1}</td>
                     <td className="py-2.5 font-medium text-neutral-800">{u.username}</td>
-                    <td className="py-2.5 font-mono text-xs text-sky-600">{u.mac}</td>
+                    <td className="py-2.5 font-mono text-xs text-primary-600">{u.mac}</td>
                     <td className="py-2.5 font-mono text-xs text-neutral-500">{u.ip}</td>
                     <td className="py-2.5 text-xs text-neutral-500">{u.ssid}</td>
-                    <td className="py-2.5 text-right text-xs font-medium text-sky-600">{fmtBytes(u.bytesDown)}</td>
+                    <td className="py-2.5 text-right text-xs font-medium text-primary-600">{fmtBytes(u.bytesDown)}</td>
                     <td className="py-2.5 text-right text-xs font-medium text-emerald-600">{fmtBytes(u.bytesUp)}</td>
                     <td className="py-2.5 text-right text-xs font-semibold text-neutral-800">{fmtBytes(u.totalBytes)}</td>
                   </tr>

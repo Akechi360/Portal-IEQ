@@ -50,13 +50,13 @@ export default function CredencialesPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="text-xl font-bold text-gray-900">Credenciales de hoy</h1>
-          <span className="bg-sky-50 text-sky-700 border border-sky-200 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+          <span className="bg-primary-50 text-primary-700 border border-primary-200 rounded-full px-2.5 py-0.5 text-xs font-semibold">
             {isLoading ? "..." : `${total} total`}
           </span>
         </div>
         <button
           onClick={() => router.push("/admision/emitir")}
-          className="bg-sky-500 hover:bg-sky-600 transition-colors text-white rounded-xl px-4 py-2 text-sm flex items-center gap-2"
+          className="bg-primary-500 hover:bg-primary-600 transition-colors text-white rounded-xl px-4 py-2 text-sm flex items-center gap-2"
         >
           <PlusCircle className="w-[18px] h-[18px]" />
           Nueva credencial
@@ -72,7 +72,7 @@ export default function CredencialesPage() {
             placeholder="Buscar por nombre o código..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-64 pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            className="w-64 pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
         
@@ -83,7 +83,7 @@ export default function CredencialesPage() {
               onClick={() => setFiltroTipo(t)}
               className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-colors border ${
                 filtroTipo === t
-                  ? "bg-sky-500 text-white border-sky-500"
+                  ? "bg-primary-500 text-white border-primary-500"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -114,7 +114,7 @@ export default function CredencialesPage() {
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-sm text-gray-400">
                     <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+                      <Loader2 className="h-4 w-4 animate-spin text-primary-500" />
                       Cargando credenciales emitidas...
                     </div>
                   </td>

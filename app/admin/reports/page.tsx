@@ -97,7 +97,7 @@ export default function ReportsPage() {
           label="Descarga total"
           value={isLoading ? "—" : fmtBytes(totalDownBytes)}
           sub="Sesiones activas Ruijie"
-          subColor="text-sky-600"
+          subColor="text-primary-600"
         />
         <KpiCard
           label="Subida total"
@@ -126,7 +126,7 @@ export default function ReportsPage() {
                       <p className="font-mono text-[10px] text-neutral-400">{u.mac}</p>
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-sky-600">{fmtBytes(u.totalBytes)}</span>
+                  <span className="text-sm font-semibold text-primary-600">{fmtBytes(u.totalBytes)}</span>
                 </div>
               ))}
             </div>
@@ -146,7 +146,7 @@ export default function ReportsPage() {
                   <span className="font-semibold text-neutral-800">{pacientes} <span className="text-xs text-neutral-400">({pctPacientes}%)</span></span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-neutral-100">
-                  <div className="h-full rounded-full bg-sky-500" style={{ width: `${pctPacientes}%` }} />
+                  <div className="h-full rounded-full bg-primary-500" style={{ width: `${pctPacientes}%` }} />
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">

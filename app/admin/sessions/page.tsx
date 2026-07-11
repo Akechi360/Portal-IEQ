@@ -99,7 +99,7 @@ function SsidBadge({ ssid }: { ssid: string }) {
     );
   }
   return (
-    <span className="inline-flex items-center rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+    <span className="inline-flex items-center rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
       {ssid}
     </span>
   );

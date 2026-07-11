@@ -13,7 +13,7 @@ const roleLabels: Record<string, string> = {
 
 function StatusBadge({ role }: { role: string }) {
   if (role === "SUPERADMIN") {
-    return <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-600 border border-sky-100">Superadmin</span>;
+    return <span className="inline-flex rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600 border border-primary-100">Superadmin</span>;
   }
   if (role === "OPERADOR") {
     return <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600 border border-amber-100">Operador</span>;

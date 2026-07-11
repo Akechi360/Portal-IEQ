@@ -82,7 +82,7 @@ export function LoginClientInternal({
             onChange={(e) => setUsername(e.target.value)}
             placeholder={usernamePlaceholder}
             disabled={status === "loading"}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
           />
         </div>
 
@@ -96,7 +96,7 @@ export function LoginClientInternal({
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             disabled={status === "loading"}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
           />
         </div>
 
@@ -114,7 +114,7 @@ export function LoginClientInternal({
         <button
           type="submit"
           disabled={status === "loading" || !username.trim() || !password.trim()}
-          className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-70 flex items-center justify-center gap-2 transition-colors"
+          className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-primary-500 hover:bg-primary-600 text-white disabled:opacity-70 flex items-center justify-center gap-2 transition-colors"
         >
           {status === "loading" ? (
             <>

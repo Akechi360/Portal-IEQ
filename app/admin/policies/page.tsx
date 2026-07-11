@@ -8,8 +8,8 @@ const PLANS = [
     id: "basico",
     name: "Básico",
     users: 174,
-    color: "bg-sky-100",
-    badge: "text-sky-600 bg-sky-50",
+    color: "bg-primary-100",
+    badge: "text-primary-600 bg-primary-50",
     active: false,
     details: [
       { label: "Descarga", value: "10 Mbps" },
@@ -91,7 +91,7 @@ function Switch({ enabled }: { enabled: boolean }) {
   return (
     <div
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out ${
-        enabled ? "bg-sky-500" : "bg-neutral-200"
+        enabled ? "bg-primary-500" : "bg-neutral-200"
       }`}
     >
       <span
@@ -108,7 +108,7 @@ function PlanCard({ plan }: { plan: typeof PLANS[0] }) {
     <div
       className={`flex flex-col rounded-xl border bg-white p-5 transition-all ${
         plan.active
-          ? "border-sky-400 shadow-md ring-1 ring-sky-400"
+          ? "border-primary-400 shadow-md ring-1 ring-primary-400"
           : "border-neutral-100 shadow-sm hover:shadow-md hover:border-neutral-200"
       }`}
     >
@@ -142,7 +142,7 @@ export default function PoliciesPage() {
     <div className="space-y-5">
       {/* Top action row */}
       <div className="flex items-center justify-end">
-        <button className="flex items-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-600">
+        <button className="flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600">
           Nueva política
         </button>
       </div>
@@ -190,7 +190,7 @@ export default function PoliciesPage() {
           <div className="mb-6 flex w-full justify-between gap-1">
             {SCHEDULE_DAYS.map((day) => {
               let bg = "bg-neutral-100";
-              if (day.status === "full") bg = "bg-sky-100";
+              if (day.status === "full") bg = "bg-primary-100";
               if (day.status === "partial") bg = "bg-amber-100";
               
               return (
@@ -207,7 +207,7 @@ export default function PoliciesPage() {
           {/* Legend */}
           <div className="mb-6 flex items-center gap-4 text-[11px] font-medium text-neutral-500">
             <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-sky-100" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-primary-100" />
               Acceso completo
             </div>
             <div className="flex items-center gap-1.5">

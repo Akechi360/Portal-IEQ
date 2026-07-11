@@ -185,7 +185,7 @@ export default function AdminDashboardPage() {
           label="Consumo total (Ruijie)"
           value={fmtBytes(totalBytes)}
           sub={`${activeSessionsCount} clientes activos`}
-          subColor="text-sky-600"
+          subColor="text-primary-600"
         />
         <KpiCard
           label="Bloqueados / Expirados"
@@ -208,7 +208,7 @@ export default function AdminDashboardPage() {
                 placeholder="Buscar usuario..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="rounded-lg border border-neutral-200 bg-neutral-50 py-1.5 pl-8 pr-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400"
+                className="rounded-lg border border-neutral-200 bg-neutral-50 py-1.5 pl-8 pr-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
               />
             </div>
           </div>
@@ -248,7 +248,7 @@ export default function AdminDashboardPage() {
                         >
                           {user.initials}
                         </div>
-                        <span className="font-medium text-sky-600 hover:underline cursor-pointer">
+                        <span className="font-medium text-primary-600 hover:underline cursor-pointer">
                           {user.name}
                         </span>
                       </div>
@@ -293,7 +293,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="flex items-center justify-between border-t border-neutral-100 pt-2">
                 <span className="text-neutral-500">Clientes activos</span>
-                <span className="font-semibold text-sky-600">{activeSessionsCount}</span>
+                <span className="font-semibold text-primary-600">{activeSessionsCount}</span>
               </div>
             </div>
           </div>

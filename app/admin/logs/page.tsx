@@ -24,7 +24,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 const TYPE_STYLES: Record<LogType, { bg: string; text: string; iconBg: string }> = {
   Bloqueo: { bg: "bg-red-50", text: "text-red-600", iconBg: "bg-red-100" },
   Rechazado: { bg: "bg-red-50", text: "text-red-600", iconBg: "bg-red-100" },
-  Conexión: { bg: "bg-sky-50", text: "text-sky-600", iconBg: "bg-sky-100" },
+  Conexión: { bg: "bg-primary-50", text: "text-primary-600", iconBg: "bg-primary-100" },
   Advertencia: { bg: "bg-amber-50", text: "text-amber-600", iconBg: "bg-amber-100" },
   Éxito: { bg: "bg-green-50", text: "text-green-600", iconBg: "bg-green-100" },
   Desconexión: { bg: "bg-neutral-100", text: "text-neutral-500", iconBg: "bg-neutral-100" },
@@ -113,7 +113,7 @@ export default function LogsPage() {
               placeholder="Buscar por usuario, MAC, IP o evento..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400"
+              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
             />
           </div>
 
@@ -125,7 +125,7 @@ export default function LogsPage() {
                 onClick={() => setFilter(f.value)}
                 className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
                   filter === f.value
-                    ? "bg-sky-50 text-sky-600"
+                    ? "bg-primary-50 text-primary-600"
                     : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700"
                 }`}
               >
@@ -159,7 +159,7 @@ export default function LogsPage() {
           </p>
 
           <div className="flex items-center gap-1">
-            <button className="flex h-7 w-7 items-center justify-center rounded-md text-sm bg-sky-500 font-semibold text-white">
+            <button className="flex h-7 w-7 items-center justify-center rounded-md text-sm bg-primary-500 font-semibold text-white">
               1
             </button>
           </div>
