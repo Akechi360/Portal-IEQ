@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import { CredentialStatus, DoctorStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireInternal } from "@/lib/jwt";
+import { activeSessionWhere } from "@/lib/session-activity";
 
 type ListItemType = "PACIENTE" | "TRANSITO" | "MEDICO";
 
@@ -56,7 +57,7 @@ export async function GET(req: Request) {
     if (includeCredentials) {
       const credentials = await db.credential.findMany({
         where: type && type !== "MEDICO" ? { tipo: type as "PACIENTE" | "TRANSITO" } : undefined,
-        include: { _count: { select: { sessions: { where: { endedAt: null } } } } },
+        include: { _count: { select: { sessions: { where: activeSessionWhere() } } } },
         orderBy: { createdAt: "desc" },
       });
       items.push(
@@ -76,7 +77,7 @@ export async function GET(req: Request) {
 
     if (includeDoctors) {
       const doctors = await db.doctor.findMany({
-        include: { _count: { select: { sessions: { where: { endedAt: null } } } } },
+        include: { _count: { select: { sessions: { where: activeSessionWhere() } } } },
         orderBy: { createdAt: "desc" },
       });
       items.push(

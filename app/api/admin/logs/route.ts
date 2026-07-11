@@ -55,8 +55,9 @@ export async function GET(req: Request) {
         type = "Desconexión";
       }
 
-      // Convertir formato de hora legible
+      // Convertir formato de hora legible (hora local de la clínica).
       const time = new Date(log.createdAt).toLocaleString("es-ES", {
+        timeZone: "America/Caracas",
         day: "numeric",
         month: "short",
         hour: "2-digit",

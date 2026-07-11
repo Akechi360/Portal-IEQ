@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/jwt";
 import { db } from "@/lib/db";
+import { activeSessionWhere } from "@/lib/session-activity";
 
 const MB = 1_048_576;
 
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
 
   try {
     const openSessions = await db.session.findMany({
-      where: { endedAt: null },
+      where: activeSessionWhere(),
       include: { credential: true, doctor: true, staffUser: true },
     });
 

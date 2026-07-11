@@ -111,6 +111,7 @@ export async function POST(req: Request) {
     }
 
     const isStop = statusType === "stop";
+    const now = new Date();
 
     if (statusType === "start") {
       // Alta de sesión. upsert por si el NAS reenvía el Start.
@@ -125,8 +126,9 @@ export async function POST(req: Request) {
           credentialId,
           doctorId,
           staffUserId,
+          lastSeenAt: now,
         },
-        update: { ip, ssid, endedAt: null },
+        update: { ip, ssid, endedAt: null, lastSeenAt: now },
       });
     } else {
       // Interim-Update o Stop: actualizamos tráfico/estado. Si perdimos el
@@ -143,17 +145,19 @@ export async function POST(req: Request) {
           credentialId,
           doctorId,
           staffUserId,
-          startedAt: new Date(Date.now() - sessionTime * 1000),
+          startedAt: new Date(now.getTime() - sessionTime * 1000),
           dataUpMB,
           dataDownMB,
-          endedAt: isStop ? new Date() : null,
+          endedAt: isStop ? now : null,
+          lastSeenAt: now,
         },
         update: {
           ip,
           ssid,
           dataUpMB,
           dataDownMB,
-          endedAt: isStop ? new Date() : null,
+          endedAt: isStop ? now : null,
+          lastSeenAt: now,
         },
       });
     }

@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/jwt";
+import { isSessionActive } from "@/lib/session-activity";
 
 export async function GET(req: Request) {
   const auth = await requireAdmin(req);
@@ -37,11 +38,20 @@ export async function GET(req: Request) {
         tipo = "Staff / Gerencia";
       }
 
-      // Duración: hasta endedAt si ya cerró, o hasta ahora si sigue activa.
+      const active = isSessionActive(s);
+
+      // Duración: hasta endedAt (si cerró), hasta ahora (si sigue activa), o
+      // hasta el último accounting visto (si quedó stale por un Stop perdido).
       let duration = "—";
       if (s.startedAt) {
-        const end = s.endedAt ? new Date(s.endedAt).getTime() : Date.now();
-        const mins = Math.floor((end - new Date(s.startedAt).getTime()) / 60000);
+        const endMs = s.endedAt
+          ? new Date(s.endedAt).getTime()
+          : active
+          ? Date.now()
+          : s.lastSeenAt
+          ? new Date(s.lastSeenAt).getTime()
+          : new Date(s.startedAt).getTime();
+        const mins = Math.max(0, Math.floor((endMs - new Date(s.startedAt).getTime()) / 60000));
         duration = mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${mins % 60}m`;
       }
 
@@ -55,8 +65,8 @@ export async function GET(req: Request) {
         duration,
         download: s.dataDownMB ?? 0,
         upload: s.dataUpMB ?? 0,
-        // Fuente de verdad: la sesión está activa mientras no tenga endedAt (Stop).
-        status: s.endedAt ? "Desconectado" : "Activo",
+        // Activa solo si no cerró Y recibió accounting reciente (no stale).
+        status: active ? "Activo" : "Desconectado",
         tipo,
       };
     });

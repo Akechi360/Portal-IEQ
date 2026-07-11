@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/jwt";
 import { getDevices } from "@/lib/ruijie";
 import { db } from "@/lib/db";
+import { activeSessionWhere } from "@/lib/session-activity";
 
 const MB = 1_048_576;
 
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
   try {
     const [openSessions, aps] = await Promise.all([
       db.session.findMany({
-        where: { endedAt: null },
+        where: activeSessionWhere(),
         orderBy: { startedAt: "desc" },
         include: { credential: true, doctor: true, staffUser: true },
       }),
