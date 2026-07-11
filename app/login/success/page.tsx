@@ -12,15 +12,18 @@ import {
   Wifi,
   AlertCircle,
   ExternalLink,
+  Building2,
 } from "lucide-react";
+import { cn } from "@/lib/styles";
+import styles from "./success.module.css";
 
 // app/login/success/page.tsx
-// Página de éxito compartida para todos los tipos de acceso WiFi
-// Muestra confirmación de conexión a WiFi-ClinicaIEQ
+// Página de éxito compartida para todos los tipos de acceso WiFi.
+// Confirma la conexión a la red de la Clínica IEQ.
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  
+
   const ssid = searchParams?.get("ssid") || "WiFi Clinica IEQ Los Mangos";
   const plan = searchParams?.get("plan");
   const nombre = searchParams?.get("nombre");
@@ -42,164 +45,124 @@ function SuccessContent() {
   const displaySsid = /^vlan/i.test(ssid) ? "WiFi Clinica IEQ Los Mangos" : ssid;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-sky-50 flex items-center justify-center p-4 font-sans">
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 w-full max-w-md mx-auto">
-        
-        {/* 1. ÍCONO DE ÉXITO ANIMADO */}
-        <div className={`mx-auto w-16 h-16 mb-6 bg-green-100 rounded-full flex items-center justify-center ${animate ? "animate-bounce" : ""}`}>
-          <CheckCircle2 className="text-green-500 w-9 h-9" />
-        </div>
+    <div className={styles.portal}>
+      <div className={styles.aura} aria-hidden="true"><i /><i /><i /></div>
 
-        {/* 2. TÍTULO */}
-        <h1 className="text-2xl font-bold text-gray-900 text-center">
-          ¡Acceso concedido!
-        </h1>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          {/* Hero de éxito */}
+          <div className={styles.hero}>
+            <div className={cn(styles.check, animate && styles.checkPop)}>
+              <CheckCircle2 />
+            </div>
+            <h1>¡Acceso concedido!</h1>
+            <p>Ya estás conectado a <b>{displaySsid}</b></p>
+          </div>
 
-        {/* 3. SUBTÍTULO */}
-        <p className="text-sm text-gray-500 text-center mt-1 mb-6">
-          Ya estás conectado a <strong>{displaySsid}</strong>
-        </p>
-
-        {/* 4. SEPARADOR */}
-        <div className="border-t border-gray-100" />
-
-        {/* 5. INFO SEGÚN PLAN */}
-        <div className="mt-6 flex flex-col gap-3">
-          
-          {plan === "Paciente" && (
-            <>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Paciente</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{nombre || "Paciente"}</span>
-              </div>
-              {habitacion && (
-                <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <BedDouble className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">Habitación</span>
+          {/* Detalle según plan */}
+          <div className={styles.body}>
+            <div className={styles.rows}>
+              {plan === "Paciente" && (
+                <>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><User /> Paciente</span>
+                    <span className={styles.rowVal}>{nombre || "Paciente"}</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">{habitacion}</span>
-                </div>
+                  {habitacion && (
+                    <div className={styles.row}>
+                      <span className={styles.rowLeft}><BedDouble /> Habitación</span>
+                      <span className={styles.rowVal}>{habitacion}</span>
+                    </div>
+                  )}
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Clock /> Tiempo disponible</span>
+                    <span className={styles.rowVal}>{timeLeft}</span>
+                  </div>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Smartphone /> Dispositivos</span>
+                    <span className={styles.rowVal}>{devicesUsed || 1} de {maxDevices || 4} conectados</span>
+                  </div>
+                </>
               )}
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Tiempo disponible</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{timeLeft}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Dispositivos</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">
-                  {devicesUsed || 1} de {maxDevices || 4} conectados
-                </span>
-              </div>
-            </>
-          )}
 
-          {plan === "Medico" && (
-            <>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Médico</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{nombre || "Personal médico"}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Tipo de acceso</span>
-                </div>
-                <span className="bg-green-100 text-green-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                  Permanente
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <Wifi className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Red asignada</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{displaySsid}</span>
-              </div>
-            </>
-          )}
+              {plan === "Medico" && (
+                <>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Stethoscope /> Médico</span>
+                    <span className={styles.rowVal}>{nombre || "Personal médico"}</span>
+                  </div>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Clock /> Tipo de acceso</span>
+                    <span className={styles.badgePerm}>Permanente</span>
+                  </div>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Wifi /> Red asignada</span>
+                    <span className={styles.rowVal}>{displaySsid}</span>
+                  </div>
+                </>
+              )}
 
-          {plan === "Transito" && (
-            <>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Visitante</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{nombre || "Tránsito"}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Tiempo disponible</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{timeLeft || "30 minutos"}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">Dispositivos</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800">1 dispositivo</span>
-              </div>
-              <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700">
-                    El acceso expira al finalizar el tiempo asignado.
-                  </p>
-                </div>
-              </div>
-            </>
-          )}
+              {plan === "Staff" && (
+                <>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Building2 /> Personal</span>
+                    <span className={styles.rowVal}>{nombre || "Personal / Gerencia"}</span>
+                  </div>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Clock /> Tipo de acceso</span>
+                    <span className={styles.badgePerm}>Permanente</span>
+                  </div>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Wifi /> Red asignada</span>
+                    <span className={styles.rowVal}>{displaySsid}</span>
+                  </div>
+                </>
+              )}
 
-        </div>
+              {plan === "Transito" && (
+                <>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><User /> Visitante</span>
+                    <span className={styles.rowVal}>{nombre || "Tránsito"}</span>
+                  </div>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Clock /> Tiempo disponible</span>
+                    <span className={styles.rowVal}>{timeLeft || "30 minutos"}</span>
+                  </div>
+                  <div className={styles.row}>
+                    <span className={styles.rowLeft}><Smartphone /> Dispositivos</span>
+                    <span className={styles.rowVal}>1 dispositivo</span>
+                  </div>
+                </>
+              )}
+            </div>
 
-        {/* 6. BOTÓN PRINCIPAL */}
-        <button
-          onClick={() => (window.location.href = "https://www.clinicaieq.com")}
-          className="mt-6 w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
-        >
-          <ExternalLink className="w-4 h-4" />
-          Ir a www.clinicaieq.com
-        </button>
+            {plan === "Transito" && (
+              <div className={styles.warn}>
+                <AlertCircle />
+                <span>El acceso expira al finalizar el tiempo asignado.</span>
+              </div>
+            )}
 
-        {/* 7. TEXTO SECUNDARIO */}
-        <p className="mt-3 text-center text-xs text-gray-400">
-          Puedes cerrar esta ventana en cualquier momento.
-        </p>
+            <button className={styles.cta} onClick={() => (window.location.href = "https://www.clinicaieq.com")}>
+              <ExternalLink /> Ir a www.clinicaieq.com
+            </button>
+            <p className={styles.secondary}>Puedes cerrar esta ventana en cualquier momento.</p>
 
-        {/* 8. BADGE DE SSID */}
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <span className="w-2 h-2 rounded-full animate-pulse bg-green-500" />
-          <span className="text-xs text-gray-400">
-            Conectado a{" "}
-            <span className="font-semibold text-green-600">
-              {displaySsid}
-            </span>
-          </span>
+            <div className={styles.foot}>
+              <span className={styles.dot} /> Conectado a {displaySsid}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Envuelve el contenido en Suspense para evitar errores de hidratación con useSearchParams en App Router
+// Suspense evita errores de hidratación con useSearchParams en App Router.
 export default function SuccessPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+    <Suspense fallback={<div className={styles.portal} />}>
       <SuccessContent />
     </Suspense>
   );
