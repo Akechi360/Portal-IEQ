@@ -41,7 +41,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const { nombre, email } = parsed.data;
+    const { nombre } = parsed.data;
+    // Correo normalizado (minúsculas) para que el login por correo coincida.
+    const email = parsed.data.email.trim().toLowerCase();
 
     const existing = await db.staffUser.findUnique({ where: { email } });
     if (existing) {

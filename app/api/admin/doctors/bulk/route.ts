@@ -66,7 +66,9 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const { nombre, email, especialidad, telefono } = candidate.data;
+      const { nombre, especialidad, telefono } = candidate.data;
+      // Correo normalizado para que el login por correo coincida siempre.
+      const email = candidate.data.email.trim().toLowerCase();
 
       try {
         const existing = await db.doctor.findUnique({ where: { email } });

@@ -296,7 +296,7 @@ export function LoginClient({ mac, ip, redirect, ssid, loginUrl = "", logoutUrl 
             {/* Médico */}
             <div className={cn(styles.mode, activeTab === "doctor" && styles.show)}>
               <form onSubmit={handleDoctorSubmit}>
-                <label className={styles.lbl} htmlFor="mail">Correo institucional</label>
+                <label className={styles.lbl} htmlFor="mail">Tu correo registrado</label>
                 <div className={styles.field}>
                   <Mail className={styles.ic} />
                   <input
@@ -305,12 +305,12 @@ export function LoginClient({ mac, ip, redirect, ssid, loginUrl = "", logoutUrl 
                     inputMode="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="dr.apellido@ieq.com"
+                    placeholder="dr.perez@gmail.com"
                     disabled={doctorStatus === "loading"}
                     className={styles.input}
                   />
                 </div>
-                <p className={styles.subhint}>Usa tu correo @ieq.com o @ieq.med</p>
+                <p className={styles.subhint}>El correo que registró Sistemas (Gmail, Outlook, etc.)</p>
 
                 {doctorStatus === "error" && (
                   <div className={cn(styles.alert, styles.alertError)} role="alert">

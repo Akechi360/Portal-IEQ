@@ -45,7 +45,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const { nombre, especialidad, email, telefono } = parsed.data;
+    const { nombre, especialidad, telefono } = parsed.data;
+    // Correo normalizado (minúsculas) para que el login por correo coincida
+    // sin importar cómo lo escriba el médico.
+    const email = parsed.data.email.trim().toLowerCase();
     const voucherCode = generateVoucherCode();
 
     const doctor = await db.doctor.create({

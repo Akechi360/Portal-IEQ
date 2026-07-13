@@ -73,8 +73,13 @@ export async function doctorLogin(input: {
   voucherCode: string;
   mac: string;
 }): Promise<DoctorLoginResult> {
-  // El portal envía el email del médico en el campo voucherCode
-  const doctor = await db.doctor.findUnique({ where: { email: input.voucherCode } });
+  // El portal envía el email del médico en el campo voucherCode. Los médicos
+  // usan correos personales (gmail/outlook/yahoo...) que pueden escribir con
+  // distinta capitalización a la del padrón importado — la búsqueda es
+  // insensible a mayúsculas para que coincidan igual.
+  const doctor = await db.doctor.findFirst({
+    where: { email: { equals: input.voucherCode.trim(), mode: "insensitive" } },
+  });
   if (!doctor || doctor.status !== "ACTIVE") {
     return { ok: false, message: "Acceso no autorizado." };
   }

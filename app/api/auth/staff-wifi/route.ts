@@ -33,9 +33,10 @@ export async function POST(req: Request) {
       cookieStore.get("portal_mac")?.value ??
       "00:00:00:00:00:00";
 
-    // 1. Validate staff user
-    const staffUser = await db.staffUser.findUnique({
-      where: { email }
+    // 1. Validate staff user (búsqueda insensible a mayúsculas: cubre filas
+    //    guardadas con distinta capitalización a la del correo escrito)
+    const staffUser = await db.staffUser.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } }
     });
 
     if (!staffUser || staffUser.status !== StaffStatus.ACTIVE) {
