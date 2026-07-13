@@ -1,0 +1,107 @@
+/* components/login/loginlayout.module.css — Login interno (Admin/Admisión), hermano del portal cautivo */
+
+.shell {
+  --teal-900:#0a565d; --teal-800:#0d6f78; --teal-500:#12aeb4; --teal-300:#4cebf0;
+  --grad:linear-gradient(160deg,#0a4247 0%,#0d6f78 46%,#12aeb4 100%);
+  --ground:#eef3f5; --ink:#22303a; --ink2:#5f7482; --ink3:#9fb1bb;
+  --line:#e6eef0;
+  --ease:cubic-bezier(.34,1.4,.5,1);
+
+  font-family:'Outfit','Segoe UI Variable','Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+  min-height:100vh; min-height:100dvh;
+  display:flex; flex-direction:column;
+  background:var(--ground); color:var(--ink);
+}
+.shell * { box-sizing:border-box; }
+
+@media (min-width:1024px) {
+  .shell { flex-direction:row; }
+}
+
+/* ── Brand panel ──────────────────────────────────────────── */
+.brand {
+  position:relative; overflow:hidden;
+  background:var(--grad); color:#eafcfd;
+  padding:32px 32px 28px;
+  display:flex; flex-direction:column;
+}
+@media (min-width:1024px) {
+  .brand { width:46%; padding:56px 64px; }
+}
+
+.aura { position:absolute; inset:0; z-index:0; pointer-events:none; }
+.aura i { position:absolute; border-radius:50%; opacity:.55; filter:blur(2px); mix-blend-mode:screen; }
+.aura i:nth-child(1){ width:70%; padding-bottom:70%; left:-25%; top:-20%; background:radial-gradient(circle,rgba(76,235,240,.35),transparent 65%); animation:drift 24s var(--ease) infinite alternate; }
+.aura i:nth-child(2){ width:55%; padding-bottom:55%; right:-18%; bottom:-15%; background:radial-gradient(circle,rgba(18,174,180,.4),transparent 65%); animation:drift2 28s var(--ease) infinite alternate; }
+.rings { position:absolute; inset:0; z-index:0; opacity:.16; pointer-events:none; }
+.rings i { position:absolute; border:1px solid #fff; border-radius:50%; }
+.rings i:nth-child(1){ width:560px; height:560px; left:-190px; top:-220px; }
+.rings i:nth-child(2){ width:760px; height:760px; left:-90px; top:-380px; }
+@keyframes drift { to { transform:translate(30px,24px) scale(1.06); } }
+@keyframes drift2 { to { transform:translate(-24px,-20px) scale(1.08); } }
+
+.brandInner { position:relative; z-index:1; display:flex; flex-direction:column; height:100%; }
+
+.logoRow { display:flex; align-items:center; gap:12px; }
+.logoImg { height:38px; width:auto; object-fit:contain; }
+.logoTxt b { display:block; font-size:16px; font-weight:700; }
+.logoTxt span { display:block; font-size:12px; color:rgba(234,252,253,.72); margin-top:1px; }
+
+.badgeTablet {
+  display:none; align-items:center; gap:8px;
+  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26);
+  padding:7px 13px; border-radius:999px; font-size:12px; font-weight:500; margin-left:auto;
+}
+@media (min-width:640px) and (max-width:1023px) { .badgeTablet { display:inline-flex; } }
+
+.hero { display:none; }
+@media (min-width:1024px) {
+  .hero { display:block; margin-top:auto; }
+}
+.eyebrow {
+  display:inline-flex; align-items:center; gap:7px;
+  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.24);
+  padding:6px 13px; border-radius:999px; font-size:11.5px; font-weight:600;
+  letter-spacing:.04em; text-transform:uppercase; margin-bottom:18px;
+}
+.eyebrow .dot { width:6px;height:6px;border-radius:50%;background:#7dffc0; box-shadow:0 0 0 3px rgba(125,255,192,.24); }
+.title { margin:0 0 12px; font-size:34px; font-weight:700; line-height:1.12; letter-spacing:-.6px; max-width:15ch; }
+.desc { margin:0 0 30px; font-size:14.5px; line-height:1.6; color:rgba(234,252,253,.82); max-width:36ch; }
+
+.features { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:15px; }
+.features li { display:flex; align-items:center; gap:12px; font-size:13.5px; }
+.featIc { width:36px;height:36px;border-radius:11px;flex:0 0 auto; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); display:grid;place-items:center; }
+.featIc svg { width:18px;height:18px; }
+.features b { font-weight:600; }
+.features .muted { color:rgba(234,252,253,.72); }
+
+.brandFoot { display:none; }
+@media (min-width:1024px) {
+  .brandFoot { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; margin-top:44px; padding-top:22px; border-top:1px solid rgba(255,255,255,.16); }
+}
+.footText { font-size:12px; color:rgba(234,252,253,.62); }
+.badgeDesktop { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26); padding:7px 13px; border-radius:999px; font-size:12px; font-weight:500; }
+.dotPulse { width:7px;height:7px;border-radius:50%;background:#7dffc0; box-shadow:0 0 0 3px rgba(125,255,192,.22); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+/* ── Form panel ───────────────────────────────────────────── */
+.formSide {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:40px 24px; background:var(--ground);
+  position:relative;
+}
+@media (min-width:1024px) {
+  .formSide { padding:0 64px; background:#fdfefe; }
+}
+
+.formCard {
+  width:100%; max-width:400px;
+  background:#fff; border:1px solid rgba(255,255,255,.7);
+  border-radius:22px; padding:34px 30px;
+  box-shadow:0 24px 56px -20px rgba(10,86,93,.24), 0 8px 20px -12px rgba(148,163,184,.22);
+  animation:pop .5s var(--ease) both;
+}
+@media (min-width:1024px) {
+  .formCard { box-shadow:none; border:none; padding:0; border-radius:0; max-width:340px; }
+}
+@keyframes pop { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }

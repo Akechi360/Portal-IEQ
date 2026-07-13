@@ -4,12 +4,13 @@ import { LoginClientInternal } from "@/components/auth/LoginClientInternal";
 export default function AdmisionLoginPage() {
   return (
     <LoginLayout
-      leftColor="#0F172A"
       leftTitle="Panel de\nAdmisión"
       leftDescription="Emisión y gestión de credenciales WiFi para pacientes y tránsito."
       badgeSSID="Acceso Interno"
-      badgeTheme="slate"
-      leftFeatures={[]}
+      leftFeatures={[
+        { icon: "clock", bold: "Emisión rápida", text: "vouchers para pacientes y tránsito" },
+        { icon: "shield", bold: "Control de dispositivos", text: "un voucher, un equipo casado" },
+      ]}
     >
       <LoginClientInternal
         title="Acceso a Admisión"

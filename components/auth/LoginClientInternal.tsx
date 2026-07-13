@@ -65,15 +65,15 @@ export function LoginClientInternal({
   };
 
   return (
-    <div className="max-w-sm w-full mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-      <p className="text-sm text-gray-500 mt-1 mb-6">
+    <div className="w-full">
+      <h2 className="text-[22px] font-bold text-neutral-900 tracking-tight">{title}</h2>
+      <p className="text-sm text-neutral-500 mt-1.5 mb-7">
         {description}
       </p>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5">
             Usuario
           </label>
           <input
@@ -82,12 +82,12 @@ export function LoginClientInternal({
             onChange={(e) => setUsername(e.target.value)}
             placeholder={usernamePlaceholder}
             disabled={status === "loading"}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+            className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50 text-neutral-900 text-[15px] focus:outline-none focus:ring-4 focus:ring-primary-500/15 focus:border-primary-500 focus:bg-white transition-colors disabled:opacity-50"
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="mb-2">
+          <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5">
             Contraseña
           </label>
           <input
@@ -96,25 +96,23 @@ export function LoginClientInternal({
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             disabled={status === "loading"}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+            className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50 text-neutral-900 text-[15px] focus:outline-none focus:ring-4 focus:ring-primary-500/15 focus:border-primary-500 focus:bg-white transition-colors disabled:opacity-50"
           />
         </div>
 
         {error && status === "error" && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-3 flex items-start gap-3">
-            <AlertCircle className="text-red-500 shrink-0 h-[18px] w-[18px]" />
-            <div>
-              <p className="text-sm text-red-700 font-medium">
-                {error}
-              </p>
-            </div>
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-3.5 mt-3 flex items-start gap-2.5">
+            <AlertCircle className="text-red-500 shrink-0 h-[17px] w-[17px] mt-0.5" />
+            <p className="text-[13px] text-red-700 font-medium leading-snug">
+              {error}
+            </p>
           </div>
         )}
 
         <button
           type="submit"
           disabled={status === "loading" || !username.trim() || !password.trim()}
-          className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-primary-500 hover:bg-primary-600 text-white disabled:opacity-70 flex items-center justify-center gap-2 transition-colors"
+          className="w-full mt-5 py-3.5 rounded-2xl font-semibold text-sm text-white disabled:opacity-60 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_14px_28px_-12px_rgba(18,174,180,0.65)] bg-gradient-to-br from-primary-600 to-primary-500 hover:brightness-105"
         >
           {status === "loading" ? (
             <>

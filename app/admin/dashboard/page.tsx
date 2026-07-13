@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Users, UserCheck, Activity, ShieldAlert } from "lucide-react";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -68,18 +68,29 @@ function KpiCard({
   label,
   value,
   sub,
-  subColor
+  subColor,
+  icon: Icon,
+  iconBg,
+  iconColor
 }: {
   label: string;
   value: React.ReactNode;
   sub: string;
   subColor?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconBg: string;
+  iconColor: string;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-100 bg-white px-5 py-4 shadow-sm">
-      <p className="text-xs text-neutral-400">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-neutral-900">{value}</p>
-      <p className={`mt-1 text-xs font-medium ${subColor ?? "text-neutral-400"}`}>{sub}</p>
+    <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)] transition-shadow hover:shadow-[0_1px_2px_rgba(15,23,42,0.06),0_14px_34px_-12px_rgba(15,23,42,0.2)]">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-medium text-neutral-500">{label}</p>
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon className={`h-[18px] w-[18px] ${iconColor}`} />
+        </div>
+      </div>
+      <p className="mt-3 text-[28px] font-bold leading-none tracking-tight text-neutral-900 tabular-nums">{value}</p>
+      <p className={`mt-2 text-xs font-medium ${subColor ?? "text-neutral-400"}`}>{sub}</p>
     </div>
   );
 }
@@ -87,7 +98,7 @@ function KpiCard({
 /* ── Page ─────────────────────────────────────────────────── */
 export default function AdminDashboardPage() {
   const [search, setSearch] = useState("");
-  
+
   // SWR para credenciales y médicos
   const { data, isLoading } = useSWR("/api/list", fetcher, { refreshInterval: 8000 });
   // SWR para logs de auditoría reales
@@ -117,10 +128,10 @@ export default function AdminDashboardPage() {
 
   // Mapear eventos recientes basados en logs reales de la base de datos Supabase
   const recentEvents = logs.slice(0, 4).map((log: any) => {
-    let color = "#12aeb4"; // azul conexión
+    let color = "#12aeb4"; // teal conexión
     if (log.type === "Rechazado" || log.type === "Bloqueo") color = "#EF4444";
     else if (log.type === "Éxito") color = "#10B981";
-    
+
     return {
       id: log.id,
       color,
@@ -133,7 +144,7 @@ export default function AdminDashboardPage() {
     let status: UserStatus = "Activo";
     if (item.status === "Blocked" || item.status === "Expired") status = "Bloqueado";
     if (item.status === "Pending") status = "Autenticando";
-    
+
     const initials = item.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
     const color = item.type === "PACIENTE" ? "#12aeb4" : item.type === "TRANSITO" ? "#F59E0B" : "#10B981";
 
@@ -174,31 +185,43 @@ export default function AdminDashboardPage() {
           value={isLoading ? "-" : items.length}
           sub="Total en el sistema"
           subColor="text-neutral-400"
+          icon={Users}
+          iconBg="bg-neutral-100"
+          iconColor="text-neutral-600"
         />
         <KpiCard
           label="Usuarios Activos"
           value={isLoading ? "-" : items.filter((i: any) => i.status === 'Active').length}
           sub="Credenciales válidas"
           subColor="text-green-600"
+          icon={UserCheck}
+          iconBg="bg-green-50"
+          iconColor="text-green-600"
         />
         <KpiCard
           label="Consumo total (Ruijie)"
           value={fmtBytes(totalBytes)}
           sub={`${activeSessionsCount} clientes activos`}
           subColor="text-primary-600"
+          icon={Activity}
+          iconBg="bg-primary-50"
+          iconColor="text-primary-600"
         />
         <KpiCard
           label="Bloqueados / Expirados"
           value={isLoading ? "-" : items.filter((i: any) => i.status === 'Blocked' || i.status === 'Expired').length}
           sub="Acceso denegado"
           subColor="text-red-500"
+          icon={ShieldAlert}
+          iconBg="bg-red-50"
+          iconColor="text-red-500"
         />
       </div>
 
       {/* Main grid: table + right panels */}
       <div className="flex flex-col gap-4 lg:flex-row">
         {/* Usuarios activos table */}
-        <div className="min-w-0 flex-1 rounded-xl border border-neutral-100 bg-white shadow-sm">
+        <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)]">
           <div className="flex items-center justify-between px-5 py-4">
             <h2 className="text-base font-semibold text-neutral-800">Usuarios activos</h2>
             <div className="relative">
@@ -216,29 +239,29 @@ export default function AdminDashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-t border-neutral-100">
-                  <th className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                <tr className="border-y border-neutral-100 bg-neutral-50/70">
+                  <th className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                     Usuario
                   </th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                     Identificador / IP
                   </th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                     Señal
                   </th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                     Tiempo
                   </th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                     Estado
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-50">
+              <tbody className="divide-y divide-neutral-100">
                 {filtered.map((user) => (
                   <tr
                     key={user.id}
-                    className="transition-colors hover:bg-neutral-50"
+                    className="transition-colors hover:bg-primary-50/40"
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
@@ -248,7 +271,7 @@ export default function AdminDashboardPage() {
                         >
                           {user.initials}
                         </div>
-                        <span className="font-medium text-primary-600 hover:underline cursor-pointer">
+                        <span className="font-medium text-primary-700 hover:underline cursor-pointer">
                           {user.name}
                         </span>
                       </div>
@@ -274,7 +297,7 @@ export default function AdminDashboardPage() {
         {/* Right column */}
         <div className="flex w-full shrink-0 flex-col gap-4 lg:w-64">
           {/* Bandwidth usage */}
-          <div className="rounded-xl border border-neutral-100 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)]">
             <h3 className="mb-3 text-sm font-semibold text-neutral-800">
               Uso de ancho de banda
             </h3>
@@ -283,23 +306,23 @@ export default function AdminDashboardPage() {
                 <span className="flex items-center gap-1.5 text-neutral-500">
                   <span className="text-neutral-400">↓</span> Descarga
                 </span>
-                <span className="font-semibold text-neutral-800">{fmtBytes(totalDownBytes)}</span>
+                <span className="font-semibold text-neutral-800 tabular-nums">{fmtBytes(totalDownBytes)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-neutral-500">
                   <span className="text-neutral-400">↑</span> Subida
                 </span>
-                <span className="font-semibold text-neutral-800">{fmtBytes(totalUpBytes)}</span>
+                <span className="font-semibold text-neutral-800 tabular-nums">{fmtBytes(totalUpBytes)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-neutral-100 pt-2">
                 <span className="text-neutral-500">Clientes activos</span>
-                <span className="font-semibold text-primary-600">{activeSessionsCount}</span>
+                <span className="font-semibold text-primary-600 tabular-nums">{activeSessionsCount}</span>
               </div>
             </div>
           </div>
 
           {/* Recent events */}
-          <div className="rounded-xl border border-neutral-100 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)]">
             <h3 className="mb-3 text-sm font-semibold text-neutral-800">Eventos recientes</h3>
             <div className="space-y-3">
               {recentEvents.length === 0 ? (

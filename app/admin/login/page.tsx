@@ -4,12 +4,13 @@ import { LoginClientInternal } from "@/components/auth/LoginClientInternal";
 export default function AdminLoginPage() {
   return (
     <LoginLayout
-      leftColor="#0F172A"
       leftTitle="Panel de\nSistemas"
       leftDescription="Gestión centralizada de la infraestructura y usuarios del portal."
       badgeSSID="Acceso Interno"
-      badgeTheme="slate"
-      leftFeatures={[]}
+      leftFeatures={[
+        { icon: "shield", bold: "Acceso protegido", text: "solo personal autorizado" },
+        { icon: "zap", bold: "Control en vivo", text: "sesiones y dispositivos en tiempo real" },
+      ]}
     >
       <LoginClientInternal
         title="Acceso a Sistemas"
