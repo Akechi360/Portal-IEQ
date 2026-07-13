@@ -7,7 +7,7 @@ import useSWR from "swr";
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AdmisionDashboardPage() {
-  const { data, error, isLoading } = useSWR("/api/list", fetcher, { refreshInterval: 10000 });
+  const { data, isLoading } = useSWR("/api/list", fetcher, { refreshInterval: 10000 });
 
   // Calcular saludo
   const hour = new Date().getHours();
@@ -27,76 +27,93 @@ export default function AdmisionDashboardPage() {
 
   const items = data?.items || [];
   const today = new Date().toISOString().split('T')[0];
-  
+
   const credencialesHoy = items.filter((c: any) => c.createdAt.startsWith(today) && (c.type === 'PACIENTE' || c.type === 'TRANSITO')).length;
   const pacientesActivos = items.filter((c: any) => c.type === 'PACIENTE' && c.status === 'Active').length;
   const transitoActivos = items.filter((c: any) => c.type === 'TRANSITO' && c.status === 'Active').length;
+  const totalActivos = pacientesActivos + transitoActivos || 1;
+  const pacientesPct = Math.round((pacientesActivos / totalActivos) * 100);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      
-      {/* SALUDO SUPERIOR */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{greeting}, Operador</h1>
-        <p className="text-sm text-gray-500 mt-1">{formattedDate}</p>
+    <div className="mx-auto max-w-2xl">
+
+      {/* Turno + credenciales de hoy — hermano compacto del hero del admin */}
+      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-primary-800 via-primary-700 to-primary-500 p-6 text-white shadow-[0_20px_44px_-18px_rgba(13,111,120,0.5)]">
+        <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
+        <div className="relative flex items-center justify-between gap-4">
+          <div>
+            <p className="flex items-center gap-2 text-xs font-medium text-primary-50/85">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+              Turno activo
+            </p>
+            <h1 className="mt-2 text-xl font-bold tracking-tight">{greeting}, Operador</h1>
+            <p className="text-sm text-primary-50/75">{formattedDate}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-4xl font-bold leading-none tabular-nums">{isLoading ? "–" : credencialesHoy}</p>
+            <p className="mt-1 text-xs text-primary-50/80">credenciales hoy</p>
+          </div>
+        </div>
       </div>
 
-      {/* KPI STRIP */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
-          <p className="text-3xl font-bold text-primary-600">{isLoading ? "-" : credencialesHoy}</p>
-          <p className="text-xs text-gray-500 mt-1">Credenciales hoy</p>
+      {/* Split de activos: proporción real paciente/tránsito, no dos cajas sueltas */}
+      <div className="mb-8 rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)]">
+        <div className="mb-2 flex items-center justify-between text-xs font-medium text-neutral-500">
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
+            Pacientes activos · <span className="font-semibold text-neutral-800 tabular-nums">{isLoading ? "-" : pacientesActivos}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+            Tránsito activos · <span className="font-semibold text-neutral-800 tabular-nums">{isLoading ? "-" : transitoActivos}</span>
+          </span>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
-          <p className="text-3xl font-bold text-green-600">{isLoading ? "-" : pacientesActivos}</p>
-          <p className="text-xs text-gray-500 mt-1">Pacientes activos</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
-          <p className="text-3xl font-bold text-amber-500">{isLoading ? "-" : transitoActivos}</p>
-          <p className="text-xs text-gray-500 mt-1">Tránsito activos</p>
+        <div className="flex h-2 overflow-hidden rounded-full bg-neutral-100">
+          <div className="bg-primary-500 transition-[width] duration-500 ease-out" style={{ width: `${pacientesPct}%` }} />
+          <div className="flex-1 bg-amber-400" />
         </div>
       </div>
 
       {/* ACCIONES PRINCIPALES */}
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
           Acciones rápidas
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          
-          {/* CARD ACCIÓN 1 */}
+
+          {/* CARD ACCIÓN 1 — primaria, tratamiento teal (el único acento fuerte) */}
           <Link href="/admision/emitir" className="group block h-full">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md hover:border-primary-200 transition-all cursor-pointer h-full flex flex-col">
-              <div className="bg-primary-50 rounded-xl p-3 w-fit mb-4 group-hover:bg-primary-100 transition-colors">
-                <PlusCircle className="text-primary-600 w-6 h-6" />
+            <div className="flex h-full flex-col rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 to-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)] transition-all hover:border-primary-300 hover:shadow-[0_1px_2px_rgba(15,23,42,0.06),0_14px_34px_-12px_rgba(15,23,42,0.2)]">
+              <div className="mb-4 w-fit rounded-xl bg-primary-600 p-3 shadow-[0_8px_16px_-8px_rgba(13,111,120,0.6)] transition-colors group-hover:bg-primary-700">
+                <PlusCircle className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-neutral-900">
                 Emitir credencial nueva
               </h3>
-              <p className="text-sm text-gray-500 mt-1 mb-4 flex-1">
+              <p className="text-sm text-neutral-500 mt-1 mb-4 flex-1">
                 Genera acceso WiFi para un Paciente o persona en Tránsito
               </p>
-              <div className="bg-primary-500 hover:bg-primary-600 text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2 w-fit transition-colors">
+              <div className="bg-primary-600 group-hover:bg-primary-700 text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2 w-fit transition-colors">
                 <ArrowRight className="w-[14px] h-[14px]" />
                 Emitir ahora
               </div>
             </div>
           </Link>
 
-          {/* CARD ACCIÓN 2 */}
+          {/* CARD ACCIÓN 2 — secundaria, neutral */}
           <Link href="/admision/credenciales" className="group block h-full">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer h-full flex flex-col">
-              <div className="bg-gray-50 rounded-xl p-3 w-fit mb-4 group-hover:bg-gray-100 transition-colors">
-                <ClipboardList className="text-gray-600 w-6 h-6" />
+            <div className="flex h-full flex-col rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)] transition-all hover:border-neutral-300 hover:shadow-[0_1px_2px_rgba(15,23,42,0.06),0_14px_34px_-12px_rgba(15,23,42,0.2)]">
+              <div className="bg-neutral-100 rounded-xl p-3 w-fit mb-4 group-hover:bg-neutral-200 transition-colors">
+                <ClipboardList className="text-neutral-600 w-6 h-6" />
               </div>
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-neutral-900">
                 Credenciales de hoy
               </h3>
-              <p className="text-sm text-gray-500 mt-1 mb-4 flex-1">
+              <p className="text-sm text-neutral-500 mt-1 mb-4 flex-1">
                 Consulta todos los accesos generados durante el turno actual
               </p>
-              <div className="bg-gray-900 hover:bg-gray-700 text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2 w-fit transition-colors">
+              <div className="bg-neutral-900 hover:bg-neutral-700 text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2 w-fit transition-colors">
                 <List className="w-[14px] h-[14px]" />
                 Ver listado
               </div>

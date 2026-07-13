@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Users, UserCheck, Activity, ShieldAlert } from "lucide-react";
+import { Search, Users, ShieldAlert, Wifi } from "lucide-react";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -21,12 +21,12 @@ interface ActiveUser {
   status: UserStatus;
 }
 
-/* ── Status badge ─────────────────────────────────────────── */
-const statusConfig: Record<UserStatus, { bg: string; text: string; dot: string }> = {
-  Activo: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
-  Limitado: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
-  Autenticando: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
-  Bloqueado: { bg: "bg-red-50", text: "text-red-600", dot: "bg-red-500" }
+/* ── Status → color (reutilizado en badge Y franja de fila) ── */
+const statusConfig: Record<UserStatus, { bg: string; text: string; dot: string; hex: string }> = {
+  Activo: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500", hex: "#22c55e" },
+  Limitado: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", hex: "#f59e0b" },
+  Autenticando: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", hex: "#3b82f6" },
+  Bloqueado: { bg: "bg-red-50", text: "text-red-600", dot: "bg-red-500", hex: "#ef4444" }
 };
 
 function StatusBadge({ status }: { status: UserStatus }) {
@@ -63,12 +63,76 @@ function SignalBars({ level }: { level: number }) {
   );
 }
 
-/* ── KPI Card ─────────────────────────────────────────────── */
-function KpiCard({
+/* ── Hero: la métrica que de verdad importa en un panel de red
+   en vivo — cuántos dispositivos están conectados AHORA, con el
+   pulso de marca teal y el reparto real de tráfico. ──────────── */
+function NetworkHero({
+  activeCount,
+  isLoading,
+  downBytes,
+  upBytes,
+  fmtBytes
+}: {
+  activeCount: number;
+  isLoading: boolean;
+  downBytes: number;
+  upBytes: number;
+  fmtBytes: (n: number) => string;
+}) {
+  const total = downBytes + upBytes || 1;
+  const downPct = Math.round((downBytes / total) * 100);
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-800 via-primary-700 to-primary-500 p-6 text-white shadow-[0_24px_50px_-20px_rgba(13,111,120,0.55)]">
+      <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-primary-300/20 blur-3xl" aria-hidden="true" />
+
+      <div className="relative flex items-start justify-between gap-4">
+        <div>
+          <p className="flex items-center gap-2 text-xs font-medium text-primary-50/85">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
+            </span>
+            Red operativa en vivo
+          </p>
+          <p className="mt-3 text-[44px] font-bold leading-none tracking-tight tabular-nums">
+            {isLoading ? "–" : activeCount}
+          </p>
+          <p className="mt-1.5 text-sm text-primary-50/80">clientes conectados ahora mismo</p>
+        </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/12 backdrop-blur-sm">
+          <Wifi className="h-5 w-5 text-white" />
+        </div>
+      </div>
+
+      {/* Reparto de tráfico: dato real, no decorativo */}
+      <div className="relative mt-7">
+        <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium text-primary-50/80">
+          <span>↓ Descarga · {fmtBytes(downBytes)}</span>
+          <span>↑ Subida · {fmtBytes(upBytes)}</span>
+        </div>
+        <div className="flex h-1.5 overflow-hidden rounded-full bg-white/15">
+          <div
+            className="bg-white transition-[width] duration-500 ease-out"
+            style={{ width: `${downPct}%` }}
+          />
+          <div
+            className="bg-primary-200/80 transition-[width] duration-500 ease-out"
+            style={{ width: `${100 - downPct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Stat secundaria compacta (franja de icono, sin ser otra
+   caja idéntica flotando junto a las demás) ─────────────────── */
+function CompactStat({
   label,
   value,
   sub,
-  subColor,
   icon: Icon,
   iconBg,
   iconColor
@@ -76,21 +140,20 @@ function KpiCard({
   label: string;
   value: React.ReactNode;
   sub: string;
-  subColor?: string;
   icon: React.ComponentType<{ className?: string }>;
   iconBg: string;
   iconColor: string;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)] transition-shadow hover:shadow-[0_1px_2px_rgba(15,23,42,0.06),0_14px_34px_-12px_rgba(15,23,42,0.2)]">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium text-neutral-500">{label}</p>
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
-          <Icon className={`h-[18px] w-[18px] ${iconColor}`} />
-        </div>
+    <div className="flex items-center gap-3 rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-14px_rgba(15,23,42,0.14)]">
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+        <Icon className={`h-[18px] w-[18px] ${iconColor}`} />
       </div>
-      <p className="mt-3 text-[28px] font-bold leading-none tracking-tight text-neutral-900 tabular-nums">{value}</p>
-      <p className={`mt-2 text-xs font-medium ${subColor ?? "text-neutral-400"}`}>{sub}</p>
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium text-neutral-500">{label}</p>
+        <p className="text-xl font-bold leading-tight text-neutral-900 tabular-nums">{value}</p>
+        <p className="text-[10.5px] text-neutral-400">{sub}</p>
+      </div>
     </div>
   );
 }
@@ -123,8 +186,6 @@ export default function AdminDashboardPage() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   }
-
-  const totalBytes = totalDownBytes + totalUpBytes;
 
   // Mapear eventos recientes basados en logs reales de la base de datos Supabase
   const recentEvents = logs.slice(0, 4).map((log: any) => {
@@ -171,51 +232,54 @@ export default function AdminDashboardPage() {
       u.mac.toLowerCase().includes(search.toLowerCase())
   );
 
+  const blockedCount = items.filter((i: any) => i.status === "Blocked" || i.status === "Expired").length;
+
   return (
     <div className="space-y-5">
-      {/* Page title */}
+      {/* Eyebrow + título (eco del login: mismo lenguaje de marca) */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-800">Resumen de red</h1>
+        <p className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-primary-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
+          Panel de Sistemas
+        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Resumen de red</h1>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard
-          label="Usuarios Registrados"
-          value={isLoading ? "-" : items.length}
-          sub="Total en el sistema"
-          subColor="text-neutral-400"
-          icon={Users}
-          iconBg="bg-neutral-100"
-          iconColor="text-neutral-600"
+      {/* Hero de red + stats secundarias */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <NetworkHero
+          activeCount={activeSessionsCount}
+          isLoading={isLoading}
+          downBytes={totalDownBytes}
+          upBytes={totalUpBytes}
+          fmtBytes={fmtBytes}
         />
-        <KpiCard
-          label="Usuarios Activos"
-          value={isLoading ? "-" : items.filter((i: any) => i.status === 'Active').length}
-          sub="Credenciales válidas"
-          subColor="text-green-600"
-          icon={UserCheck}
-          iconBg="bg-green-50"
-          iconColor="text-green-600"
-        />
-        <KpiCard
-          label="Consumo total (Ruijie)"
-          value={fmtBytes(totalBytes)}
-          sub={`${activeSessionsCount} clientes activos`}
-          subColor="text-primary-600"
-          icon={Activity}
-          iconBg="bg-primary-50"
-          iconColor="text-primary-600"
-        />
-        <KpiCard
-          label="Bloqueados / Expirados"
-          value={isLoading ? "-" : items.filter((i: any) => i.status === 'Blocked' || i.status === 'Expired').length}
-          sub="Acceso denegado"
-          subColor="text-red-500"
-          icon={ShieldAlert}
-          iconBg="bg-red-50"
-          iconColor="text-red-500"
-        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <CompactStat
+            label="Usuarios registrados"
+            value={isLoading ? "-" : items.length}
+            sub="Total en el sistema"
+            icon={Users}
+            iconBg="bg-neutral-100"
+            iconColor="text-neutral-600"
+          />
+          <CompactStat
+            label="Credenciales activas"
+            value={isLoading ? "-" : items.filter((i: any) => i.status === "Active").length}
+            sub="Válidas ahora mismo"
+            icon={Wifi}
+            iconBg="bg-green-50"
+            iconColor="text-green-600"
+          />
+          <CompactStat
+            label="Bloqueados / expirados"
+            value={isLoading ? "-" : blockedCount}
+            sub="Acceso denegado"
+            icon={ShieldAlert}
+            iconBg="bg-red-50"
+            iconColor="text-red-500"
+          />
+        </div>
       </div>
 
       {/* Main grid: table + right panels */}
@@ -263,7 +327,12 @@ export default function AdminDashboardPage() {
                     key={user.id}
                     className="transition-colors hover:bg-primary-50/40"
                   >
-                    <td className="px-5 py-3">
+                    {/* Franja de estado en el borde: se escanea de un vistazo,
+                        sin depender solo del badge de texto al final de la fila. */}
+                    <td
+                      className="px-5 py-3"
+                      style={{ boxShadow: `inset 3px 0 0 0 ${statusConfig[user.status].hex}` }}
+                    >
                       <div className="flex items-center gap-2.5">
                         <div
                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
@@ -301,16 +370,23 @@ export default function AdminDashboardPage() {
             <h3 className="mb-3 text-sm font-semibold text-neutral-800">
               Uso de ancho de banda
             </h3>
-            <div className="space-y-2 text-xs">
+            <div className="flex h-2 overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className="bg-primary-500 transition-[width] duration-500 ease-out"
+                style={{ width: `${Math.round((totalDownBytes / (totalDownBytes + totalUpBytes || 1)) * 100)}%` }}
+              />
+              <div className="flex-1 bg-neutral-300" />
+            </div>
+            <div className="mt-3 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-neutral-500">
-                  <span className="text-neutral-400">↓</span> Descarga
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary-500" /> Descarga
                 </span>
                 <span className="font-semibold text-neutral-800 tabular-nums">{fmtBytes(totalDownBytes)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-neutral-500">
-                  <span className="text-neutral-400">↑</span> Subida
+                  <span className="h-1.5 w-1.5 rounded-full bg-neutral-300" /> Subida
                 </span>
                 <span className="font-semibold text-neutral-800 tabular-nums">{fmtBytes(totalUpBytes)}</span>
               </div>
@@ -321,27 +397,29 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Recent events */}
+          {/* Recent events — timeline: los eventos SÍ son cronológicos,
+              la línea conectora encierra esa secuencia real. */}
           <div className="rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.16)]">
             <h3 className="mb-3 text-sm font-semibold text-neutral-800">Eventos recientes</h3>
-            <div className="space-y-3">
-              {recentEvents.length === 0 ? (
-                <p className="text-xs text-neutral-400">No hay eventos grabados en la base de datos.</p>
-              ) : (
-                recentEvents.map((event: any) => (
-                  <div key={event.id} className="flex gap-2.5">
-                    <div
-                      className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
+            {recentEvents.length === 0 ? (
+              <p className="text-xs text-neutral-400">No hay eventos grabados en la base de datos.</p>
+            ) : (
+              <div className="relative space-y-4">
+                <div className="absolute bottom-1 left-[5px] top-1 w-px bg-neutral-200" aria-hidden="true" />
+                {recentEvents.map((event: any) => (
+                  <div key={event.id} className="relative flex gap-2.5">
+                    <span
+                      className="relative z-10 mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-white"
                       style={{ backgroundColor: event.color }}
                     />
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs leading-snug text-neutral-700">{event.text}</p>
                       <p className="mt-0.5 text-[10px] text-neutral-400">{event.time}</p>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
