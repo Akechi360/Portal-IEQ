@@ -108,9 +108,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // Attempt 2: Doctor email
-    const doctor = await db.doctor.findUnique({
-      where: { email: username },
+    // Attempt 2: Doctor email (insensible a mayúsculas: el gateway envía el
+    // correo tal como lo escribió el médico, la DB lo guarda en minúsculas)
+    const doctor = await db.doctor.findFirst({
+      where: { email: { equals: username.trim(), mode: "insensitive" } },
     });
 
     if (doctor && doctor.status === "ACTIVE") {
@@ -121,9 +122,9 @@ export async function POST(req: Request) {
       });
     }
 
-    // Attempt 3: Staff email
-    const staff = await db.staffUser.findUnique({
-      where: { email: username },
+    // Attempt 3: Staff email (insensible a mayúsculas, mismo motivo)
+    const staff = await db.staffUser.findFirst({
+      where: { email: { equals: username.trim(), mode: "insensitive" } },
     });
 
     if (staff && staff.status === "ACTIVE") {

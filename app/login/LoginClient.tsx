@@ -141,6 +141,14 @@ export function LoginClient({ mac, ip, redirect, ssid, loginUrl = "", logoutUrl 
         successUrl.searchParams.set("timeLeft", "permanente");
         successUrl.searchParams.set("ssid", displaySsid);
 
+        // WISPr: pasar por el login del gateway con el correo como credencial
+        // (RADIUS lo valida contra la tabla Doctor). Sin esto el gateway nunca
+        // abre internet aunque el portal muestre "acceso concedido".
+        if (loginUrl) {
+          redirectToWisprLogin(email.trim(), successUrl.toString());
+          return;
+        }
+
         // WiFiDog: pasar por el gateway para que abra el acceso a internet
         if (data.data?.gatewayAuthUrl) {
           window.location.href = `${data.data.gatewayAuthUrl}&url=${encodeURIComponent(successUrl.toString())}`;
@@ -191,6 +199,14 @@ export function LoginClient({ mac, ip, redirect, ssid, loginUrl = "", logoutUrl 
         successUrl.searchParams.set("nombre", data.data?.nombre || "");
         successUrl.searchParams.set("timeLeft", "permanente");
         successUrl.searchParams.set("ssid", displaySsid);
+
+        // WISPr: pasar por el login del gateway con el correo como credencial
+        // (RADIUS lo valida contra la tabla StaffUser). Sin esto el gateway
+        // nunca abre internet aunque el portal muestre "acceso concedido".
+        if (loginUrl) {
+          redirectToWisprLogin(staffEmail.trim(), successUrl.toString());
+          return;
+        }
 
         // WiFiDog: pasar por el gateway para que abra el acceso a internet
         if (data.data?.gatewayAuthUrl) {
