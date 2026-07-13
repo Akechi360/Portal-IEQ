@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR from "swr";
 import {
   UserPlus,
@@ -12,7 +12,9 @@ import {
   Eye,
   Clock,
   Loader2,
+  Upload,
 } from "lucide-react";
+import { parseCsv } from "@/lib/csv";
 
 type StatusMedico = "activo" | "pendiente" | "inactivo";
 
@@ -38,6 +40,9 @@ export default function MedicosPage() {
   const [busqueda, setBusqueda] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ createdCount: number; skipped: { row: number; email?: string; reason: string }[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estado del formulario modal
   const [modalMedico, setModalMedico] = useState({
@@ -115,22 +120,106 @@ export default function MedicosPage() {
     }
   };
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ""; // permite re-seleccionar el mismo archivo después
+
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) {
+        alert("El archivo está vacío o no tiene el formato esperado (encabezado + filas).");
+        return;
+      }
+      const res = await fetch("/api/admin/doctors/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setImportResult({ createdCount: json.createdCount, skipped: json.skipped });
+        mutate();
+      } else {
+        alert(json.message || "Error al importar el archivo.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo leer o importar el archivo.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div>
       {/* HEADER DE MÓDULO */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Médicos</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gestión de acceso médico permanente</p>
         </div>
-        <button
-          onClick={() => setModalAbierto(true)}
-          className="bg-primary-500 hover:bg-primary-600 transition-colors text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2"
-        >
-          <UserPlus className="w-[18px] h-[18px]" />
-          Registrar médico
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="bg-white border border-gray-200 hover:bg-gray-50 transition-colors text-gray-700 rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2 disabled:opacity-60"
+          >
+            {importing ? (
+              <Loader2 className="w-[18px] h-[18px] animate-spin text-primary-500" />
+            ) : (
+              <Upload className="w-[18px] h-[18px]" />
+            )}
+            Importar CSV
+          </button>
+          <button
+            onClick={() => setModalAbierto(true)}
+            className="bg-primary-500 hover:bg-primary-600 transition-colors text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2"
+          >
+            <UserPlus className="w-[18px] h-[18px]" />
+            Registrar médico
+          </button>
+        </div>
       </div>
+
+      {/* RESUMEN DE IMPORTACIÓN */}
+      {importResult && (
+        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm text-primary-800">
+              <span className="font-semibold">{importResult.createdCount}</span> médico(s) importado(s) correctamente.
+              {importResult.skipped.length > 0 && (
+                <span> {importResult.skipped.length} fila(s) omitida(s).</span>
+              )}
+            </p>
+            <button
+              onClick={() => setImportResult(null)}
+              className="text-primary-400 hover:text-primary-600 shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          {importResult.skipped.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs text-primary-700 max-h-32 overflow-y-auto">
+              {importResult.skipped.map((s, i) => (
+                <li key={i}>
+                  Fila {s.row}{s.email ? ` (${s.email})` : ""}: {s.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* BADGE DE ALERTA */}
       {pendientesCount > 0 && (

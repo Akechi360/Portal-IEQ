@@ -58,6 +58,16 @@ export const doctorCreateSchema = z.object({
 
 export type DoctorCreateInput = z.infer<typeof doctorCreateSchema>;
 
+// ─── Staff / Personal ─────────────────────────────────────────────────────────
+
+/** POST /api/admin/staff */
+export const staffCreateSchema = z.object({
+  nombre: z.string().min(2, "Nombre requerido").trim().optional(),
+  email: z.string().email("Email inválido").trim(),
+});
+
+export type StaffCreateInput = z.infer<typeof staffCreateSchema>;
+
 // ─── Webhooks ─────────────────────────────────────────────────────────────────
 
 /** POST /api/webhooks/clinic */

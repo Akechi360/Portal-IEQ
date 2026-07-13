@@ -17,7 +17,8 @@ import {
   LogOut,
   Menu,
   X,
-  Bell
+  Bell,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/styles";
 import useSWR from "swr";
@@ -34,6 +35,7 @@ const principalItems: NavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "Usuarios", icon: Users },
   { href: "/admin/medicos", label: "Médicos", icon: Stethoscope },
+  { href: "/admin/staff", label: "Personal", icon: Building2 },
   { href: "/admin/sessions", label: "Sesiones Wifi", icon: Wifi },
   { href: "/admin/devices", label: "Dispositivos", icon: Monitor }
 ];
@@ -62,6 +64,7 @@ function getBreadcrumb(pathname: string) {
     dashboard: "Dashboard",
     list: "Usuarios",
     medicos: "Médicos",
+    staff: "Personal",
     sessions: "Sesiones Wifi",
     devices: "Dispositivos",
     reports: "Reportes",
