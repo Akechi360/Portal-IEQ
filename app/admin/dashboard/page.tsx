@@ -45,7 +45,7 @@ function StatusBadge({ status }: { status: UserStatus }) {
 function SignalBars({ level }: { level: number }) {
   const bars = [1, 2, 3, 4];
   const color =
-    level >= 4 ? "#3B82F6" : level >= 3 ? "#3B82F6" : level >= 2 ? "#F59E0B" : "#EF4444";
+    level >= 4 ? "#12aeb4" : level >= 3 ? "#12aeb4" : level >= 2 ? "#F59E0B" : "#EF4444";
   return (
     <div className="flex items-end gap-[2px]">
       {bars.map((b) => (
@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
 
   // Mapear eventos recientes basados en logs reales de la base de datos Supabase
   const recentEvents = logs.slice(0, 4).map((log: any) => {
-    let color = "#3B82F6"; // azul conexión
+    let color = "#12aeb4"; // azul conexión
     if (log.type === "Rechazado" || log.type === "Bloqueo") color = "#EF4444";
     else if (log.type === "Éxito") color = "#10B981";
     
@@ -135,7 +135,7 @@ export default function AdminDashboardPage() {
     if (item.status === "Pending") status = "Autenticando";
     
     const initials = item.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
-    const color = item.type === "PACIENTE" ? "#3B82F6" : item.type === "TRANSITO" ? "#F59E0B" : "#10B981";
+    const color = item.type === "PACIENTE" ? "#12aeb4" : item.type === "TRANSITO" ? "#F59E0B" : "#10B981";
 
     // Asociar IP real si la credencial tiene una sesión activa correspondiente
     const activeSession = sessions.find((s: any) => s.name === item.name && s.status === "Activo");

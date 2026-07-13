@@ -44,8 +44,8 @@ function StatusBadge({ status }: { status: SessionStatus }) {
 
 function SignalBars({ level }: { level: number }) {
   const color =
-    level >= 4 ? "#3B82F6"
-    : level >= 3 ? "#3B82F6"
+    level >= 4 ? "#12aeb4"
+    : level >= 3 ? "#12aeb4"
     : level >= 2 ? "#F59E0B"
     : "#EF4444";
   return (
@@ -69,7 +69,7 @@ function SignalBars({ level }: { level: number }) {
 function SpeedCell({ mbps, max }: { mbps: number | null | undefined; max: number }) {
   const value = mbps ?? 0;
   const pct = Math.min(100, Math.round((value / max) * 100)) || 0;
-  const color = pct > 60 ? "#3B82F6" : pct > 30 ? "#10B981" : "#F59E0B";
+  const color = pct > 60 ? "#12aeb4" : pct > 30 ? "#10B981" : "#F59E0B";
   return (
     <div>
       <span className="text-sm font-medium text-neutral-800">

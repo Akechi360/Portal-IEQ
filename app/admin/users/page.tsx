@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 // Predefined colors for avatars
-const COLORS = ["#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444", "#EC4899", "#14B8A6"];
+const COLORS = ["#12aeb4", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444", "#EC4899", "#14B8A6"];
 
 function getInitials(name: string) {
   return name

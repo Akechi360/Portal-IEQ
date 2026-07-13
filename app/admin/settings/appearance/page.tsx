@@ -37,7 +37,7 @@ export default function AppearanceSettingsPage() {
       <div className="rounded-xl border border-neutral-100 bg-white shadow-sm p-6">
         <h3 className="mb-5 text-sm font-semibold text-neutral-800">Colores</h3>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <ColorPickerField label="Color primario" defaultValue="#0ea5e9" />
+          <ColorPickerField label="Color primario" defaultValue="#12aeb4" />
           <ColorPickerField label="Color secundario" defaultValue="#334155" />
           <ColorPickerField label="Color de fondo" defaultValue="#f8fafc" />
           <ColorPickerField label="Color del texto principal" defaultValue="#1e293b" />
