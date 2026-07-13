@@ -97,8 +97,8 @@ function NavSection({
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150",
                 active
-                  ? "bg-primary-500 font-medium text-white"
-                  : "text-neutral-400 hover:bg-neutral-800 hover:text-white"
+                  ? "bg-primary-600 font-medium text-white shadow-sm"
+                  : "text-neutral-500 hover:bg-primary-50 hover:text-primary-700"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -144,7 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const breadcrumb = getBreadcrumb(pathname);
 
   return (
-    <div className="flex min-h-screen bg-[#f0f4f8] text-neutral-900">
+    <div className="flex min-h-screen bg-[#f4f6f9] text-neutral-900">
       {/* ── Overlay (solo móvil, al abrir el drawer) ──────────── */}
       {mobileOpen && (
         <div
@@ -157,20 +157,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Sidebar ──────────────────────────────────────────── */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[220px] shrink-0 flex-col bg-[#111827] text-white transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-[220px] shrink-0 flex-col border-r border-neutral-200 bg-white text-neutral-700 transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-neutral-100">
           <img src="/logo-ieq.png" alt="IEQ" className="h-9 w-auto object-contain" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold leading-tight text-white">Portal IEQ</p>
+            <p className="text-sm font-bold leading-tight text-neutral-800">Portal IEQ</p>
             <p className="text-[11px] text-neutral-400">Control de acceso</p>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
-            className="shrink-0 rounded-md p-1 text-neutral-400 hover:bg-neutral-800 hover:text-white lg:hidden"
+            className="shrink-0 rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 lg:hidden"
             aria-label="Cerrar menú"
           >
             <X className="h-5 w-5" />
@@ -185,32 +185,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Status bar */}
-        <div className="border-t border-white/10 px-4 py-3 text-xs">
+        <div className="border-t border-neutral-100 px-4 py-3 text-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-green-400 inline-block" />
-              <span className="text-neutral-400">Red activa</span>
+              <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
+              <span className="text-neutral-500">Red activa</span>
             </div>
-            <span className="text-neutral-400">
-              Conectados <span className="font-semibold text-white">{activeClients} usuarios</span>
+            <span className="text-neutral-500">
+              Conectados <span className="font-semibold text-neutral-800">{activeClients} usuarios</span>
             </span>
           </div>
         </div>
 
         {/* Admin user + logout */}
-        <div className="border-t border-white/10 px-4 py-3">
+        <div className="border-t border-neutral-100 px-4 py-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white text-xs font-bold">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-white">{adminName}</p>
+              <p className="truncate text-sm font-medium text-neutral-800">{adminName}</p>
               <p className="text-[11px] text-neutral-400">{adminRole}</p>
             </div>
             <button
               onClick={handleLogout}
               title="Cerrar sesión"
-              className="shrink-0 rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-red-400"
+              className="shrink-0 rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
             >
               <LogOut className="h-4 w-4" />
             </button>
