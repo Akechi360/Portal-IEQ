@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { InputField, ToggleRow } from "../components";
+import { InputField, ToggleRow, MockNotice } from "../components";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -75,7 +75,10 @@ export default function AdminsSettingsPage() {
       </div>
 
       <div className="rounded-xl border border-neutral-100 bg-white shadow-sm p-6">
-        <h3 className="mb-5 text-sm font-semibold text-neutral-800">Seguridad de acceso</h3>
+        <h3 className="mb-3 text-sm font-semibold text-neutral-800">Seguridad de acceso</h3>
+        <div className="mb-5">
+          <MockNotice>Estos controles son una maqueta — todavía no aplican de verdad.</MockNotice>
+        </div>
         <div className="flex flex-col gap-4 mb-6">
           <ToggleRow label="Requerir 2FA para acceso al panel" defaultEnabled={false} />
           <div className="h-px w-full bg-neutral-100" />

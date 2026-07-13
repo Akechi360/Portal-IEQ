@@ -1,9 +1,14 @@
 import { Upload } from "lucide-react";
-import { InputField, ColorPickerField, SelectField } from "../components";
+import { InputField, ColorPickerField, SelectField, MockNotice } from "../components";
 
 export default function AppearanceSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
+      <MockNotice>
+        El portal cautivo (/login) ya tiene la marca teal de Clínica IEQ fija en código —
+        estos campos aún no la sobrescriben, así que cambiarlos aquí no afecta lo que ven los pacientes.
+      </MockNotice>
+
       {/* Identidad */}
       <div className="rounded-xl border border-neutral-100 bg-white shadow-sm p-6">
         <h3 className="mb-5 text-sm font-semibold text-neutral-800">Identidad</h3>

@@ -27,6 +27,11 @@ export interface SystemConfigMap {
   ruijie_gateway_url: string;
   ruijie_group_guest: string;
   ruijie_group_medicos: string;
+  // Umbrales del motor de anomalías (ver lib/policy.ts)
+  policy_max_shared_mac: number;
+  policy_max_transito_sessions: number;
+  policy_night_start_hour: number;
+  policy_night_end_hour: number;
 }
 
 // ─── Valores por defecto (offline) ────────────────────────────────────────────
@@ -53,6 +58,13 @@ const DEFAULT_SYSTEM: SystemConfigMap = {
   ruijie_gateway_url: process.env.RUIJIE_GATEWAY_URL ?? "http://localhost:8080",
   ruijie_group_guest: process.env.RUIJIE_GROUP_GUEST ?? "grp-guest",
   ruijie_group_medicos: process.env.RUIJIE_GROUP_MEDICOS ?? "grp-medicos",
+  // Mismos valores que estaban hardcodeados en lib/policy.ts — cambiar
+  // estos defaults no altera el comportamiento hasta que se guarde un
+  // valor explícito en SystemConfig.
+  policy_max_shared_mac: 4,
+  policy_max_transito_sessions: 1,
+  policy_night_start_hour: 23,
+  policy_night_end_hour: 5,
 };
 
 import { db } from "@/lib/db";
@@ -64,7 +76,11 @@ function parseConfigValue(key: string, value: string): any {
   if (
     key === "guest_session_hours" ||
     key === "max_devices_guest" ||
-    key === "max_devices_doctor"
+    key === "max_devices_doctor" ||
+    key === "policy_max_shared_mac" ||
+    key === "policy_max_transito_sessions" ||
+    key === "policy_night_start_hour" ||
+    key === "policy_night_end_hour"
   ) {
     const num = Number(value);
     return isNaN(num) ? null : num;

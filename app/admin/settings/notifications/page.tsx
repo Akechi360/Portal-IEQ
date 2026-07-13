@@ -1,4 +1,4 @@
-import { InputField, SelectField, ToggleRow } from "../components";
+import { InputField, SelectField, ToggleRow, MockNotice } from "../components";
 
 export default function NotificationsSettingsPage() {
   const events = [
@@ -13,6 +13,10 @@ export default function NotificationsSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <MockNotice>
+        Esta sección es una maqueta — no hay envío real de correos ni webhooks conectado todavía.
+      </MockNotice>
+
       {/* Canales de notificación */}
       <div className="rounded-xl border border-neutral-100 bg-white shadow-sm p-6">
         <h3 className="mb-5 text-sm font-semibold text-neutral-800">Canales de notificación</h3>

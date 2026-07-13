@@ -242,7 +242,11 @@ export async function createVoucher(payload: {
         body: JSON.stringify({
           groupId: networkGroupId.toString(),
           profile: RUIJIE_PROFILE_ID,
-          userGroupId: RUIJIE_USER_GROUP_ID,
+          // Antes se ignoraba payload.groupId y siempre se mandaba el mismo
+          // RUIJIE_USER_GROUP_ID hardcodeado — todas las credenciales
+          // (paciente/tránsito/médico) recibían idéntico perfil de ancho de
+          // banda en Ruijie sin importar qué grupo se les asignara.
+          userGroupId: payload.groupId || RUIJIE_USER_GROUP_ID,
         }),
       }
     );

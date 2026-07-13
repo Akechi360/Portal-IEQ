@@ -1,8 +1,13 @@
-import { InputField, SelectField, ToggleRow } from "../components";
+import { InputField, SelectField, ToggleRow, MockNotice } from "../components";
 
 export default function DatabaseSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
+      <MockNotice>
+        Los valores de conexión y estadísticas de esta sección son de ejemplo — no reflejan la
+        base de datos real todavía (la real es Supabase self-hosted en Coolify).
+      </MockNotice>
+
       {/* Estado de la conexión */}
       <div className="rounded-xl border border-neutral-100 bg-white shadow-sm p-6">
         <div className="mb-5 flex items-center justify-between">

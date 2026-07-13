@@ -10,14 +10,17 @@ import { logAccess } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { createVoucher } from "@/lib/ruijie";
 import { requireInternal } from "@/lib/jwt";
+import { getSystemConfig } from "@/lib/config";
 
-function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Date {
+async function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Promise<Date> {
   const now = new Date();
   if (tipo === "TRANSITO") {
     return new Date(now.getTime() + 30 * 60 * 1000); // 30 minutos
   }
-  // Paciente: días de estancia + 2h de gracia (default 2 días)
-  const days = diasEstancia ?? 2;
+  // Paciente: días de estancia + 2h de gracia. Si no se especifican días,
+  // el default viene de Configuración → Red WiFi (guest_session_hours),
+  // no de un número fijo en código.
+  const days = diasEstancia ?? (await getSystemConfig("guest_session_hours")) / 24;
   return new Date(now.getTime() + (days * 24 + 2) * 60 * 60 * 1000);
 }
 
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
 
     const { tipo, nombre, habitacion, maxDevices, diasEstancia, issuerId } = parsed.data;
     const voucherCode = generateVoucherCode();
-    const expireAt = getExpireAt(tipo, diasEstancia);
+    const expireAt = await getExpireAt(tipo, diasEstancia);
 
     // Bulletproof: verify that issuerId actually exists in the database to prevent Prisma crashes.
     let finalIssuerId = issuerId;
@@ -74,7 +77,10 @@ export async function POST(req: Request) {
       },
     });
 
-    const groupId = process.env.RUIJIE_GROUP_ID || "default-group";
+    // Grupo de ancho de banda real asignado a invitados (Paciente/Tránsito)
+    // en Configuración → Red WiFi. Antes esto usaba RUIJIE_GROUP_ID por
+    // error — esa variable es el ID de red/sitio, no el perfil de usuario.
+    const groupId = await getSystemConfig("ruijie_group_guest");
     try {
       await createVoucher({ code: voucherCode, groupId, maxDevices, expireAt, note: nombre });
     } catch (e) {

@@ -1,8 +1,13 @@
-import { InputField, SelectField, ToggleRow } from "./components";
+import { InputField, SelectField, ToggleRow, MockNotice } from "./components";
 
 export default function GeneralSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
+      <MockNotice>
+        Esta sección es una maqueta — para ajustes con efecto real sobre RADIUS/Ruijie ve a{" "}
+        <b>Configuración → Red WiFi</b>.
+      </MockNotice>
+
       {/* Section 1: Información general */}
       <div className="rounded-xl border border-neutral-100 bg-white shadow-sm p-6">
         <h3 className="mb-5 text-sm font-semibold text-neutral-800">

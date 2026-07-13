@@ -5,6 +5,7 @@
 import { db } from "@/lib/db";
 import { LogEvent } from "@prisma/client";
 import { logAccess } from "@/lib/audit";
+import { getSystemConfig } from "@/lib/config";
 
 export interface PolicyInput {
   mac: string;
@@ -31,30 +32,35 @@ export async function evaluatePolicy(input: PolicyInput): Promise<PolicyResult> 
 
   try {
     if (input.tipo === "TRANSITO") {
+      const maxSessions = await getSystemConfig("policy_max_transito_sessions");
       const activeSessions = await db.session.count({
         where: { mac: input.mac, endedAt: null },
       });
-      // Si ya hay más de una sesión activa (incluyendo la recién creada antes de evaluar)
-      if (activeSessions > 1) {
+      // Si ya hay más sesiones activas que el umbral configurado (incluyendo
+      // la recién creada antes de evaluar)
+      if (activeSessions > maxSessions) {
         anomalies.push("TRANSITO_TOO_MANY_SESSIONS");
       }
     }
 
     if (input.tipo === "PACIENTE") {
+      const maxSharedMac = await getSystemConfig("policy_max_shared_mac");
       const sharedMacCount = await db.session.groupBy({
         by: ["credentialId"],
-        where: { 
+        where: {
           mac: input.mac,
           credentialId: { not: null }
         },
       });
-      if (sharedMacCount.length > 4) {
+      if (sharedMacCount.length > maxSharedMac) {
         anomalies.push("REPEATED_VOUCHER_SAME_MAC");
       }
     }
 
+    const nightStart = await getSystemConfig("policy_night_start_hour");
+    const nightEnd = await getSystemConfig("policy_night_end_hour");
     const hour = new Date().getHours();
-    if ((input.tipo === "MEDICO" || input.tipo === "STAFF") && (hour < 5 || hour > 23)) {
+    if ((input.tipo === "MEDICO" || input.tipo === "STAFF") && (hour < nightEnd || hour > nightStart)) {
       anomalies.push("UNUSUAL_NIGHT_ACCESS");
     }
 

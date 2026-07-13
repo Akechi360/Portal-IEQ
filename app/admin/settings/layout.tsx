@@ -22,16 +22,6 @@ export default function SettingsLayout({
 
   return (
     <div className="flex flex-col space-y-6">
-      {/* Top action row */}
-      <div className="flex items-center justify-end gap-3">
-        <button className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
-          Restaurar
-        </button>
-        <button className="rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600">
-          Guardar cambios
-        </button>
-      </div>
-
       <div className="flex flex-col gap-8 md:flex-row">
         {/* Left Sidebar (Sub-navigation) */}
         <div className="w-full shrink-0 md:w-56">

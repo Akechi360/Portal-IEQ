@@ -1,8 +1,13 @@
-import { InputField, SelectField, ToggleRow } from "../components";
+import { InputField, SelectField, ToggleRow, MockNotice } from "../components";
 
 export default function AuthSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
+      <MockNotice>
+        Esta sección es una maqueta — la autenticación real hoy corre por RADIUS/FreeRADIUS
+        (ver Configuración → Red WiFi) y no lee ninguno de estos valores todavía.
+      </MockNotice>
+
       {/* Modo de autenticación */}
       <div className="rounded-xl border border-neutral-100 bg-white shadow-sm p-6">
         <h3 className="mb-5 text-sm font-semibold text-neutral-800">Modo de autenticación</h3>
