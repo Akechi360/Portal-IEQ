@@ -86,10 +86,13 @@ function NavSection({
   pathname: string;
 }) {
   return (
-    <div className="mb-1">
-      <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
-        {title}
-      </p>
+    <div>
+      <div className="mb-1.5 flex items-center gap-2 px-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.09em] text-neutral-400">
+          {title}
+        </p>
+        <span className="h-px flex-1 bg-neutral-100" aria-hidden="true" />
+      </div>
       <nav className="space-y-0.5">
         {items.map((item) => {
           const Icon = item.icon;
@@ -99,13 +102,28 @@ function NavSection({
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150",
+                "group relative flex items-center gap-2.5 rounded-[10px] py-1.5 pl-3 pr-2.5 text-[13.5px] transition-colors duration-150",
                 active
-                  ? "bg-primary-600 font-medium text-white shadow-sm"
-                  : "text-neutral-500 hover:bg-primary-50 hover:text-primary-700"
+                  ? "bg-primary-50 font-semibold text-primary-900"
+                  : "font-medium text-neutral-500 hover:bg-primary-50 hover:text-primary-800"
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              {active && (
+                <span
+                  className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-gradient-to-b from-primary-600 to-primary-500"
+                  aria-hidden="true"
+                />
+              )}
+              <span
+                className={cn(
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
+                  active
+                    ? "bg-gradient-to-br from-primary-700 to-primary-500 text-white shadow-[0_4px_10px_-4px_rgba(13,111,120,0.6)]"
+                    : "text-neutral-400 group-hover:text-primary-600"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </span>
               <span>{item.label}</span>
             </Link>
           );
@@ -165,56 +183,63 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-neutral-100">
-          <img src="/logo-ieq.png" alt="IEQ" className="h-9 w-auto object-contain" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold leading-tight text-neutral-800">Portal IEQ</p>
-            <p className="text-[11px] text-neutral-400">Control de acceso</p>
+        {/* Brand cap teal — eco directo del login */}
+        <div className="px-3 pt-3.5 pb-2.5">
+          <div className="relative overflow-hidden rounded-2xl bg-[linear-gradient(155deg,#0a565d_0%,#0d6f78_55%,#12aeb4_100%)] px-3.5 py-3">
+            <span
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(120px_60px_at_90%_-20%,rgba(255,255,255,0.28),transparent_60%)]"
+              aria-hidden="true"
+            />
+            <div className="relative flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-white/25 bg-white/15 backdrop-blur-sm">
+                <ShieldCheck className="h-[18px] w-[18px] text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-bold leading-tight text-white">Portal IEQ</p>
+                <p className="text-[10.5px] text-white/70">Control de acceso</p>
+              </div>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="shrink-0 rounded-md p-1 text-white/70 hover:bg-white/15 hover:text-white lg:hidden"
+                aria-label="Cerrar menú"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="shrink-0 rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 lg:hidden"
-            aria-label="Cerrar menú"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </div>
 
         {/* Nav sections */}
-        <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-3 pb-4 pt-1 space-y-3.5">
           <NavSection title="Principal" items={principalItems} pathname={pathname} />
           <NavSection title="Análisis" items={analysisItems} pathname={pathname} />
           <NavSection title="Sistema" items={systemItems} pathname={pathname} />
         </div>
 
-        {/* Status bar */}
-        <div className="border-t border-neutral-100 px-4 py-3 text-xs">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
-              <span className="text-neutral-500">Red activa</span>
-            </div>
-            <span className="text-neutral-500">
-              Conectados <span className="font-semibold text-neutral-800">{activeClients} usuarios</span>
+        {/* Status + perfil */}
+        <div className="border-t border-neutral-100 px-3 pb-3 pt-2.5">
+          <div className="flex items-center justify-between px-1 pb-2.5 text-[11px]">
+            <span className="flex items-center gap-1.5 text-neutral-500">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" />
+              Red activa
+            </span>
+            <span className="text-neutral-400">
+              <span className="font-semibold text-neutral-700">{activeClients}</span> conectados
             </span>
           </div>
-        </div>
 
-        {/* Admin user + logout */}
-        <div className="border-t border-neutral-100 px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white text-xs font-bold">
+          <div className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-[#f4f6f9]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-700 to-primary-500 text-xs font-bold text-white shadow-[0_0_0_2px_#fff,0_0_0_3.5px_theme(colors.primary.100)]">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-neutral-800">{adminName}</p>
-              <p className="text-[11px] text-neutral-400">{adminRole}</p>
+              <p className="truncate text-[12.5px] font-medium text-neutral-800">{adminName}</p>
+              <p className="text-[10.5px] text-neutral-400">{adminRole}</p>
             </div>
             <button
               onClick={handleLogout}
               title="Cerrar sesión"
-              className="shrink-0 rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+              className="shrink-0 rounded-lg p-1.5 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -261,7 +286,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
         </header>
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
+          {/* Tope de ancho: a 1920 no tiene efecto (contenido ~1700px); en
+              monitores/TV ultra-anchos centra el contenido para que no se
+              estire de borde a borde. */}
+          <div className="mx-auto w-full max-w-[1760px]">{children}</div>
+        </main>
       </div>
     </div>
   );
