@@ -18,8 +18,9 @@ export default async function LoginPage({
 
   // WiFiDog usa mac/ip/redirect; WISPr (preset "Ruijie") usa
   // client_mac/nas_ip/url + login_url/logout_url. Aceptamos ambos.
+  // Nota: la IP (params.ip / nas_ip) NO se pasa al cliente — es la IP pública
+  // del enlace y no debe quedar visible ni en el HTML del portal público.
   const mac = str(params.mac) ?? str(params.client_mac)
-  const ip = str(params.ip) ?? str(params.nas_ip)
   const redirect = str(params.redirect) ?? str(params.url)
   const ssid = str(params.ssid)
 
@@ -30,7 +31,6 @@ export default async function LoginPage({
   return (
     <LoginClient
       mac={mac || ''}
-      ip={ip || ''}
       redirect={redirect || ''}
       ssid={ssid || 'WiFi-ClinicaIEQ'}
       loginUrl={loginUrl || ''}

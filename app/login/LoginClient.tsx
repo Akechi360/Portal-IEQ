@@ -12,7 +12,6 @@ import styles from "./login.module.css";
 
 interface LoginClientProps {
   mac: string;
-  ip: string;
   redirect: string;
   ssid: string;
   loginUrl?: string;
@@ -22,7 +21,7 @@ interface LoginClientProps {
 type TabType = "code" | "doctor" | "staff";
 type StatusType = "idle" | "loading" | "success" | "error";
 
-export function LoginClient({ mac, ip, redirect, ssid, loginUrl = "", logoutUrl = "" }: LoginClientProps) {
+export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = "" }: LoginClientProps) {
   const router = useRouter();
   // El gateway manda el nombre de la VLAN (p.ej. "VLAN233"), no el SSID real
   const displaySsid =
@@ -410,12 +409,6 @@ export function LoginClient({ mac, ip, redirect, ssid, loginUrl = "", logoutUrl 
             <div className={styles.foot}>
               <span className={styles.dot} /> Red disponible · {displaySsid}
             </div>
-
-            {(mac || ip) && (
-              <p className={styles.debug}>
-                {mac && <>MAC {mac}</>}{mac && ip ? " · " : ""}{ip && <>IP {ip}</>}
-              </p>
-            )}
           </div>
         </div>
       </div>
