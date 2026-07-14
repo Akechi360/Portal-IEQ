@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ticket, Mail, AlertCircle, Wifi, ArrowRight, CheckCircle2, ShieldCheck, Zap, Clock, X } from "lucide-react";
+import { Ticket, Mail, AlertCircle, Wifi, ArrowRight, CheckCircle2, ShieldCheck, ShieldPlus, Zap, Clock, X } from "lucide-react";
 import { cn } from "@/lib/styles";
 import styles from "./login.module.css";
 
@@ -250,7 +250,7 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
           {/* Brand cap */}
           <div className={styles.cap}>
             <div className={styles.capRow}>
-              <div className={styles.mark}><img src="/logo-ieq.png" alt="Clínica IEQ Los Mangos" /></div>
+              <div className={styles.mark}><ShieldPlus /></div>
               <div>
                 <b>Clínica IEQ</b>
                 <span>Los Mangos</span>

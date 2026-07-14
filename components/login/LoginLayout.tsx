@@ -40,7 +40,8 @@ export function LoginLayout({
 
         <div className={styles.brandInner}>
           <div className={styles.logoRow}>
-            <img src="/logo-ieq.png" alt="IEQ" className={styles.logoImg} />
+            {/* El logo (PNG transparente teal) va en el panel blanco del
+                formulario, no sobre el gradiente teal donde no contrastaría. */}
             <div className={styles.logoTxt}>
               <b>Portal IEQ</b>
               <span>Control de acceso WiFi</span>

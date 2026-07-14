@@ -66,6 +66,11 @@ export function LoginClientInternal({
 
   return (
     <div className="w-full">
+      <img
+        src="/logo-ieq.png"
+        alt="Clínica IEQ Los Mangos"
+        className="mb-6 h-16 w-auto select-none"
+      />
       <h2 className="text-[22px] font-bold text-neutral-900 tracking-tight">{title}</h2>
       <p className="text-sm text-neutral-500 mt-1.5 mb-7">
         {description}
