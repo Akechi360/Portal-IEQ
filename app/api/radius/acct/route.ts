@@ -50,6 +50,22 @@ function parseSsid(calledStationId?: string): string | null {
 }
 
 export async function POST(req: Request) {
+  // Mismo candado opcional que /verify: si RADIUS_SHARED_SECRET está definido,
+  // solo FreeRADIUS (que envía ?k=<secreto>) puede reportar accounting, evitando
+  // que alguien inyecte sesiones falsas o cierre sesiones reales. Sin la env, se
+  // mantiene el comportamiento actual (no rompe nada).
+  const radiusSecret = process.env.RADIUS_SHARED_SECRET;
+  if (radiusSecret) {
+    const provided =
+      req.headers.get("x-radius-secret") ||
+      new URL(req.url).searchParams.get("k") ||
+      "";
+    if (provided !== radiusSecret) {
+      console.warn("[RADIUS Acct] Secreto compartido ausente/incorrecto — ignorando");
+      return new NextResponse(null, { status: 200 });
+    }
+  }
+
   // JSON primero; si falla, form-urlencoded (mismo patrón que /verify).
   let body: Record<string, string> = {};
   try {
