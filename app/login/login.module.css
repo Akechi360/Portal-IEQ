@@ -47,8 +47,9 @@
 .cap { position:relative; background:var(--grad); color:#eafcfd; padding:22px 24px 20px; overflow:hidden; }
 .cap::after { content:""; position:absolute; inset:0; background:radial-gradient(320px 160px at 82% -20%, rgba(255,255,255,.28), transparent 60%); }
 .capRow { position:relative; display:flex; align-items:center; gap:12px; }
-.mark { width:44px;height:44px;border-radius:13px;flex:0 0 auto; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.32); display:grid;place-items:center; }
+.mark { width:46px;height:46px;border-radius:13px;flex:0 0 auto; background:#fff; border:1px solid rgba(255,255,255,.7); display:grid;place-items:center; overflow:hidden; padding:5px; box-shadow:0 6px 14px -6px rgba(10,86,93,.5); }
 .mark svg { width:23px;height:23px; }
+.mark img { width:100%; height:100%; object-fit:contain; }
 .capRow b { display:block;font-size:15px;font-weight:700;letter-spacing:.2px; }
 .capRow span { display:block;font-size:12px;color:rgba(234,252,253,.75);margin-top:1px; }
 .capTitle { position:relative; margin:16px 0 0; font-size:19px; font-weight:600; letter-spacing:-.2px; }
@@ -108,6 +109,32 @@
 .foot .dot { width:7px;height:7px;border-radius:50%;background:var(--teal-500); box-shadow:0 0 0 4px rgba(18,174,180,.18); animation:pulse 2s infinite; }
 .debug { margin-top:10px; text-align:center; font-size:10.5px; color:var(--ink3); font-variant-numeric:tabular-nums; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+/* Términos y aviso de privacidad */
+.legal { margin-top:14px; text-align:center; font-size:11px; line-height:1.5; color:var(--ink3); }
+.legalLink { appearance:none; border:0; background:none; padding:0; cursor:pointer; font:inherit; font-size:11px; color:var(--teal-800); font-weight:600; text-decoration:underline; text-underline-offset:2px; }
+.legalLink:hover { color:var(--teal-500); }
+
+.modalOverlay { position:fixed; inset:0; z-index:50; background:rgba(10,40,44,.55); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:18px; animation:fade .2s ease both; }
+.modalCard { background:#fff; width:100%; max-width:460px; max-height:86vh; border-radius:var(--r-lg); box-shadow:var(--sh-card); display:flex; flex-direction:column; overflow:hidden; animation:pop .32s var(--ease) both; }
+.modalHead { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px 14px; border-bottom:1px solid var(--line); }
+.modalHead h2 { margin:0; font-size:16px; font-weight:700; color:var(--ink); }
+.modalClose { appearance:none; border:0; background:var(--tertiary); border-radius:10px; width:32px;height:32px; display:grid;place-items:center; cursor:pointer; color:var(--ink2); transition:background .15s,color .15s; }
+.modalClose:hover { background:var(--tint); color:var(--teal-800); }
+.modalClose svg { width:17px;height:17px; }
+.modalBody { padding:16px 20px; overflow-y:auto; }
+.modalBody h4 { margin:16px 0 5px; font-size:13px; font-weight:700; color:var(--teal-800); }
+.modalBody h4:first-child { margin-top:0; }
+.modalBody p { margin:0 0 8px; font-size:12.5px; line-height:1.55; color:var(--ink2); }
+.modalBody ul { margin:0 0 8px; padding-left:18px; }
+.modalBody li { font-size:12.5px; line-height:1.55; color:var(--ink2); margin-bottom:3px; }
+.modalConsent { display:flex; gap:10px; align-items:flex-start; margin-top:6px; background:var(--tertiary); border:1px solid var(--line); border-radius:var(--r-md); padding:12px 13px; cursor:pointer; }
+.modalConsent input { margin-top:2px; width:16px;height:16px; accent-color:var(--teal-800); flex:0 0 auto; cursor:pointer; }
+.modalConsent span { font-size:12px; line-height:1.5; color:var(--ink2); }
+.modalFoot { padding:14px 20px 18px; border-top:1px solid var(--line); }
+.modalBtn { width:100%; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600; color:#fff; border:0; padding:13px; border-radius:var(--r-md); background:var(--grad); box-shadow:0 12px 24px -12px rgba(18,174,180,.7); transition:filter .15s, transform .14s var(--ease); }
+.modalBtn:hover { filter:brightness(1.05); }
+.modalBtn:active { transform:scale(.99); }
 
 @media (prefers-reduced-motion:reduce) {
   .portal *, .portal { animation:none !important; transition:none !important; }

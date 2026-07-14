@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ticket, Mail, AlertCircle, Wifi, ArrowRight, CheckCircle2, ShieldCheck, ShieldPlus, Zap, Clock } from "lucide-react";
+import { Ticket, Mail, AlertCircle, Wifi, ArrowRight, CheckCircle2, ShieldCheck, Zap, Clock, X } from "lucide-react";
 import { cn } from "@/lib/styles";
 import styles from "./login.module.css";
 
@@ -38,6 +38,10 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
     window.location.href = url.toString();
   }
   const [activeTab, setActiveTab] = useState<TabType>("code");
+
+  // Términos y aviso de privacidad
+  const [showTerms, setShowTerms] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   // Formulario de código (PACIENTE / TRANSITO)
   const [code, setCode] = useState("");
@@ -246,7 +250,7 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
           {/* Brand cap */}
           <div className={styles.cap}>
             <div className={styles.capRow}>
-              <div className={styles.mark}><ShieldPlus /></div>
+              <div className={styles.mark}><img src="/logo-ieq.png" alt="Clínica IEQ Los Mangos" /></div>
               <div>
                 <b>Clínica IEQ</b>
                 <span>Los Mangos</span>
@@ -402,16 +406,99 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
             {/* Chips de confianza */}
             <div className={styles.trust}>
               <div className={styles.chip}><ShieldCheck /><b>WPA3</b><span>Cifrado</span></div>
-              <div className={styles.chip}><Zap /><b>500 Mbps</b><span>Velocidad</span></div>
-              <div className={styles.chip}><Clock /><b>06–22h</b><span>Lun–Vie</span></div>
+              <div className={styles.chip}><Zap /><b>600 Mbps</b><span>Velocidad</span></div>
+              <div className={styles.chip}><Clock /><b>24/7</b><span>Disponible</span></div>
             </div>
 
             <div className={styles.foot}>
               <span className={styles.dot} /> Red disponible · {displaySsid}
             </div>
+
+            <p className={styles.legal}>
+              Al conectarte aceptas los{" "}
+              <button type="button" className={styles.legalLink} onClick={() => setShowTerms(true)}>
+                Términos y el Aviso de Privacidad
+              </button>.
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Modal: Términos y Aviso de Privacidad */}
+      {showTerms && (
+        <div className={styles.modalOverlay} onClick={() => setShowTerms(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Términos y Aviso de Privacidad">
+            <div className={styles.modalHead}>
+              <h2>Términos y Aviso de Privacidad</h2>
+              <button type="button" className={styles.modalClose} onClick={() => setShowTerms(false)} aria-label="Cerrar">
+                <X />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p>
+                Clínica IEQ Los Mangos pone a tu disposición esta red WiFi de cortesía. Al
+                conectarte, aceptas los presentes términos y el tratamiento de tus datos que
+                aquí se describe, conforme a la legislación venezolana.
+              </p>
+
+              <h4>1. Datos que recopilamos</h4>
+              <p>Para operar y proteger la red registramos datos técnicos de la conexión:</p>
+              <ul>
+                <li>Dirección MAC e IP del dispositivo.</li>
+                <li>Fecha, hora y duración de las sesiones.</li>
+                <li>Volumen de datos consumidos y red (SSID) utilizada.</li>
+                <li>Correo institucional o código de acceso con el que te autenticas.</li>
+              </ul>
+
+              <h4>2. Finalidad</h4>
+              <p>
+                Usamos estos datos únicamente para brindar el servicio de acceso a Internet,
+                garantizar la seguridad de la red, prevenir usos indebidos y cumplir con las
+                obligaciones legales aplicables.
+              </p>
+
+              <h4>3. Base legal y tus derechos</h4>
+              <p>
+                El tratamiento se realiza conforme al artículo 28 de la Constitución de la
+                República Bolivariana de Venezuela (derecho de acceso y protección de datos) y
+                demás normativa vigente. Puedes solicitar el acceso, rectificación o supresión
+                de tus datos escribiendo al departamento de Sistemas de la clínica.
+              </p>
+
+              <h4>4. Conservación</h4>
+              <p>
+                Los registros de conexión se conservan por el tiempo necesario para los fines
+                indicados y luego se eliminan o anonimizan.
+              </p>
+
+              <h4>5. Comunicaciones y marketing</h4>
+              <p>
+                Si nos proporcionas un correo, podremos enviarte información institucional y
+                promociones de los servicios de Clínica IEQ Los Mangos, solo si lo autorizas a
+                continuación. Puedes revocar esta autorización en cualquier momento.
+              </p>
+              <label className={styles.modalConsent}>
+                <input
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={(e) => setMarketingOptIn(e.target.checked)}
+                />
+                <span>
+                  Autorizo el uso de mis datos de contacto para recibir información y
+                  promociones de Clínica IEQ Los Mangos. (Opcional)
+                </span>
+              </label>
+            </div>
+
+            <div className={styles.modalFoot}>
+              <button type="button" className={styles.modalBtn} onClick={() => setShowTerms(false)}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

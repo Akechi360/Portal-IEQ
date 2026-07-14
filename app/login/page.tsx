@@ -32,7 +32,7 @@ export default async function LoginPage({
     <LoginClient
       mac={mac || ''}
       redirect={redirect || ''}
-      ssid={ssid || 'WiFi-ClinicaIEQ'}
+      ssid={ssid || 'WiFi Clinica IEQ Los Mangos'}
       loginUrl={loginUrl || ''}
       logoutUrl={logoutUrl || ''}
     />

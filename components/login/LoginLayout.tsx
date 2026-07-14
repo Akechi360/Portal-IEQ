@@ -25,7 +25,7 @@ export function LoginLayout({
   leftFeatures,
   badgeSSID,
   badgePrefix = "Red disponible",
-  footerText = "© 2026 IEQ - Todos los derechos reservados",
+  footerText = "© 2026 Clínica IEQ Los Mangos - Todos los derechos reservados",
   children,
 }: LoginLayoutProps) {
   const [line1, line2] = leftTitle.split("\\n");
