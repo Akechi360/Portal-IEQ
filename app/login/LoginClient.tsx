@@ -6,8 +6,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ticket, Mail, AlertCircle, Wifi, ArrowRight, CheckCircle2, ShieldCheck, ShieldPlus, Zap, Clock, X } from "lucide-react";
+import { Ticket, Mail, Wifi, ArrowRight, CheckCircle2, ShieldCheck, ShieldPlus, Zap, Clock, X } from "lucide-react";
 import { cn } from "@/lib/styles";
+import { alertMessage } from "@/lib/alerts";
 import styles from "./login.module.css";
 
 interface LoginClientProps {
@@ -46,20 +47,40 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
   // Formulario de código (PACIENTE / TRANSITO)
   const [code, setCode] = useState("");
   const [codeStatus, setCodeStatus] = useState<StatusType>("idle");
-  const [codeError, setCodeError] = useState("");
 
   // Formulario de médico
   const [email, setEmail] = useState("");
   const [doctorStatus, setDoctorStatus] = useState<StatusType>("idle");
-  const [doctorError, setDoctorError] = useState("");
 
   // Formulario de Gerencia / Staff
   const [staffEmail, setStaffEmail] = useState("");
   const [staffStatus, setStaffStatus] = useState<StatusType>("idle");
-  const [staffError, setStaffError] = useState("");
 
   // Índice del segmento activo (para el indicador deslizante)
   const segIndex = activeTab === "code" ? 0 : activeTab === "doctor" ? 1 : 2;
+
+  // Diálogo de error de acceso, con guía según el tipo de usuario:
+  // paciente -> pedir en Admisión; médico/personal -> pedir en Sistemas.
+  const showAccessError = (tipo: "paciente" | "medico" | "personal", serverMsg?: string) => {
+    const donde = tipo === "paciente" ? "Admisión" : "Sistemas";
+    const que = tipo === "paciente" ? "tu código de acceso" : "tu correo";
+    alertMessage({
+      icon: "warning",
+      title: "No pudimos darte acceso",
+      html:
+        (serverMsg ? `${serverMsg}<br/><br/>` : "") +
+        `Revisa que <b>${que}</b> esté bien escrito. Si aún no tienes acceso, ` +
+        `solicítalo en <b>${donde}</b>.`,
+    });
+  };
+
+  const showConnectionError = () => {
+    alertMessage({
+      icon: "error",
+      title: "Error de conexión",
+      text: "No pudimos conectar con el servidor. Intenta de nuevo en un momento.",
+    });
+  };
 
   // Handler para acceso con código
   const handleCodeSubmit = async (e: React.FormEvent) => {
@@ -107,12 +128,12 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
 
         router.push(successUrl.toString());
       } else {
-        setCodeStatus("error");
-        setCodeError(data.message || "Código inválido o expirado");
+        setCodeStatus("idle");
+        showAccessError("paciente", data.message);
       }
     } catch (err) {
-      setCodeStatus("error");
-      setCodeError("Error de conexión. Intenta de nuevo.");
+      setCodeStatus("idle");
+      showConnectionError();
     }
   };
 
@@ -160,27 +181,24 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
 
         router.push(successUrl.toString());
       } else {
-        setDoctorStatus("error");
-        setDoctorError(data.message || "Correo no registrado como médico");
+        setDoctorStatus("idle");
+        showAccessError("medico", data.message);
       }
     } catch (err) {
-      setDoctorStatus("error");
-      setDoctorError("Error de conexión. Intenta de nuevo.");
-    } finally {
       setDoctorStatus("idle");
+      showConnectionError();
     }
   };
 
-  // Handler simulado para acceso de Gerencia / Staff
+  // Handler para acceso de Gerencia / Staff
   const handleStaffSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!staffEmail.trim() || !staffEmail.includes("@")) {
-      setStaffError("Ingresa un correo institucional válido.");
+      showAccessError("personal");
       return;
     }
 
     setStaffStatus("loading");
-    setStaffError("");
 
     try {
       const res = await fetch("/api/auth/staff-wifi", {
@@ -219,14 +237,12 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
 
         router.push(successUrl.toString());
       } else {
-        setStaffStatus("error");
-        setStaffError(data.message || "Error de autenticación.");
+        setStaffStatus("idle");
+        showAccessError("personal", data.message);
       }
     } catch (err) {
-      setStaffStatus("error");
-      setStaffError("Error de conexión. Intenta de nuevo.");
-    } finally {
       setStaffStatus("idle");
+      showConnectionError();
     }
   };
 
@@ -292,16 +308,6 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
                 </div>
                 <p className={styles.subhint}>Lo entrega Admisión al registrarte · válido por tu estancia</p>
 
-                {codeStatus === "error" && (
-                  <div className={cn(styles.alert, styles.alertError)} role="alert">
-                    <AlertCircle />
-                    <div>
-                      <strong>{codeError || "Código inválido o expirado."}</strong>
-                      <p>Solicita un nuevo código en Admisión.</p>
-                    </div>
-                  </div>
-                )}
-
                 <button type="submit" disabled={codeStatus === "loading" || !code.trim()} className={styles.cta}>
                   {codeStatus === "loading" ? (
                     <><span className={styles.spinner} /> Verificando...</>
@@ -330,16 +336,6 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
                   />
                 </div>
                 <p className={styles.subhint}>El correo que registró Sistemas (Gmail, Outlook, etc.)</p>
-
-                {doctorStatus === "error" && (
-                  <div className={cn(styles.alert, styles.alertError)} role="alert">
-                    <AlertCircle />
-                    <div>
-                      <strong>{doctorError || "Correo no registrado como médico."}</strong>
-                      <p>Contacta al departamento de Sistemas · Ext. 101.</p>
-                    </div>
-                  </div>
-                )}
 
                 <button type="submit" disabled={doctorStatus === "loading" || !email.trim()} className={styles.cta}>
                   {doctorStatus === "loading" ? (
@@ -374,15 +370,6 @@ export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = ""
                 </div>
                 <p className={styles.subhint}>Personal y gerencia de la clínica</p>
 
-                {staffStatus === "error" && (
-                  <div className={cn(styles.alert, styles.alertError)} role="alert">
-                    <AlertCircle />
-                    <div>
-                      <strong>{staffError || "Error de autenticación."}</strong>
-                      <p>Verifica tu correo o intenta de nuevo.</p>
-                    </div>
-                  </div>
-                )}
                 {staffStatus === "success" && (
                   <div className={cn(styles.alert, styles.alertSuccess)}>
                     <CheckCircle2 />
