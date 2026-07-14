@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getSystemConfig } from "@/lib/config";
 
 /**
  * POST /api/radius/verify
@@ -108,6 +109,16 @@ export async function POST(req: Request) {
       }
     }
 
+    // Médicos y personal tienen acceso "permanente" pero revocable: en vez de
+    // autorizar indefinidamente (lo que dejaría al gateway sin volver a
+    // consultar nunca y haría imposible revocar a alguien que ya no labora),
+    // devolvemos un Session-Timeout para que el gateway revalide contra RADIUS
+    // cada N minutos. Termination-Action=RADIUS-Request(1) le pide reautenticar
+    // en silencio al vencer, de modo que la sesión se siente permanente pero,
+    // al desactivar a la persona, el próximo ciclo la rechaza y la desconecta.
+    const reauthMinutes = await getSystemConfig("session_reauth_minutes");
+    const sessionTimeout = String(Math.max(1, Math.round(reauthMinutes)) * 60);
+
     // Attempt 2: Doctor email (insensible a mayúsculas: el gateway envía el
     // correo tal como lo escribió el médico, la DB lo guarda en minúsculas)
     const doctor = await db.doctor.findFirst({
@@ -115,10 +126,12 @@ export async function POST(req: Request) {
     });
 
     if (doctor && doctor.status === "ACTIVE") {
-      console.log(`[RADIUS Verify] ACCEPT doctor: ${username}`);
+      console.log(`[RADIUS Verify] ACCEPT doctor: ${username} (reauth ${sessionTimeout}s)`);
       return NextResponse.json({
         "control:Auth-Type": "Accept",
         "control:Cleartext-Password": password,
+        "reply:Session-Timeout": sessionTimeout,
+        "reply:Termination-Action": "1",
       });
     }
 
@@ -128,10 +141,12 @@ export async function POST(req: Request) {
     });
 
     if (staff && staff.status === "ACTIVE") {
-      console.log(`[RADIUS Verify] ACCEPT staff: ${username}`);
+      console.log(`[RADIUS Verify] ACCEPT staff: ${username} (reauth ${sessionTimeout}s)`);
       return NextResponse.json({
         "control:Auth-Type": "Accept",
         "control:Cleartext-Password": password,
+        "reply:Session-Timeout": sessionTimeout,
+        "reply:Termination-Action": "1",
       });
     }
 

@@ -8,8 +8,8 @@ import {
   Search,
   Check,
   X,
-  EyeOff,
-  Eye,
+  Ban,
+  RotateCcw,
   Clock,
   Loader2,
   Upload,
@@ -68,6 +68,19 @@ export default function MedicosPage() {
     const matchesFiltro = filtro === "todos" || statusMapeado === filtro;
     return matchesSearch && matchesFiltro;
   });
+
+  const handleRevoke = async (id: string, nombre: string) => {
+    if (
+      !confirm(
+        `¿Revocar el acceso WiFi de ${nombre}?\n\n` +
+        `Se usa cuando la persona ya no labora en la clínica. Su correo dejará de ` +
+        `conectarse y su dispositivo será desconectado en la próxima revalidación ` +
+        `del gateway (según el intervalo configurado). Podrás restaurarlo cuando quieras.`
+      )
+    )
+      return;
+    await handleToggleStatus(id, "INACTIVE");
+  };
 
   const handleToggleStatus = async (id: string, nuevoStatus: "ACTIVE" | "INACTIVE" | "PENDING") => {
     setLoadingId(id);
@@ -396,22 +409,32 @@ export default function MedicosPage() {
                         )}
                         {statusMapeado === "activo" && (
                           <button
-                            title="Desactivar"
-                            onClick={() => handleToggleStatus(m.id, "INACTIVE")}
+                            title="Revocar el acceso WiFi de este médico"
+                            onClick={() => handleRevoke(m.id, m.nombre)}
                             disabled={loadingId === m.id}
-                            className="bg-gray-100 hover:bg-gray-200 rounded-lg p-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                           >
-                            <EyeOff className="w-[14px] h-[14px]" />
+                            {loadingId === m.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Ban className="h-3.5 w-3.5" />
+                            )}
+                            Revocar acceso
                           </button>
                         )}
                         {statusMapeado === "inactivo" && (
                           <button
-                            title="Reactivar"
+                            title="Restaurar el acceso WiFi de este médico"
                             onClick={() => handleToggleStatus(m.id, "ACTIVE")}
                             disabled={loadingId === m.id}
-                            className="bg-gray-100 hover:bg-green-100 rounded-lg p-1.5 text-gray-400 hover:text-green-600 transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
                           >
-                            <Eye className="w-[14px] h-[14px]" />
+                            {loadingId === m.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            )}
+                            Restaurar acceso
                           </button>
                         )}
                       </div>

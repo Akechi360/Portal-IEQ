@@ -32,6 +32,10 @@ export interface SystemConfigMap {
   policy_max_transito_sessions: number;
   policy_night_start_hour: number;
   policy_night_end_hour: number;
+  // Cada cuántos minutos el gateway revalida contra RADIUS las sesiones
+  // permanentes (médico/personal). Define en cuánto surte efecto una
+  // revocación de acceso. Ver /api/radius/verify.
+  session_reauth_minutes: number;
 }
 
 // ─── Valores por defecto (offline) ────────────────────────────────────────────
@@ -65,6 +69,7 @@ const DEFAULT_SYSTEM: SystemConfigMap = {
   policy_max_transito_sessions: 1,
   policy_night_start_hour: 23,
   policy_night_end_hour: 5,
+  session_reauth_minutes: 60,
 };
 
 import { db } from "@/lib/db";
@@ -80,7 +85,8 @@ function parseConfigValue(key: string, value: string): any {
     key === "policy_max_shared_mac" ||
     key === "policy_max_transito_sessions" ||
     key === "policy_night_start_hour" ||
-    key === "policy_night_end_hour"
+    key === "policy_night_end_hour" ||
+    key === "session_reauth_minutes"
   ) {
     const num = Number(value);
     return isNaN(num) ? null : num;

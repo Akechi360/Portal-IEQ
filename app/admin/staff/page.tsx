@@ -5,8 +5,8 @@ import useSWR from "swr";
 import {
   UserPlus,
   Search,
-  EyeOff,
-  Eye,
+  Ban,
+  RotateCcw,
   Loader2,
   X,
   Upload,
@@ -49,6 +49,19 @@ export default function StaffPage() {
       (filtro === "inactivo" && s.status === "INACTIVE");
     return matchesSearch && matchesFiltro;
   });
+
+  const handleRevoke = async (id: string, nombre: string) => {
+    if (
+      !confirm(
+        `¿Revocar el acceso WiFi de ${nombre}?\n\n` +
+        `Se usa cuando la persona ya no labora en la clínica. Su correo dejará de ` +
+        `conectarse y su dispositivo será desconectado en la próxima revalidación ` +
+        `del gateway (según el intervalo configurado). Podrás restaurarlo cuando quieras.`
+      )
+    )
+      return;
+    await handleToggleStatus(id, "INACTIVE");
+  };
 
   const handleToggleStatus = async (id: string, nuevoStatus: "ACTIVE" | "INACTIVE") => {
     setLoadingId(id);
@@ -299,21 +312,31 @@ export default function StaffPage() {
                     <td className="px-4 py-3.5">
                       {s.status === "ACTIVE" ? (
                         <button
-                          title="Desactivar"
-                          onClick={() => handleToggleStatus(s.id, "INACTIVE")}
+                          title="Revocar el acceso WiFi de este personal"
+                          onClick={() => handleRevoke(s.id, s.nombre || s.email)}
                           disabled={loadingId === s.id}
-                          className="bg-neutral-100 hover:bg-neutral-200 rounded-lg p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                         >
-                          <EyeOff className="w-[14px] h-[14px]" />
+                          {loadingId === s.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Ban className="h-3.5 w-3.5" />
+                          )}
+                          Revocar acceso
                         </button>
                       ) : (
                         <button
-                          title="Reactivar"
+                          title="Restaurar el acceso WiFi de este personal"
                           onClick={() => handleToggleStatus(s.id, "ACTIVE")}
                           disabled={loadingId === s.id}
-                          className="bg-neutral-100 hover:bg-green-100 rounded-lg p-1.5 text-neutral-400 hover:text-green-600 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
                         >
-                          <Eye className="w-[14px] h-[14px]" />
+                          {loadingId === s.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          )}
+                          Restaurar acceso
                         </button>
                       )}
                     </td>
