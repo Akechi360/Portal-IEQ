@@ -4,8 +4,22 @@
 
 import { jwtVerify, SignJWT } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET || "default_super_secret_key_change_in_production";
-const key = new TextEncoder().encode(JWT_SECRET);
+/**
+ * Deriva la clave de firma en tiempo de ejecución. Exige JWT_SECRET fuerte:
+ * NO hay fallback inseguro. Si falta, lanza — así la app falla ruidosamente
+ * en vez de firmar sesiones con una clave pública conocida (takeover de admin).
+ * Es perezoso (no top-level) para no romper el build cuando la env no está
+ * disponible en tiempo de compilación.
+ */
+function getKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 16) {
+    throw new Error(
+      "JWT_SECRET no está configurado o es demasiado corto. Define una clave aleatoria de 32+ bytes (openssl rand -hex 32) en las variables de entorno."
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export interface SessionPayload {
   sub: string;
@@ -20,12 +34,12 @@ export async function signToken(payload: SessionPayload): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("12h")
-    .sign(key);
+    .sign(getKey());
 }
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, key);
+    const { payload } = await jwtVerify(token, getKey());
     return payload as SessionPayload;
   } catch {
     return null;

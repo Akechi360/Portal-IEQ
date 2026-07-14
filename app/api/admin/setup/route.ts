@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/jwt";
 import bcrypt from "bcryptjs";
 
-export async function GET() {
+// GET — Estado de los admins. PROTEGIDO: solo un admin autenticado puede verlo.
+// (Antes era público y filtraba usuarios y roles a cualquiera.)
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const count = await db.admin.count();
     const admins = await db.admin.findMany({ select: { username: true, role: true, status: true } });
@@ -12,13 +18,36 @@ export async function GET() {
   }
 }
 
-// One-time setup endpoint — creates default admins if none exist.
-// Only works when no Admin records are in the DB (safe to call multiple times).
+// POST — Seed inicial de admins. Solo funciona si aún no existe ningún admin.
+// Requiere SETUP_SECRET del entorno (SIN fallback hardcodeado) y lee las
+// contraseñas iniciales de variables de entorno (SETUP_ADMIN_PASSWORD /
+// SETUP_OPERADOR_PASSWORD): nunca del código. Tras el seed, las contraseñas
+// solo viven en la DB (hasheadas con bcrypt).
 export async function POST(req: Request) {
-  const { secret } = await req.json().catch(() => ({}));
+  const setupSecret = process.env.SETUP_SECRET;
+  if (!setupSecret) {
+    return NextResponse.json(
+      { ok: false, message: "SETUP_SECRET no está configurado en el servidor." },
+      { status: 500 }
+    );
+  }
 
-  if (secret !== process.env.SETUP_SECRET && secret !== "ieq-setup-2026") {
+  const { secret } = await req.json().catch(() => ({}));
+  if (secret !== setupSecret) {
     return NextResponse.json({ ok: false, message: "No autorizado." }, { status: 401 });
+  }
+
+  const adminPassword = process.env.SETUP_ADMIN_PASSWORD;
+  const operadorPassword = process.env.SETUP_OPERADOR_PASSWORD;
+  if (!adminPassword || !operadorPassword) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message:
+          "Define SETUP_ADMIN_PASSWORD y SETUP_OPERADOR_PASSWORD en el entorno antes de ejecutar el setup.",
+      },
+      { status: 500 }
+    );
   }
 
   try {
@@ -27,16 +56,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, message: `Ya existen ${existing} admin(s). Setup no necesario.` });
     }
   } catch (e: any) {
-    return NextResponse.json({
-      ok: false,
-      message: "Error al consultar DB — probablemente las migraciones no se aplicaron.",
-      error: e?.message ?? String(e),
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Error al consultar DB — probablemente las migraciones no se aplicaron.",
+        error: e?.message ?? String(e),
+      },
+      { status: 500 }
+    );
   }
 
   try {
-    const superHash = await bcrypt.hash("Sistemas#2026", 10);
-    const opHash   = await bcrypt.hash("Admision#2026", 10);
+    const superHash = await bcrypt.hash(adminPassword, 10);
+    const opHash = await bcrypt.hash(operadorPassword, 10);
 
     await db.admin.createMany({
       data: [
@@ -59,15 +91,15 @@ export async function POST(req: Request) {
       ],
     });
 
+    // No devolvemos las contraseñas en la respuesta.
     return NextResponse.json({
       ok: true,
-      message: "Admins creados. SUPERADMIN: admin_sistemas / Sistemas#2026",
+      message: "Admins creados: admin_sistemas (SUPERADMIN) y admin_operador (OPERADOR).",
     });
   } catch (e: any) {
-    return NextResponse.json({
-      ok: false,
-      message: "Error al crear admins.",
-      error: e?.message ?? String(e),
-    }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, message: "Error al crear admins.", error: e?.message ?? String(e) },
+      { status: 500 }
+    );
   }
 }

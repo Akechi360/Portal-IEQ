@@ -21,6 +21,26 @@ function normalizeMac(raw: string): string {
 }
 
 export async function POST(req: Request) {
+  // Secreto compartido opcional: si RADIUS_SHARED_SECRET está definido, solo
+  // FreeRADIUS (que envía el mismo secreto) puede consultar este endpoint,
+  // evitando que cualquiera en internet enumere correos/vouchers válidos.
+  // Si no está definido, se permite (compatibilidad con el flujo actual) pero
+  // se registra una advertencia. Para activarlo: setear RADIUS_SHARED_SECRET
+  // en Coolify y añadir "?k=<secreto>" a la uri del módulo rest de FreeRADIUS.
+  const radiusSecret = process.env.RADIUS_SHARED_SECRET;
+  if (radiusSecret) {
+    const provided =
+      req.headers.get("x-radius-secret") ||
+      new URL(req.url).searchParams.get("k") ||
+      "";
+    if (provided !== radiusSecret) {
+      console.warn("[RADIUS Verify] Secreto compartido ausente/incorrecto — rechazando");
+      return NextResponse.json({ "reply:Reply-Message": "Unauthorized" }, { status: 200 });
+    }
+  } else {
+    console.warn("[RADIUS Verify] RADIUS_SHARED_SECRET no configurado — endpoint sin protección de origen");
+  }
+
   let username = "";
   let password = "";
   let rawMac = "";
