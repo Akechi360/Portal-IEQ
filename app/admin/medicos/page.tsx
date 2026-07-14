@@ -15,6 +15,7 @@ import {
   Upload,
 } from "lucide-react";
 import { parseCsv } from "@/lib/csv";
+import { confirmAction } from "@/lib/alerts";
 
 type StatusMedico = "activo" | "pendiente" | "inactivo";
 
@@ -70,15 +71,16 @@ export default function MedicosPage() {
   });
 
   const handleRevoke = async (id: string, nombre: string) => {
-    if (
-      !confirm(
-        `¿Revocar el acceso WiFi de ${nombre}?\n\n` +
-        `Se usa cuando la persona ya no labora en la clínica. Su correo dejará de ` +
-        `conectarse y su dispositivo será desconectado en la próxima revalidación ` +
-        `del gateway (según el intervalo configurado). Podrás restaurarlo cuando quieras.`
-      )
-    )
-      return;
+    const ok = await confirmAction({
+      title: `¿Revocar el acceso WiFi de ${nombre}?`,
+      html:
+        "Se usa cuando la persona ya no labora en la clínica. Su correo dejará de " +
+        "conectarse y su dispositivo será desconectado en la próxima revalidación " +
+        "del gateway (según el intervalo configurado). Podrás restaurarlo cuando quieras.",
+      confirmText: "Revocar acceso",
+      danger: true,
+    });
+    if (!ok) return;
     await handleToggleStatus(id, "INACTIVE");
   };
 
