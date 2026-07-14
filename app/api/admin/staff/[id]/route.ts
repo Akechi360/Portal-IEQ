@@ -32,9 +32,14 @@ export async function PATCH(
       );
     }
 
+    // Correo normalizado a minúsculas para que el login por correo coincida,
+    // consistente con el alta individual y en lote.
+    const data = { ...parsed.data };
+    if (data.email) data.email = data.email.trim().toLowerCase();
+
     const staff = await db.staffUser.update({
       where: { id },
-      data: parsed.data,
+      data,
     });
 
     await logAccess({

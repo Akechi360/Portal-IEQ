@@ -10,6 +10,7 @@ import {
   Loader2,
   X,
   Upload,
+  Pencil,
 } from "lucide-react";
 import { parseCsv } from "@/lib/csv";
 import { confirmAction } from "@/lib/alerts";
@@ -30,6 +31,11 @@ export default function StaffPage() {
 
   const [modalStaff, setModalStaff] = useState({ nombre: "", email: "" });
   const [modalError, setModalError] = useState("");
+
+  // Edición de datos
+  const [editStaff, setEditStaff] = useState<{ id: string; nombre: string; email: string } | null>(null);
+  const [editError, setEditError] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ createdCount: number; skipped: { row: number; email?: string; reason: string }[] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +90,34 @@ export default function StaffPage() {
       alert("Error de red al actualizar estado.");
     } finally {
       setLoadingId(null);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editStaff || !editStaff.email.trim()) return;
+    setEditError("");
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${editStaff.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: editStaff.nombre.trim() || undefined,
+          email: editStaff.email.trim(),
+        }),
+      });
+      if (res.ok) {
+        mutate();
+        setEditStaff(null);
+      } else {
+        const err = await res.json();
+        setEditError(err.message || "Error al guardar los cambios.");
+      }
+    } catch (e) {
+      console.error(e);
+      setEditError("Error de red al guardar los cambios.");
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -312,35 +346,46 @@ export default function StaffPage() {
                     </td>
 
                     <td className="px-4 py-3.5">
-                      {s.status === "ACTIVE" ? (
+                      <div className="flex items-center gap-2">
                         <button
-                          title="Revocar el acceso WiFi de este personal"
-                          onClick={() => handleRevoke(s.id, s.nombre || s.email)}
-                          disabled={loadingId === s.id}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                          title="Editar datos de este personal"
+                          onClick={() => setEditStaff({ id: s.id, nombre: s.nombre || "", email: s.email })}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
                         >
-                          {loadingId === s.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Ban className="h-3.5 w-3.5" />
-                          )}
-                          Revocar acceso
+                          <Pencil className="h-3.5 w-3.5" />
+                          Editar
                         </button>
-                      ) : (
-                        <button
-                          title="Restaurar el acceso WiFi de este personal"
-                          onClick={() => handleToggleStatus(s.id, "ACTIVE")}
-                          disabled={loadingId === s.id}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
-                        >
-                          {loadingId === s.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <RotateCcw className="h-3.5 w-3.5" />
-                          )}
-                          Restaurar acceso
-                        </button>
-                      )}
+
+                        {s.status === "ACTIVE" ? (
+                          <button
+                            title="Revocar el acceso WiFi de este personal"
+                            onClick={() => handleRevoke(s.id, s.nombre || s.email)}
+                            disabled={loadingId === s.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                          >
+                            {loadingId === s.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Ban className="h-3.5 w-3.5" />
+                            )}
+                            Revocar acceso
+                          </button>
+                        ) : (
+                          <button
+                            title="Restaurar el acceso WiFi de este personal"
+                            onClick={() => handleToggleStatus(s.id, "ACTIVE")}
+                            disabled={loadingId === s.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
+                          >
+                            {loadingId === s.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            )}
+                            Restaurar acceso
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -412,6 +457,67 @@ export default function StaffPage() {
                 className="bg-primary-600 hover:bg-primary-700 text-white transition-colors rounded-xl px-4 py-2.5 text-sm font-medium flex-1 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 Registrar y activar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN */}
+      {editStaff && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-neutral-900">Editar personal</h2>
+              <button
+                onClick={() => setEditStaff(null)}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Nombre completo (opcional)</label>
+                <input
+                  type="text"
+                  value={editStaff.nombre}
+                  onChange={(e) => setEditStaff({ ...editStaff, nombre: e.target.value })}
+                  placeholder="María González"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Correo institucional</label>
+                <input
+                  type="email"
+                  value={editStaff.email}
+                  onChange={(e) => setEditStaff({ ...editStaff, email: e.target.value })}
+                  placeholder="nombre@clinicaieq.com"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {editError && (
+              <p className="mt-3 text-sm text-red-600">{editError}</p>
+            )}
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEditStaff(null)}
+                className="bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors rounded-xl px-4 py-2.5 text-sm flex-1 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editSaving || !editStaff.email.trim()}
+                className="bg-primary-600 hover:bg-primary-700 text-white transition-colors rounded-xl px-4 py-2.5 text-sm font-medium flex-1 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+              >
+                {editSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Guardar cambios
               </button>
             </div>
           </div>
