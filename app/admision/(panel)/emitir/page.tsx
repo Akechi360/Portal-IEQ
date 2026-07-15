@@ -328,7 +328,7 @@ export default function EmitirCredencialPage() {
           {/* BOTÓN GENERAR */}
           <button
             onClick={handleGenerar}
-            disabled={!nombre.trim() || (tipo === "Paciente" && !habitacion) || loading}
+            disabled={!nombre.trim() || (tipo === "Paciente" && (!habitacion || !numeroHabitacion.trim())) || loading}
             className="w-full mt-6 py-3 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
