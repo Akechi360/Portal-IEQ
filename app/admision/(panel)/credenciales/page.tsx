@@ -60,7 +60,7 @@ export default function CredencialesPage() {
 
       autoTable(doc, {
         startY: 28,
-        head: [["Código", "Tipo", "Nombre", "Área", "Creada", "Expira", "Disp.", "Estado"]],
+        head: [["Código", "Tipo", "Nombre", "Área / Habitación", "Creada", "Expira", "Disp.", "Estado"]],
         body: items.map((c) => [
           c.identifier,
           tipoLabel(c.type),
@@ -166,7 +166,7 @@ export default function CredencialesPage() {
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Área</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Área / Habitación</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Creada</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Expira</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Disp.</th>

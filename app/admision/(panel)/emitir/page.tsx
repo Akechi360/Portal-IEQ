@@ -21,7 +21,8 @@ export default function EmitirCredencialPage() {
 
   const [tipo, setTipo] = useState<"Paciente" | "Transito">("Paciente");
   const [nombre, setNombre] = useState("");
-  const [habitacion, setHabitacion] = useState("");
+  const [habitacion, setHabitacion] = useState(""); // área (dropdown)
+  const [numeroHabitacion, setNumeroHabitacion] = useState(""); // habitación (texto)
   const [diasEstancia, setDiasEstancia] = useState(1);
   const [maxDispositivos, setMaxDispositivos] = useState(1);
   
@@ -58,7 +59,10 @@ export default function EmitirCredencialPage() {
         body: JSON.stringify({
           tipo: tipo === "Paciente" ? "PACIENTE" : "TRANSITO",
           nombre: nombre.trim(),
-          habitacion: tipo === "Paciente" && habitacion ? habitacion.trim() : undefined,
+          habitacion:
+            tipo === "Paciente"
+              ? [habitacion, numeroHabitacion.trim()].filter(Boolean).join(" · ") || undefined
+              : undefined,
           maxDevices: tipo === "Paciente" ? maxDispositivos : 1,
           diasEstancia: tipo === "Paciente" ? diasEstancia : undefined,
           issuerId: issuerId || "admin_operador_fallback",
@@ -99,6 +103,7 @@ export default function EmitirCredencialPage() {
     setResultado(null);
     setNombre("");
     setHabitacion("");
+    setNumeroHabitacion("");
     setDiasEstancia(1);
     setMaxDispositivos(1);
     setError("");
@@ -244,6 +249,20 @@ export default function EmitirCredencialPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* CAMPO HABITACIÓN */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Número de habitación
+                </label>
+                <input
+                  type="text"
+                  value={numeroHabitacion}
+                  onChange={(e) => setNumeroHabitacion(e.target.value)}
+                  placeholder="Ej: 302-A"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
               </div>
 
               {/* DÍAS DE ESTANCIA */}
