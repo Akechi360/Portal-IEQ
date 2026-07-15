@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { LogEvent } from "@prisma/client";
 import { requireAdmin } from "@/lib/jwt";
+import { humanizeDetail } from "@/lib/log-labels";
 
 export async function GET(req: Request) {
   const auth = await requireAdmin(req);
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
         id: log.id,
         type,
         user: log.actor,
-        action: log.detail || log.event.replace("_", " ").toLowerCase(),
+        action: humanizeDetail(log.detail, log.event),
         ip: log.ip || "—",
         mac: log.mac || "—",
         ssid: log.ssid || "WiFi-ClinicaIEQ",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { ArrowLeft, PlusCircle, Search, ClipboardList, Loader2 } from "lucide-react";
+import { ArrowLeft, PlusCircle, Search, ClipboardList, Loader2, Download } from "lucide-react";
 
 type TipoAcceso = "Todos" | "Paciente" | "Transito";
 
@@ -37,6 +37,56 @@ export default function CredencialesPage() {
   const items: ListItem[] = data?.items || [];
   const total = data?.total || 0;
 
+  const [exporting, setExporting] = useState(false);
+
+  const tipoLabel = (t: string) =>
+    t === "PACIENTE" ? "Paciente" : t === "TRANSITO" ? "Tránsito" : "Médico";
+  const estadoLabel = (s: string) =>
+    s === "Active" ? "Activo" : s === "Expired" ? "Expirado" : s === "Blocked" ? "Bloqueado" : s;
+
+  async function handleExportPDF() {
+    if (items.length === 0) return;
+    setExporting(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const autoTable = (await import("jspdf-autotable")).default;
+      const doc = new jsPDF();
+
+      doc.setFontSize(14);
+      doc.text("Credenciales emitidas — Clínica IEQ Los Mangos", 14, 16);
+      doc.setFontSize(9);
+      doc.setTextColor(120);
+      doc.text(`Generado: ${new Date().toLocaleString("es-ES")}  ·  ${items.length} credencial(es)`, 14, 22);
+
+      autoTable(doc, {
+        startY: 28,
+        head: [["Código", "Tipo", "Nombre", "Área", "Creada", "Expira", "Disp.", "Estado"]],
+        body: items.map((c) => [
+          c.identifier,
+          tipoLabel(c.type),
+          c.name,
+          c.room || "—",
+          new Date(c.createdAt).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
+          c.expiresAt
+            ? new Date(c.expiresAt).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+            : "Al conectarse",
+          String(c.devicesCount),
+          estadoLabel(c.status),
+        ]),
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        headStyles: { fillColor: [13, 111, 120], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [244, 246, 249] },
+      });
+
+      doc.save(`credenciales-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (e) {
+      console.error("Error al exportar PDF:", e);
+      alert("No se pudo generar el PDF.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       
@@ -54,13 +104,27 @@ export default function CredencialesPage() {
             {isLoading ? "..." : `${total} total`}
           </span>
         </div>
-        <button
-          onClick={() => router.push("/admision/emitir")}
-          className="bg-primary-500 hover:bg-primary-600 transition-colors text-white rounded-xl px-4 py-2 text-sm flex items-center gap-2"
-        >
-          <PlusCircle className="w-[18px] h-[18px]" />
-          Nueva credencial
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportPDF}
+            disabled={exporting || items.length === 0}
+            className="bg-white border border-gray-200 hover:bg-gray-50 transition-colors text-gray-700 rounded-xl px-4 py-2 text-sm flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {exporting ? (
+              <Loader2 className="w-[18px] h-[18px] animate-spin text-primary-500" />
+            ) : (
+              <Download className="w-[18px] h-[18px]" />
+            )}
+            Exportar PDF
+          </button>
+          <button
+            onClick={() => router.push("/admision/emitir")}
+            className="bg-primary-500 hover:bg-primary-600 transition-colors text-white rounded-xl px-4 py-2 text-sm flex items-center gap-2"
+          >
+            <PlusCircle className="w-[18px] h-[18px]" />
+            Nueva credencial
+          </button>
+        </div>
       </div>
 
       {/* FILTROS */}
@@ -102,7 +166,7 @@ export default function CredencialesPage() {
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Habitación</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Área</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Creada</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Expira</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Disp.</th>
@@ -159,7 +223,7 @@ export default function CredencialesPage() {
                           minute: "2-digit"
                         })
                       ) : (
-                        <span className="text-gray-300">Nunca</span>
+                        <span className="text-gray-400">Al conectarse</span>
                       )}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-center text-gray-600">

@@ -108,6 +108,26 @@ export async function POST(req: Request) {
                 { status: 200 }
               );
             }
+            // Primera conexión: arranca aquí el reloj de expiración. La
+            // credencial se emite "en espera" (expireAt = null) y los días de
+            // estancia (o los 30 min de tránsito) empiezan a contar ahora, no
+            // al momento de emitir.
+            if (bindings.length === 0 && !credential.expireAt) {
+              const ms =
+                credential.tipo === "TRANSITO"
+                  ? 30 * 60 * 1000
+                  : ((credential.diasEstancia ?? 1) * 24 + 2) * 60 * 60 * 1000;
+              try {
+                await db.credential.update({
+                  where: { id: credential.id },
+                  data: { expireAt: new Date(Date.now() + ms) },
+                });
+                console.log(`[RADIUS Verify] Reloj iniciado para ${username} (+${ms}ms)`);
+              } catch {
+                // Si falla el update, la credencial sigue válida (sin expiry aún).
+              }
+            }
+
             try {
               await db.deviceBinding.create({
                 data: { credentialId: credential.id, mac },

@@ -14,6 +14,8 @@ import {
   Copy,
 } from "lucide-react";
 
+const AREAS = ["UCI Pediátrica", "Hospitalización", "Maternidad", "Pediatría"] as const;
+
 export default function EmitirCredencialPage() {
   const router = useRouter();
 
@@ -204,7 +206,7 @@ export default function EmitirCredencialPage() {
           {/* CAMPO NOMBRE */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del visitante
+              {tipo === "Paciente" ? "Nombre del paciente" : "Nombre del visitante"}
             </label>
             <input
               type="text"
@@ -218,20 +220,29 @@ export default function EmitirCredencialPage() {
           {/* CAMPOS SOLO PARA PACIENTE */}
           {tipo === "Paciente" && (
             <>
-              {/* CAMPO HABITACIÓN */}
+              {/* CAMPO ÁREA */}
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de habitación
+                  Área de hospitalización
                 </label>
                 <div className="relative">
-                  <BedDouble className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
+                  <BedDouble className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none z-10" />
+                  <select
                     value={habitacion}
                     onChange={(e) => setHabitacion(e.target.value)}
-                    placeholder="Ej: 302-A"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
+                    className="w-full appearance-none pl-10 pr-9 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                      backgroundPosition: "right 0.75rem center",
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "1.25em 1.25em",
+                    }}
+                  >
+                    <option value="" disabled>Selecciona el área…</option>
+                    {AREAS.map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -298,7 +309,7 @@ export default function EmitirCredencialPage() {
           {/* BOTÓN GENERAR */}
           <button
             onClick={handleGenerar}
-            disabled={!nombre.trim() || loading}
+            disabled={!nombre.trim() || (tipo === "Paciente" && !habitacion) || loading}
             className="w-full mt-6 py-3 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (

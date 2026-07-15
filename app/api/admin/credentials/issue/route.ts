@@ -12,18 +12,6 @@ import { createVoucher } from "@/lib/ruijie";
 import { requireInternal } from "@/lib/jwt";
 import { getSystemConfig } from "@/lib/config";
 
-async function getExpireAt(tipo: "PACIENTE" | "TRANSITO", diasEstancia?: number): Promise<Date> {
-  const now = new Date();
-  if (tipo === "TRANSITO") {
-    return new Date(now.getTime() + 30 * 60 * 1000); // 30 minutos
-  }
-  // Paciente: días de estancia + 2h de gracia. Si no se especifican días,
-  // el default viene de Configuración → Red WiFi (guest_session_hours),
-  // no de un número fijo en código.
-  const days = diasEstancia ?? (await getSystemConfig("guest_session_hours")) / 24;
-  return new Date(now.getTime() + (days * 24 + 2) * 60 * 60 * 1000);
-}
-
 export async function POST(req: Request) {
   const auth = await requireInternal(req);
   if (auth instanceof Response) return auth;
@@ -41,7 +29,10 @@ export async function POST(req: Request) {
 
     const { tipo, nombre, habitacion, maxDevices, diasEstancia, issuerId } = parsed.data;
     const voucherCode = generateVoucherCode();
-    const expireAt = await getExpireAt(tipo, diasEstancia);
+    // La credencial se emite "en espera": expireAt = null. El reloj de
+    // expiración arranca en la PRIMERA conexión (lo fija /api/radius/verify al
+    // casar el primer dispositivo), no al momento de emitir.
+    const expireAt = null;
 
     // Bulletproof: verify that issuerId actually exists in the database to prevent Prisma crashes.
     let finalIssuerId = issuerId;
@@ -82,7 +73,7 @@ export async function POST(req: Request) {
     // error — esa variable es el ID de red/sitio, no el perfil de usuario.
     const groupId = await getSystemConfig("ruijie_group_guest");
     try {
-      await createVoucher({ code: voucherCode, groupId, maxDevices, expireAt, note: nombre });
+      await createVoucher({ code: voucherCode, groupId, maxDevices, expireAt: undefined, note: nombre });
     } catch (e) {
       console.warn("Fallo al crear voucher en Ruijie (es posible que estés en local sin credenciales)", e);
     }
