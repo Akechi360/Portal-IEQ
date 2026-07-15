@@ -195,7 +195,7 @@ export default function StaffPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.txt,text/csv,text/plain"
             className="hidden"
             onChange={handleImportFile}
           />

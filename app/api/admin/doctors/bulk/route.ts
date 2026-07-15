@@ -54,15 +54,16 @@ export async function POST(req: Request) {
       const raw = parsed.data.rows[i];
       const rowNum = i + 2; // +2: fila 1 es encabezado, arrays son 0-index
 
+      // Acepta encabezados en español (correo/teléfono) o inglés (email/telefono).
       const candidate = rowSchema.safeParse({
         nombre: raw.nombre,
-        email: raw.email,
+        email: raw.email || raw.correo,
         especialidad: raw.especialidad || undefined,
-        telefono: raw.telefono || undefined,
+        telefono: raw.telefono || raw["teléfono"] || undefined,
       });
 
       if (!candidate.success) {
-        skipped.push({ row: rowNum, email: raw.email, reason: "Nombre o correo inválido/faltante" });
+        skipped.push({ row: rowNum, email: raw.email || raw.correo, reason: "Nombre o correo inválido/faltante" });
         continue;
       }
 

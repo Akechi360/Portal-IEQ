@@ -47,11 +47,11 @@ export async function POST(req: Request) {
 
       const candidate = rowSchema.safeParse({
         nombre: raw.nombre || undefined,
-        email: raw.email,
+        email: raw.email || raw.correo,
       });
 
       if (!candidate.success) {
-        skipped.push({ row: rowNum, email: raw.email, reason: "Correo inválido/faltante" });
+        skipped.push({ row: rowNum, email: raw.email || raw.correo, reason: "Correo inválido/faltante" });
         continue;
       }
 
