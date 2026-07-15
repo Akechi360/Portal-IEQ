@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import {
   UserPlus,
@@ -56,6 +56,16 @@ export default function StaffPage() {
       (filtro === "inactivo" && s.status === "INACTIVE");
     return matchesSearch && matchesFiltro;
   });
+
+  // Paginación (cliente): evita el scroll infinito con listas grandes.
+  const PER_PAGE = 12;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(staffFiltrado.length / PER_PAGE));
+  useEffect(() => {
+    setPage(1);
+  }, [busqueda, filtro]);
+  const pageStart = (Math.min(page, totalPages) - 1) * PER_PAGE;
+  const staffPagina = staffFiltrado.slice(pageStart, pageStart + PER_PAGE);
 
   const handleRevoke = async (id: string, nombre: string) => {
     const ok = await confirmAction({
@@ -303,7 +313,7 @@ export default function StaffPage() {
                     </div>
                   </td>
                 </tr>
-              ) : staffFiltrado.map((s) => {
+              ) : staffPagina.map((s) => {
                 const iniciales = (s.nombre || s.email)
                   .split(/[\s@.]/)
                   .filter(Boolean)
@@ -401,6 +411,34 @@ export default function StaffPage() {
             </tbody>
           </table>
         </div>
+
+        {/* PAGINACIÓN */}
+        {!isLoading && staffFiltrado.length > 0 && (
+          <div className="flex items-center justify-between border-t border-neutral-100 px-4 py-3">
+            <p className="text-xs text-neutral-400">
+              Mostrando {pageStart + 1}–{Math.min(pageStart + PER_PAGE, staffFiltrado.length)} de {staffFiltrado.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="flex h-7 items-center rounded-lg border border-neutral-200 bg-white px-2.5 text-xs text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-40"
+              >
+                Anterior
+              </button>
+              <span className="px-2 text-xs font-medium text-neutral-600">
+                {Math.min(page, totalPages)} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="flex h-7 items-center rounded-lg border border-neutral-200 bg-white px-2.5 text-xs text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-40"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL DE REGISTRO */}
