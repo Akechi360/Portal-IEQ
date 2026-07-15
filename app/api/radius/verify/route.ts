@@ -166,6 +166,37 @@ export async function POST(req: Request) {
     });
 
     if (doctor && doctor.status === "ACTIVE") {
+      // ── Device binding: casa el correo del médico con su(s) dispositivo(s),
+      // hasta max_devices_doctor. Evita que un médico comparta su correo con
+      // muchos equipos. Fail-open: si la tabla aún no existe (migración
+      // pendiente) o falla la consulta, se permite el acceso igual.
+      if (mac) {
+        try {
+          const maxDevices = await getSystemConfig("max_devices_doctor");
+          const bindings = await db.doctorDeviceBinding.findMany({
+            where: { doctorId: doctor.id },
+          });
+          const alreadyBound = bindings.some((b) => b.mac === mac);
+          if (!alreadyBound) {
+            if (bindings.length >= maxDevices) {
+              console.log(`[RADIUS Verify] REJECT doctor device-limit: ${username} mac=${mac} (max ${maxDevices})`);
+              return NextResponse.json(
+                { "reply:Reply-Message": "Correo en uso en el máximo de dispositivos permitidos" },
+                { status: 200 }
+              );
+            }
+            try {
+              await db.doctorDeviceBinding.create({ data: { doctorId: doctor.id, mac } });
+              console.log(`[RADIUS Verify] Bound doctor ${username} -> ${mac}`);
+            } catch {
+              // Carrera con otra request que casó el mismo MAC: inofensivo.
+            }
+          }
+        } catch (e) {
+          console.warn(`[RADIUS Verify] doctor binding omitido (¿migración pendiente?):`, e);
+        }
+      }
+
       console.log(`[RADIUS Verify] ACCEPT doctor: ${username} (reauth ${sessionTimeout}s)`);
       return NextResponse.json({
         "control:Auth-Type": "Accept",

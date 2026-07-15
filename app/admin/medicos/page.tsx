@@ -13,9 +13,10 @@ import {
   Clock,
   Loader2,
   Upload,
+  Smartphone,
 } from "lucide-react";
 import { parseCsv } from "@/lib/csv";
-import { confirmAction } from "@/lib/alerts";
+import { confirmAction, toastSuccess } from "@/lib/alerts";
 
 type StatusMedico = "activo" | "pendiente" | "inactivo";
 
@@ -82,6 +83,33 @@ export default function MedicosPage() {
     });
     if (!ok) return;
     await handleToggleStatus(id, "INACTIVE");
+  };
+
+  const handleLiberar = async (id: string, nombre: string) => {
+    const ok = await confirmAction({
+      title: `¿Liberar los dispositivos de ${nombre}?`,
+      html:
+        "Se desvinculan todos los equipos casados a este médico. Los que estén " +
+        "conectados perderán acceso en la próxima revalidación, y podrá volver a " +
+        "casar dispositivos nuevos (hasta el máximo permitido).",
+      confirmText: "Liberar dispositivos",
+    });
+    if (!ok) return;
+    setLoadingId(id);
+    try {
+      const res = await fetch(`/api/admin/doctors/${id}/bindings`, { method: "DELETE" });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        toastSuccess(json.message || "Dispositivos liberados");
+      } else {
+        alert(json.message || "No se pudieron liberar los dispositivos.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de red al liberar dispositivos.");
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const handleToggleStatus = async (id: string, nuevoStatus: "ACTIVE" | "INACTIVE" | "PENDING") => {
@@ -410,19 +438,30 @@ export default function MedicosPage() {
                           </>
                         )}
                         {statusMapeado === "activo" && (
-                          <button
-                            title="Revocar el acceso WiFi de este médico"
-                            onClick={() => handleRevoke(m.id, m.nombre)}
-                            disabled={loadingId === m.id}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-                          >
-                            {loadingId === m.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Ban className="h-3.5 w-3.5" />
-                            )}
-                            Revocar acceso
-                          </button>
+                          <>
+                            <button
+                              title="Liberar los dispositivos casados a este médico"
+                              onClick={() => handleLiberar(m.id, m.nombre)}
+                              disabled={loadingId === m.id}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50"
+                            >
+                              <Smartphone className="h-3.5 w-3.5" />
+                              Liberar
+                            </button>
+                            <button
+                              title="Revocar el acceso WiFi de este médico"
+                              onClick={() => handleRevoke(m.id, m.nombre)}
+                              disabled={loadingId === m.id}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {loadingId === m.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Ban className="h-3.5 w-3.5" />
+                              )}
+                              Revocar acceso
+                            </button>
+                          </>
                         )}
                         {statusMapeado === "inactivo" && (
                           <button

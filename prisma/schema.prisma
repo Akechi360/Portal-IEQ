@@ -47,7 +47,19 @@ model Doctor {
   status       DoctorStatus @default(PENDING)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  sessions     Session[]
+  sessions       Session[]
+  deviceBindings DoctorDeviceBinding[]
+}
+
+model DoctorDeviceBinding {
+  id        String   @id @default(cuid())
+  doctorId  String
+  mac       String
+  boundAt   DateTime @default(now())
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, mac])
+  @@index([doctorId])
 }
 
 model StaffUser {
