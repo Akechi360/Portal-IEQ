@@ -164,12 +164,12 @@ export default function CredencialesPage() {
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
+                <th className="hidden sm:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Área / Habitación</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Creada</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Expira</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Disp.</th>
+                <th className="hidden md:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Área / Habitación</th>
+                <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Creada</th>
+                <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Expira</th>
+                <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Disp.</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
               </tr>
             </thead>
@@ -191,7 +191,7 @@ export default function CredencialesPage() {
                         {cred.identifier}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-sm">
+                    <td className="hidden sm:table-cell px-4 py-3.5 text-sm">
                       {cred.type === "PACIENTE" ? (
                         <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5 text-xs">
                           Paciente
@@ -203,18 +203,22 @@ export default function CredencialesPage() {
                       )}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-700 font-medium">
-                      {cred.name}
+                      <p className="truncate">{cred.name}</p>
+                      {/* En móvil, área/habitación se apila aquí (su columna está oculta). */}
+                      {cred.room && (
+                        <p className="md:hidden truncate text-[11px] font-normal text-gray-400">{cred.room}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-500">
+                    <td className="hidden md:table-cell px-4 py-3.5 text-sm text-gray-500">
                       {cred.room || "—"}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-500">
+                    <td className="hidden xl:table-cell px-4 py-3.5 text-sm text-gray-500">
                       {new Date(cred.createdAt).toLocaleTimeString("es-ES", {
                         hour: "2-digit",
                         minute: "2-digit"
                       })}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-500">
+                    <td className="hidden lg:table-cell px-4 py-3.5 text-sm text-gray-500">
                       {cred.expiresAt ? (
                         new Date(cred.expiresAt).toLocaleDateString("es-ES", {
                           day: "2-digit",
@@ -226,7 +230,7 @@ export default function CredencialesPage() {
                         <span className="text-gray-400">Al conectarse</span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-center text-gray-600">
+                    <td className="hidden xl:table-cell px-4 py-3.5 text-sm text-center text-gray-600">
                       {cred.devicesCount} c.
                     </td>
                     <td className="px-4 py-3.5 text-sm">

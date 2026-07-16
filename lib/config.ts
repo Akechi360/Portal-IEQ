@@ -23,6 +23,7 @@ export interface SystemConfigMap {
   doctor_session_hours: number | null; // null = permanente
   max_devices_guest: number;
   max_devices_doctor: number;
+  max_devices_staff: number;
   webhook_clinic_enabled: boolean;
   ruijie_gateway_url: string;
   ruijie_group_guest: string;
@@ -58,6 +59,7 @@ const DEFAULT_SYSTEM: SystemConfigMap = {
   doctor_session_hours: null,
   max_devices_guest: 2,
   max_devices_doctor: 3,
+  max_devices_staff: 3,
   webhook_clinic_enabled: false,
   ruijie_gateway_url: process.env.RUIJIE_GATEWAY_URL ?? "http://localhost:8080",
   ruijie_group_guest: process.env.RUIJIE_GROUP_GUEST ?? "grp-guest",
@@ -82,6 +84,7 @@ function parseConfigValue(key: string, value: string): any {
     key === "guest_session_hours" ||
     key === "max_devices_guest" ||
     key === "max_devices_doctor" ||
+    key === "max_devices_staff" ||
     key === "policy_max_shared_mac" ||
     key === "policy_max_transito_sessions" ||
     key === "policy_night_start_hour" ||

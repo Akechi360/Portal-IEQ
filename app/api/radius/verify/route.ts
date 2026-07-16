@@ -212,6 +212,36 @@ export async function POST(req: Request) {
     });
 
     if (staff && staff.status === "ACTIVE") {
+      // ── Device binding: igual que médicos, casa el correo del personal con
+      // su(s) dispositivo(s) hasta max_devices_staff. Fail-open si la tabla no
+      // existe (migración pendiente) para no romper el acceso.
+      if (mac) {
+        try {
+          const maxDevices = await getSystemConfig("max_devices_staff");
+          const bindings = await db.staffDeviceBinding.findMany({
+            where: { staffUserId: staff.id },
+          });
+          const alreadyBound = bindings.some((b) => b.mac === mac);
+          if (!alreadyBound) {
+            if (bindings.length >= maxDevices) {
+              console.log(`[RADIUS Verify] REJECT staff device-limit: ${username} mac=${mac} (max ${maxDevices})`);
+              return NextResponse.json(
+                { "reply:Reply-Message": "Correo en uso en el máximo de dispositivos permitidos" },
+                { status: 200 }
+              );
+            }
+            try {
+              await db.staffDeviceBinding.create({ data: { staffUserId: staff.id, mac } });
+              console.log(`[RADIUS Verify] Bound staff ${username} -> ${mac}`);
+            } catch {
+              // Carrera con otra request que casó el mismo MAC: inofensivo.
+            }
+          }
+        } catch (e) {
+          console.warn(`[RADIUS Verify] staff binding omitido (¿migración pendiente?):`, e);
+        }
+      }
+
       console.log(`[RADIUS Verify] ACCEPT staff: ${username} (reauth ${sessionTimeout}s)`);
       return NextResponse.json({
         "control:Auth-Type": "Accept",

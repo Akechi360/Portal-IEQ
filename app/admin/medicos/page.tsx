@@ -380,7 +380,7 @@ export default function MedicosPage() {
             <button
               key={f}
               onClick={() => setFiltro(f)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-colors border capitalize ${
+              className={`rounded-xl px-2 sm:px-3 py-1.5 text-xs font-medium transition-colors border capitalize ${
                 filtro === f
                   ? f === "pendiente"
                     ? "bg-amber-500 text-white border-amber-500"
@@ -401,10 +401,10 @@ export default function MedicosPage() {
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Médico</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Especialidad</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Correo</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Voucher</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha Registro</th>
+                <th className="hidden lg:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Especialidad</th>
+                <th className="hidden md:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Correo</th>
+                <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Voucher</th>
+                <th className="hidden xl:table-cell px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha Registro</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
               </tr>
@@ -434,32 +434,38 @@ export default function MedicosPage() {
                   <tr key={m.id} className="hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors">
                     
                     {/* COLUMNA "Médico" */}
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-3">
+                    <td className="px-2 sm:px-4 py-3.5">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <div className="bg-primary-100 rounded-full w-9 h-9 shrink-0 flex items-center justify-center">
                           <span className="text-primary-700 text-xs font-bold">{iniciales}</span>
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900 leading-tight">{m.nombre}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{m.telefono || "—"}</p>
+                        {/* max-w acota el texto en móvil para que trunque en vez de
+                            estirar la celda (las tablas auto-ajustan al contenido). */}
+                        <div className="min-w-0 max-w-[96px] sm:max-w-none">
+                          <p className="truncate text-sm font-semibold text-gray-900 leading-tight">{m.nombre}</p>
+                          {/* En móvil, correo y especialidad se apilan aquí porque
+                              sus columnas están ocultas a ese tamaño. */}
+                          <p className="md:hidden truncate text-[11px] text-gray-500 mt-0.5">{m.email}</p>
+                          <p className="lg:hidden truncate text-[11px] text-gray-400">{m.especialidad || "—"}</p>
+                          <p className="hidden lg:block text-xs text-gray-400 mt-0.5">{m.telefono || "—"}</p>
                         </div>
                       </div>
                     </td>
 
                     {/* COLUMNA "Especialidad" */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden lg:table-cell px-4 py-3.5">
                       <span className="bg-gray-100 text-gray-600 rounded-full px-2.5 py-1 text-xs font-medium">
                         {m.especialidad || "—"}
                       </span>
                     </td>
 
                     {/* COLUMNA "Correo" */}
-                    <td className="px-4 py-3.5 text-gray-600 font-mono text-xs">
+                    <td className="hidden md:table-cell px-4 py-3.5 text-gray-600 font-mono text-xs">
                       {m.email}
                     </td>
 
                     {/* COLUMNA "Voucher" */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden xl:table-cell px-4 py-3.5">
                       {m.voucherCode ? (
                         <span className="font-mono text-xs text-gray-500 bg-gray-50 rounded px-2 py-0.5 border border-gray-200">
                           {m.voucherCode}
@@ -470,7 +476,7 @@ export default function MedicosPage() {
                     </td>
 
                     {/* COLUMNA "Fecha Registro" */}
-                    <td className="px-4 py-3.5 text-sm text-gray-500">
+                    <td className="hidden xl:table-cell px-4 py-3.5 text-sm text-gray-500">
                       {new Date(m.createdAt).toLocaleDateString("es-ES", {
                         day: "2-digit",
                         month: "2-digit",
@@ -479,7 +485,7 @@ export default function MedicosPage() {
                     </td>
 
                     {/* COLUMNA "Estado" */}
-                    <td className="px-4 py-3.5">
+                    <td className="px-1.5 sm:px-4 py-3.5">
                       {statusMapeado === "activo" && (
                         <span className="bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5 text-xs inline-flex items-center gap-1">
                           Activo
@@ -499,8 +505,8 @@ export default function MedicosPage() {
                     </td>
 
                     {/* COLUMNA "Acciones" */}
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2">
+                    <td className="px-2 sm:px-4 py-3.5">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         <button
                           title="Editar datos de este médico"
                           onClick={() =>
@@ -512,10 +518,10 @@ export default function MedicosPage() {
                               telefono: m.telefono || "",
                             })
                           }
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2 sm:px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                          Editar
+                          <span className="hidden sm:inline">Editar</span>
                         </button>
 
                         {statusMapeado === "pendiente" && (
@@ -523,7 +529,7 @@ export default function MedicosPage() {
                             <button
                               onClick={() => handleToggleStatus(m.id, "ACTIVE")}
                               disabled={loadingId === m.id}
-                              className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-70"
+                              className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-2 sm:px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-70"
                             >
                               {loadingId === m.id ? (
                                 <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -547,23 +553,23 @@ export default function MedicosPage() {
                               title="Liberar los dispositivos casados a este médico"
                               onClick={() => handleLiberar(m.id, m.nombre)}
                               disabled={loadingId === m.id}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2 sm:px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50"
                             >
                               <Smartphone className="h-3.5 w-3.5" />
-                              Liberar
+                              <span className="hidden sm:inline">Liberar</span>
                             </button>
                             <button
                               title="Revocar el acceso WiFi de este médico"
                               onClick={() => handleRevoke(m.id, m.nombre)}
                               disabled={loadingId === m.id}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2 sm:px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                             >
                               {loadingId === m.id ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
                                 <Ban className="h-3.5 w-3.5" />
                               )}
-                              Revocar acceso
+                              <span className="hidden sm:inline">Revocar acceso</span>
                             </button>
                           </>
                         )}
@@ -572,14 +578,14 @@ export default function MedicosPage() {
                             title="Restaurar el acceso WiFi de este médico"
                             onClick={() => handleToggleStatus(m.id, "ACTIVE")}
                             disabled={loadingId === m.id}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-2 sm:px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
                           >
                             {loadingId === m.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
                               <RotateCcw className="h-3.5 w-3.5" />
                             )}
-                            Restaurar acceso
+                            <span className="hidden sm:inline">Restaurar acceso</span>
                           </button>
                         )}
                       </div>
