@@ -18,7 +18,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { parseCsv } from "@/lib/csv";
-import { confirmAction, toastSuccess } from "@/lib/alerts";
+import { alertMessage, confirmAction, toastSuccess } from "@/lib/alerts";
 
 type StatusMedico = "activo" | "pendiente" | "inactivo";
 
@@ -240,13 +240,22 @@ export default function MedicosPage() {
         mutate(); // trigger SWR revalidation
         setModalAbierto(false);
         setModalMedico({ nombre: "", especialidad: "", email: "", telefono: "" });
+        toastSuccess("Médico registrado");
       } else {
         const err = await res.json();
-        alert(err.message || "Error al registrar médico.");
+        await alertMessage({
+          icon: "warning",
+          title: "No se pudo registrar",
+          text: err.message || "Error al registrar médico.",
+        });
       }
     } catch (e) {
       console.error(e);
-      alert("Error de red al registrar médico.");
+      await alertMessage({
+        icon: "error",
+        title: "Error de conexión",
+        text: "No pudimos registrar al médico. Intenta de nuevo.",
+      });
     }
   };
 

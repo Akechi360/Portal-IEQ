@@ -49,6 +49,18 @@ export async function POST(req: Request) {
     // Correo normalizado (minúsculas) para que el login por correo coincida
     // sin importar cómo lo escriba el médico.
     const email = parsed.data.email.trim().toLowerCase();
+
+    // El correo es la credencial de acceso del médico y es único: si ya existe,
+    // avisamos claramente en vez de dejar que reviente el índice único y salga
+    // un 500 genérico.
+    const existing = await db.doctor.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json(
+        { ok: false, message: `Ya existe un médico registrado con ${email} (${existing.nombre}).` },
+        { status: 409 }
+      );
+    }
+
     const voucherCode = generateVoucherCode();
 
     const doctor = await db.doctor.create({
@@ -89,8 +101,16 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/admin/doctors", error);
+    // P2002 = violación de índice único (carrera con otra alta del mismo correo).
+    if (error?.code === "P2002") {
+      const campo = Array.isArray(error?.meta?.target) ? error.meta.target.join(", ") : "correo";
+      return NextResponse.json(
+        { ok: false, message: `Ya existe un médico con ese ${campo}.` },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ ok: false, message: "Error interno del servidor" }, { status: 500 });
   }
 }
