@@ -12,7 +12,11 @@ const patchSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE", "PENDING"]).optional(),
 });
 
-// ─── DELETE — Soft delete (INACTIVE) ─────────────────────────────────────────
+// ─── DELETE — Elimina el médico definitivamente ──────────────────────────────
+// Para bloquear temporalmente sin borrar, usar PATCH status=INACTIVE
+// ("Revocar acceso"). Al borrar: sus device bindings caen en cascada y sus
+// sesiones históricas se conservan con doctorId = NULL (FK ON DELETE SET NULL),
+// así no se pierde el registro de auditoría.
 
 export async function DELETE(
   req: Request,
@@ -24,21 +28,23 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const doctor = await db.doctor.update({
-      where: { id },
-      data: { status: "INACTIVE" },
-    });
+    const doctor = await db.doctor.findUnique({ where: { id } });
+    if (!doctor) {
+      return NextResponse.json({ ok: false, message: "Médico no encontrado" }, { status: 404 });
+    }
+
+    await db.doctor.delete({ where: { id } });
 
     await logAccess({
       event: "DISCONNECTED",
-      actor: "admin",
-      detail: `doctor:${doctor.email}:INACTIVE`,
+      actor: auth.username,
+      detail: `doctor:${doctor.email}:deleted`,
     });
 
-    return NextResponse.json({ ok: true, message: "Médico desactivado", data: doctor });
+    return NextResponse.json({ ok: true, message: `${doctor.nombre} fue eliminado.` });
   } catch (error) {
     console.error("DELETE /api/admin/doctors/[id]", error);
-    return NextResponse.json({ ok: false, message: "Médico no encontrado o error interno" }, { status: 404 });
+    return NextResponse.json({ ok: false, message: "Error al eliminar el médico" }, { status: 500 });
   }
 }
 
@@ -64,9 +70,14 @@ export async function PATCH(
       );
     }
 
+    // Correo normalizado a minúsculas para que el login por correo coincida,
+    // consistente con el alta individual y en lote.
+    const data = { ...parsed.data };
+    if (data.email) data.email = data.email.trim().toLowerCase();
+
     const doctor = await db.doctor.update({
       where: { id },
-      data: parsed.data,
+      data,
     });
 
     await logAccess({

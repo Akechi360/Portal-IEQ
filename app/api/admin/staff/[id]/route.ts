@@ -10,6 +10,41 @@ const patchSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
 });
 
+// ─── DELETE — Elimina el personal definitivamente ────────────────────────────
+// Para bloquear temporalmente sin borrar, usar PATCH status=INACTIVE
+// ("Revocar acceso"). Sus sesiones históricas se conservan con staffUserId =
+// NULL (FK ON DELETE SET NULL), así no se pierde el registro de auditoría.
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof Response) return auth;
+
+  const { id } = await params;
+
+  try {
+    const staff = await db.staffUser.findUnique({ where: { id } });
+    if (!staff) {
+      return NextResponse.json({ ok: false, message: "Personal no encontrado" }, { status: 404 });
+    }
+
+    await db.staffUser.delete({ where: { id } });
+
+    await logAccess({
+      event: "DISCONNECTED",
+      actor: auth.username,
+      detail: `staff:${staff.email}:deleted`,
+    });
+
+    return NextResponse.json({ ok: true, message: `${staff.nombre ?? staff.email} fue eliminado.` });
+  } catch (error) {
+    console.error("DELETE /api/admin/staff/[id]", error);
+    return NextResponse.json({ ok: false, message: "Error al eliminar el personal" }, { status: 500 });
+  }
+}
+
 // ─── PATCH — Editar campos, activar o desactivar ──────────────────────────────
 
 export async function PATCH(

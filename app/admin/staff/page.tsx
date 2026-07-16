@@ -11,9 +11,10 @@ import {
   X,
   Upload,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import { parseCsv } from "@/lib/csv";
-import { confirmAction } from "@/lib/alerts";
+import { confirmAction, toastSuccess } from "@/lib/alerts";
 
 interface Staff {
   id: string;
@@ -100,6 +101,39 @@ export default function StaffPage() {
       alert("Error de red al actualizar estado.");
     } finally {
       setLoadingId(null);
+    }
+  };
+
+  const handleDeleteStaff = async () => {
+    if (!editStaff) return;
+    const ok = await confirmAction({
+      title: `¿Eliminar a ${editStaff.nombre || editStaff.email}?`,
+      html:
+        "Esta acción es <b>permanente</b>: se borra el registro y ya no podrá conectarse. " +
+        "Su historial de sesiones se conserva para auditoría.<br/><br/>" +
+        "Si solo quieres bloquearlo temporalmente, usa <b>Revocar acceso</b> en su lugar.",
+      confirmText: "Eliminar definitivamente",
+      danger: true,
+    });
+    if (!ok) return;
+
+    setEditSaving(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/admin/staff/${editStaff.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setEditStaff(null);
+        mutate();
+        toastSuccess(json.message || "Personal eliminado");
+      } else {
+        setEditError(json.message || "No se pudo eliminar.");
+      }
+    } catch (e) {
+      console.error(e);
+      setEditError("Error de red al eliminar.");
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -557,6 +591,21 @@ export default function StaffPage() {
                 {editSaving && <Loader2 className="h-4 w-4 animate-spin" />}
                 Guardar cambios
               </button>
+            </div>
+
+            {/* Zona de peligro */}
+            <div className="mt-5 border-t border-neutral-100 pt-4">
+              <button
+                onClick={handleDeleteStaff}
+                disabled={editSaving}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar personal
+              </button>
+              <p className="mt-2 text-center text-[11px] text-neutral-400">
+                Permanente. Para bloquear temporalmente usa “Revocar acceso”.
+              </p>
             </div>
           </div>
         </div>

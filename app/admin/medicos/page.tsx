@@ -14,6 +14,8 @@ import {
   Loader2,
   Upload,
   Smartphone,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { parseCsv } from "@/lib/csv";
 import { confirmAction, toastSuccess } from "@/lib/alerts";
@@ -54,6 +56,17 @@ export default function MedicosPage() {
     telefono: "",
   });
 
+  // Edición de datos
+  const [editMedico, setEditMedico] = useState<{
+    id: string;
+    nombre: string;
+    especialidad: string;
+    email: string;
+    telefono: string;
+  } | null>(null);
+  const [editError, setEditError] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   const { data, error, isLoading, mutate } = useSWR("/api/admin/doctors", (url) =>
     fetch(url).then((res) => res.json())
   );
@@ -93,6 +106,70 @@ export default function MedicosPage() {
     });
     if (!ok) return;
     await handleToggleStatus(id, "INACTIVE");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editMedico || !editMedico.nombre.trim() || !editMedico.email.trim()) return;
+    setEditError("");
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/admin/doctors/${editMedico.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: editMedico.nombre.trim(),
+          especialidad: editMedico.especialidad.trim() || undefined,
+          email: editMedico.email.trim(),
+          telefono: editMedico.telefono.trim() || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setEditMedico(null);
+        mutate();
+        toastSuccess("Médico actualizado");
+      } else {
+        setEditError(json.message || "No se pudieron guardar los cambios.");
+      }
+    } catch (e) {
+      console.error(e);
+      setEditError("Error de red al guardar los cambios.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDeleteMedico = async () => {
+    if (!editMedico) return;
+    const ok = await confirmAction({
+      title: `¿Eliminar a ${editMedico.nombre}?`,
+      html:
+        "Esta acción es <b>permanente</b>: se borra el registro y sus dispositivos casados, " +
+        "y ya no podrá conectarse. Su historial de sesiones se conserva para auditoría.<br/><br/>" +
+        "Si solo quieres bloquearlo temporalmente, usa <b>Revocar acceso</b> en su lugar.",
+      confirmText: "Eliminar definitivamente",
+      danger: true,
+    });
+    if (!ok) return;
+
+    setEditSaving(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/admin/doctors/${editMedico.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setEditMedico(null);
+        mutate();
+        toastSuccess(json.message || "Médico eliminado");
+      } else {
+        setEditError(json.message || "No se pudo eliminar.");
+      }
+    } catch (e) {
+      console.error(e);
+      setEditError("Error de red al eliminar.");
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const handleLiberar = async (id: string, nombre: string) => {
@@ -424,6 +501,23 @@ export default function MedicosPage() {
                     {/* COLUMNA "Acciones" */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
+                        <button
+                          title="Editar datos de este médico"
+                          onClick={() =>
+                            setEditMedico({
+                              id: m.id,
+                              nombre: m.nombre,
+                              especialidad: m.especialidad || "",
+                              email: m.email,
+                              telefono: m.telefono || "",
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Editar
+                        </button>
+
                         {statusMapeado === "pendiente" && (
                           <>
                             <button
@@ -608,6 +702,98 @@ export default function MedicosPage() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN */}
+      {editMedico && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-gray-900">Editar médico</h2>
+              <button
+                onClick={() => setEditMedico(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+                <input
+                  type="text"
+                  value={editMedico.nombre}
+                  onChange={(e) => setEditMedico({ ...editMedico, nombre: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
+                <input
+                  type="text"
+                  value={editMedico.especialidad}
+                  onChange={(e) => setEditMedico({ ...editMedico, especialidad: e.target.value })}
+                  placeholder="Cardiología"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
+                <input
+                  type="email"
+                  value={editMedico.email}
+                  onChange={(e) => setEditMedico({ ...editMedico, email: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                <input
+                  type="text"
+                  value={editMedico.telefono}
+                  onChange={(e) => setEditMedico({ ...editMedico, telefono: e.target.value })}
+                  placeholder="+58 412 000 0000"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {editError && <p className="mt-3 text-sm text-red-600">{editError}</p>}
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEditMedico(null)}
+                className="bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors rounded-xl px-4 py-2.5 text-sm flex-1 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editSaving || !editMedico.nombre.trim() || !editMedico.email.trim()}
+                className="bg-primary-500 hover:bg-primary-600 text-white transition-colors rounded-xl px-4 py-2.5 text-sm font-medium flex-1 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+              >
+                {editSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Guardar cambios
+              </button>
+            </div>
+
+            {/* Zona de peligro */}
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <button
+                onClick={handleDeleteMedico}
+                disabled={editSaving}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar médico
+              </button>
+              <p className="mt-2 text-center text-[11px] text-gray-400">
+                Permanente. Para bloquear temporalmente usa “Revocar acceso”.
+              </p>
+            </div>
           </div>
         </div>
       )}
