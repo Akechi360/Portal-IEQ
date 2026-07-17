@@ -163,6 +163,7 @@ model SystemConfig {
 enum CredentialType {
   PACIENTE
   TRANSITO
+  EMERGENCIA
 }
 
 enum CredentialStatus {

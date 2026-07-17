@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BedDouble,
+  Siren,
   Timer,
   Info,
   Minus,
@@ -19,10 +20,11 @@ const AREAS = ["UCI Pediátrica", "Hospitalización", "Maternidad", "Pediatría"
 export default function EmitirCredencialPage() {
   const router = useRouter();
 
-  const [tipo, setTipo] = useState<"Paciente" | "Transito">("Paciente");
+  const [tipo, setTipo] = useState<"Paciente" | "Transito" | "Emergencia">("Paciente");
   const [nombre, setNombre] = useState("");
   const [habitacion, setHabitacion] = useState(""); // área (dropdown)
   const [numeroHabitacion, setNumeroHabitacion] = useState(""); // habitación (texto)
+  const [ubicacionEmergencia, setUbicacionEmergencia] = useState(""); // camilla/box (opcional)
   const [diasEstancia, setDiasEstancia] = useState(1);
   const [maxDispositivos, setMaxDispositivos] = useState(1);
   
@@ -57,13 +59,16 @@ export default function EmitirCredencialPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tipo: tipo === "Paciente" ? "PACIENTE" : "TRANSITO",
+          tipo: tipo === "Paciente" ? "PACIENTE" : tipo === "Emergencia" ? "EMERGENCIA" : "TRANSITO",
           nombre: nombre.trim(),
           habitacion:
             tipo === "Paciente"
               ? [habitacion, numeroHabitacion.trim()].filter(Boolean).join(" · ") || undefined
+              : tipo === "Emergencia"
+              ? [`Emergencia Adultos`, ubicacionEmergencia.trim()].filter(Boolean).join(" · ")
               : undefined,
-          maxDevices: tipo === "Paciente" ? maxDispositivos : 1,
+          // Emergencia y Paciente permiten familiares/acompañantes; Tránsito 1.
+          maxDevices: tipo === "Transito" ? 1 : maxDispositivos,
           diasEstancia: tipo === "Paciente" ? diasEstancia : undefined,
           issuerId: issuerId || "admin_operador_fallback",
         }),
@@ -82,9 +87,12 @@ export default function EmitirCredencialPage() {
             minute: "2-digit",
           }) + " (luego expirará automáticamente)";
         } else {
-          expira = tipo === "Paciente"
-            ? `${diasEstancia * 24 + 2} horas desde la primera conexión`
-            : "30 minutos desde la primera conexión";
+          expira =
+            tipo === "Paciente"
+              ? `${diasEstancia * 24 + 2} horas desde la primera conexión`
+              : tipo === "Emergencia"
+              ? "12 horas desde la primera conexión"
+              : "30 minutos desde la primera conexión";
         }
 
         setResultado({ codigo: resData.data.voucherCode, expira });
@@ -104,6 +112,7 @@ export default function EmitirCredencialPage() {
     setNombre("");
     setHabitacion("");
     setNumeroHabitacion("");
+    setUbicacionEmergencia("");
     setDiasEstancia(1);
     setMaxDispositivos(1);
     setError("");
@@ -172,10 +181,10 @@ export default function EmitirCredencialPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tipo de acceso
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setTipo("Paciente")}
-                className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 px-4 text-sm font-medium transition-all ${
+                className={`flex flex-col items-center justify-center gap-1 rounded-xl border-2 py-3 px-2 text-xs font-medium transition-all ${
                   tipo === "Paciente"
                     ? "bg-primary-500 text-white border-primary-500"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
@@ -185,8 +194,19 @@ export default function EmitirCredencialPage() {
                 Paciente
               </button>
               <button
+                onClick={() => setTipo("Emergencia")}
+                className={`flex flex-col items-center justify-center gap-1 rounded-xl border-2 py-3 px-2 text-xs font-medium transition-all ${
+                  tipo === "Emergencia"
+                    ? "bg-red-500 text-white border-red-500"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <Siren className="w-4 h-4" />
+                Emergencia
+              </button>
+              <button
                 onClick={() => setTipo("Transito")}
-                className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 px-4 text-sm font-medium transition-all ${
+                className={`flex flex-col items-center justify-center gap-1 rounded-xl border-2 py-3 px-2 text-xs font-medium transition-all ${
                   tipo === "Transito"
                     ? "bg-primary-500 text-white border-primary-500"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
@@ -208,19 +228,71 @@ export default function EmitirCredencialPage() {
             </div>
           )}
 
+          {/* INFO DE EMERGENCIA */}
+          {tipo === "Emergencia" && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 flex items-start gap-2">
+              <Siren className="text-red-500 w-[14px] h-[14px] shrink-0 mt-0.5" />
+              <span className="text-xs text-red-700">
+                Paciente de emergencia (no hospitalizado) + familiares · Acceso de 12 horas
+              </span>
+            </div>
+          )}
+
           {/* CAMPO NOMBRE */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {tipo === "Paciente" ? "Nombre del paciente" : "Nombre del visitante"}
+              {tipo === "Transito" ? "Nombre del visitante" : "Nombre del paciente"}
             </label>
             <input
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder={tipo === "Paciente" ? "Ej: Juan Pérez" : "Ej: Carlos Mendoza"}
+              placeholder={tipo === "Transito" ? "Ej: Carlos Mendoza" : "Ej: Juan Pérez"}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
+
+          {/* CAMPOS SOLO PARA EMERGENCIA */}
+          {tipo === "Emergencia" && (
+            <>
+              {/* UBICACIÓN (opcional) */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ubicación en emergencia <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={ubicacionEmergencia}
+                  onChange={(e) => setUbicacionEmergencia(e.target.value)}
+                  placeholder="Ej: Box 3 · Observación"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* DISPOSITIVOS MÁXIMOS */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dispositivos permitidos (paciente + familiares)
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setMaxDispositivos(num)}
+                      className={`rounded-xl py-2 text-sm font-semibold transition-colors ${
+                        maxDispositivos === num
+                          ? "bg-primary-500 text-white"
+                          : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* CAMPOS SOLO PARA PACIENTE */}
           {tipo === "Paciente" && (

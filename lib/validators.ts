@@ -36,7 +36,7 @@ export const adminLoginSchema = z.object({
 
 /** POST /api/admin/credentials/issue */
 export const issueCredentialSchema = z.object({
-  tipo: z.enum(["PACIENTE", "TRANSITO"]),
+  tipo: z.enum(["PACIENTE", "TRANSITO", "EMERGENCIA"]),
   nombre: z.string().min(2, "Nombre requerido (mín. 2 caracteres)").trim(),
   habitacion: z.string().trim().optional(),
   maxDevices: z.number().int().min(1).max(5).default(2),

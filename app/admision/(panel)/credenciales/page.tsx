@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { ArrowLeft, PlusCircle, Search, ClipboardList, Loader2, Download } from "lucide-react";
 
-type TipoAcceso = "Todos" | "Paciente" | "Transito";
+type TipoAcceso = "Todos" | "Paciente" | "Emergencia" | "Transito";
 
 interface ListItem {
   id: string;
   name: string;
-  type: "PACIENTE" | "TRANSITO" | "MEDICO";
+  type: "PACIENTE" | "TRANSITO" | "EMERGENCIA" | "MEDICO";
   identifier: string; // voucherCode
   room?: string | null;
   status: string; // "Active" | "Expired" | "Blocked" | "Pending"
@@ -26,7 +26,10 @@ export default function CredencialesPage() {
   const [filtroTipo, setFiltroTipo] = useState<TipoAcceso>("Todos");
 
   // Map filters to API params
-  const typeParam = filtroTipo === "Paciente" ? "PACIENTE" : filtroTipo === "Transito" ? "TRANSITO" : "";
+  const typeParam =
+    filtroTipo === "Paciente" ? "PACIENTE" :
+    filtroTipo === "Emergencia" ? "EMERGENCIA" :
+    filtroTipo === "Transito" ? "TRANSITO" : "";
 
   // SWR query
   // scope=credentials: Admisión solo gestiona pacientes/tránsito. Los médicos
@@ -42,7 +45,7 @@ export default function CredencialesPage() {
   const [exporting, setExporting] = useState(false);
 
   const tipoLabel = (t: string) =>
-    t === "PACIENTE" ? "Paciente" : t === "TRANSITO" ? "Tránsito" : "Médico";
+    t === "PACIENTE" ? "Paciente" : t === "EMERGENCIA" ? "Emergencia" : t === "TRANSITO" ? "Tránsito" : "Médico";
   const estadoLabel = (s: string) =>
     s === "Active" ? "Activo" : s === "Expired" ? "Expirado" : s === "Blocked" ? "Bloqueado" : s;
 
@@ -143,7 +146,7 @@ export default function CredencialesPage() {
         </div>
         
         <div className="flex items-center gap-2">
-          {(["Todos", "Paciente", "Transito"] as TipoAcceso[]).map((t) => (
+          {(["Todos", "Paciente", "Emergencia", "Transito"] as TipoAcceso[]).map((t) => (
             <button
               key={t}
               onClick={() => setFiltroTipo(t)}
@@ -197,6 +200,10 @@ export default function CredencialesPage() {
                       {cred.type === "PACIENTE" ? (
                         <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5 text-xs">
                           Paciente
+                        </span>
+                      ) : cred.type === "EMERGENCIA" ? (
+                        <span className="bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5 text-xs">
+                          Emergencia
                         </span>
                       ) : (
                         <span className="bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-xs">

@@ -20,6 +20,7 @@ export interface PortalConfigShape {
 
 export interface SystemConfigMap {
   guest_session_hours: number;
+  emergencia_session_hours: number;
   doctor_session_hours: number | null; // null = permanente
   max_devices_guest: number;
   max_devices_doctor: number;
@@ -56,6 +57,7 @@ const DEFAULT_PORTAL: PortalConfigShape = {
 
 const DEFAULT_SYSTEM: SystemConfigMap = {
   guest_session_hours: 48,
+  emergencia_session_hours: 12,
   doctor_session_hours: null,
   max_devices_guest: 2,
   max_devices_doctor: 3,
@@ -82,6 +84,7 @@ function parseConfigValue(key: string, value: string): any {
   if (value === "null") return null;
   if (
     key === "guest_session_hours" ||
+    key === "emergencia_session_hours" ||
     key === "max_devices_guest" ||
     key === "max_devices_doctor" ||
     key === "max_devices_staff" ||

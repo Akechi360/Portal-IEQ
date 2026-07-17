@@ -10,7 +10,7 @@ import { db } from "@/lib/db";
 import { requireInternal } from "@/lib/jwt";
 import { activeSessionWhere } from "@/lib/session-activity";
 
-type ListItemType = "PACIENTE" | "TRANSITO" | "MEDICO";
+type ListItemType = "PACIENTE" | "TRANSITO" | "EMERGENCIA" | "MEDICO";
 
 interface ListItem {
   id: string;
@@ -59,11 +59,11 @@ export async function GET(req: Request) {
     const isOperador = auth.role === "OPERADOR";
     const includeDoctors =
       !isOperador && scope !== "credentials" && (!type || type === "MEDICO");
-    const includeCredentials = !type || type === "PACIENTE" || type === "TRANSITO";
+    const includeCredentials = !type || type === "PACIENTE" || type === "TRANSITO" || type === "EMERGENCIA";
 
     if (includeCredentials) {
       const credentials = await db.credential.findMany({
-        where: type && type !== "MEDICO" ? { tipo: type as "PACIENTE" | "TRANSITO" } : undefined,
+        where: type && type !== "MEDICO" ? { tipo: type as "PACIENTE" | "TRANSITO" | "EMERGENCIA" } : undefined,
         include: { _count: { select: { sessions: { where: activeSessionWhere() } } } },
         orderBy: { createdAt: "desc" },
       });
@@ -103,7 +103,7 @@ export async function GET(req: Request) {
     }
 
     // ── Filtros ──
-    if (type && ["PACIENTE", "TRANSITO", "MEDICO"].includes(type)) {
+    if (type && ["PACIENTE", "TRANSITO", "EMERGENCIA", "MEDICO"].includes(type)) {
       items = items.filter((i) => i.type === type);
     }
 

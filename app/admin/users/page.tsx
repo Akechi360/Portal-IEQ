@@ -39,10 +39,15 @@ function getColor(name: string) {
 
 // Role badge
 function RoleBadge({ type }: { type: string }) {
-  const label = type === "PACIENTE" ? "Paciente" : type === "TRANSITO" ? "Tránsito" : "Médico";
+  const label =
+    type === "PACIENTE" ? "Paciente" :
+    type === "EMERGENCIA" ? "Emergencia" :
+    type === "TRANSITO" ? "Tránsito" : "Médico";
   const colorClass =
     type === "PACIENTE"
       ? "bg-blue-100 text-blue-700"
+      : type === "EMERGENCIA"
+      ? "bg-red-100 text-red-700"
       : type === "TRANSITO"
       ? "bg-amber-100 text-amber-700"
       : "bg-purple-100 text-purple-700";

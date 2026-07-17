@@ -113,10 +113,15 @@ export async function POST(req: Request) {
             // estancia (o los 30 min de tránsito) empiezan a contar ahora, no
             // al momento de emitir.
             if (bindings.length === 0 && !credential.expireAt) {
-              const ms =
-                credential.tipo === "TRANSITO"
-                  ? 30 * 60 * 1000
-                  : ((credential.diasEstancia ?? 1) * 24 + 2) * 60 * 60 * 1000;
+              let ms: number;
+              if (credential.tipo === "TRANSITO") {
+                ms = 30 * 60 * 1000; // 30 min
+              } else if (credential.tipo === "EMERGENCIA") {
+                // Paciente de emergencia: acceso de horas (default 12), no días.
+                ms = (await getSystemConfig("emergencia_session_hours")) * 60 * 60 * 1000;
+              } else {
+                ms = ((credential.diasEstancia ?? 1) * 24 + 2) * 60 * 60 * 1000;
+              }
               try {
                 await db.credential.update({
                   where: { id: credential.id },
