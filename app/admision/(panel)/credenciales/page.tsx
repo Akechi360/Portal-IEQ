@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { ArrowLeft, PlusCircle, Search, ClipboardList, Loader2, Download } from "lucide-react";
+import { ArrowLeft, PlusCircle, Search, ClipboardList, Loader2, Download, X, CalendarPlus, Ban, Minus, Plus } from "lucide-react";
+import { confirmAction, toastSuccess } from "@/lib/alerts";
 
 type TipoAcceso = "Todos" | "Paciente" | "Emergencia" | "Transito";
 
@@ -34,10 +35,79 @@ export default function CredencialesPage() {
   // SWR query
   // scope=credentials: Admisión solo gestiona pacientes/tránsito. Los médicos
   // los administra Sistemas y no deben aparecer aquí ni con el filtro "Todos".
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     `/api/list?scope=credentials&limit=100${typeParam ? `&type=${typeParam}` : ""}${search ? `&search=${search}` : ""}`,
     (url) => fetch(url).then((res) => res.json())
   );
+
+  // Detalle / acciones de una credencial (extender estadía, revocar).
+  const [selected, setSelected] = useState<ListItem | null>(null);
+  const [extendDias, setExtendDias] = useState(1);
+  const [working, setWorking] = useState(false);
+  const [actionError, setActionError] = useState("");
+
+  function openDetail(cred: ListItem) {
+    setSelected(cred);
+    setExtendDias(1);
+    setActionError("");
+  }
+
+  async function handleExtend() {
+    if (!selected) return;
+    setWorking(true);
+    setActionError("");
+    try {
+      const res = await fetch(`/api/admin/credentials/${selected.id}/extend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dias: extendDias }),
+      });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setSelected(null);
+        mutate();
+        toastSuccess(json.message || "Estadía extendida");
+      } else {
+        setActionError(json.message || "No se pudo extender.");
+      }
+    } catch (e) {
+      console.error(e);
+      setActionError("Error de red al extender.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleRevoke() {
+    if (!selected) return;
+    const ok = await confirmAction({
+      title: `¿Revocar la credencial de ${selected.name}?`,
+      html:
+        "El código dejará de funcionar de inmediato y sus dispositivos perderán " +
+        "acceso en la próxima revalidación. Esta acción no se puede deshacer.",
+      confirmText: "Revocar credencial",
+      danger: true,
+    });
+    if (!ok) return;
+    setWorking(true);
+    setActionError("");
+    try {
+      const res = await fetch(`/api/admin/credentials/${selected.id}`, { method: "PATCH" });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setSelected(null);
+        mutate();
+        toastSuccess("Credencial revocada");
+      } else {
+        setActionError(json.message || "No se pudo revocar.");
+      }
+    } catch (e) {
+      console.error(e);
+      setActionError("Error de red al revocar.");
+    } finally {
+      setWorking(false);
+    }
+  }
 
   const items: ListItem[] = data?.items || [];
   const total = data?.total || 0;
@@ -190,7 +260,11 @@ export default function CredencialesPage() {
                 </tr>
               ) : items.length > 0 ? (
                 items.map((cred) => (
-                  <tr key={cred.id} className="hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors">
+                  <tr
+                    key={cred.id}
+                    onClick={() => openDetail(cred)}
+                    className="hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-3.5 text-sm">
                       <span className="font-mono font-semibold text-gray-900 tracking-wider">
                         {cred.identifier}
@@ -274,10 +348,97 @@ export default function CredencialesPage() {
         </div>
         
         {/* FOOTER DE TABLA */}
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400">
-          Mostrando {items.length} credencial(es) en tiempo real
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-2 text-xs text-gray-400">
+          <span>Mostrando {items.length} credencial(es) en tiempo real</span>
+          <span className="hidden sm:inline">Toca una credencial para extenderla o revocarla</span>
         </div>
       </div>
+
+      {/* MODAL DE DETALLE / ACCIONES */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Credencial</h2>
+              <button onClick={() => setSelected(null)} className="text-gray-400 transition-colors hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm">
+              <p className="font-semibold text-gray-900">{selected.name}</p>
+              <p className="mt-0.5 font-mono text-xs tracking-wider text-gray-500">{selected.identifier}</p>
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-500">
+                <span>Tipo</span><span className="text-right font-medium text-gray-700">{tipoLabel(selected.type)}</span>
+                {selected.room && (<><span>Área / Hab.</span><span className="text-right font-medium text-gray-700">{selected.room}</span></>)}
+                <span>Expira</span>
+                <span className="text-right font-medium text-gray-700">
+                  {selected.expiresAt
+                    ? new Date(selected.expiresAt).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+                    : "Al conectarse"}
+                </span>
+                <span>Estado</span><span className="text-right font-medium text-gray-700">{estadoLabel(selected.status)}</span>
+              </div>
+            </div>
+
+            {/* Extender estadía (solo Paciente) */}
+            {selected.type === "PACIENTE" ? (
+              <div className="mt-5">
+                <label className="mb-2 block text-sm font-medium text-gray-700">Extender estadía</label>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExtendDias((d) => Math.max(1, d - 1))}
+                      className="rounded-lg bg-gray-100 p-2 transition-colors hover:bg-gray-200"
+                    >
+                      <Minus className="h-3.5 w-3.5 text-gray-600" />
+                    </button>
+                    <span className="w-8 text-center text-lg font-bold text-gray-900">{extendDias}</span>
+                    <button
+                      type="button"
+                      onClick={() => setExtendDias((d) => Math.min(30, d + 1))}
+                      className="rounded-lg bg-gray-100 p-2 transition-colors hover:bg-gray-200"
+                    >
+                      <Plus className="h-3.5 w-3.5 text-gray-600" />
+                    </button>
+                  </div>
+                  <span className="text-sm text-gray-500">día(s) más</span>
+                  <button
+                    onClick={handleExtend}
+                    disabled={working}
+                    className="ml-auto inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-70"
+                  >
+                    {working ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+                    Extender
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] text-gray-400">
+                  Mismo código, sin perder los dispositivos ya conectados.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-5 text-xs text-gray-400">
+                Solo las credenciales de Paciente se pueden extender.
+              </p>
+            )}
+
+            {actionError && <p className="mt-3 text-sm text-red-600">{actionError}</p>}
+
+            {/* Zona de peligro */}
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <button
+                onClick={handleRevoke}
+                disabled={working}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+              >
+                <Ban className="h-4 w-4" />
+                Revocar credencial
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
