@@ -44,6 +44,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const type = url.searchParams.get("type"); // "PACIENTE" | "TRANSITO" | "MEDICO" | null
+    const scope = url.searchParams.get("scope"); // "credentials" -> solo vouchers, sin médicos
     const status = url.searchParams.get("status");
     const search = url.searchParams.get("search")?.trim().toLowerCase();
     const page = Number(url.searchParams.get("page") ?? "1");
@@ -51,7 +52,13 @@ export async function GET(req: Request) {
 
     let items: ListItem[] = [];
 
-    const includeDoctors = !type || type === "MEDICO";
+    // Los médicos los administra Sistemas, no Admisión. Un OPERADOR (Admisión)
+    // NUNCA los recibe, aunque pida type=MEDICO a mano — es control de acceso
+    // real en el servidor, no solo ocultarlos en la vista. Además, cualquier
+    // panel puede pedir scope=credentials para excluirlos explícitamente.
+    const isOperador = auth.role === "OPERADOR";
+    const includeDoctors =
+      !isOperador && scope !== "credentials" && (!type || type === "MEDICO");
     const includeCredentials = !type || type === "PACIENTE" || type === "TRANSITO";
 
     if (includeCredentials) {

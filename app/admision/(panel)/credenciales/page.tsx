@@ -29,8 +29,10 @@ export default function CredencialesPage() {
   const typeParam = filtroTipo === "Paciente" ? "PACIENTE" : filtroTipo === "Transito" ? "TRANSITO" : "";
 
   // SWR query
+  // scope=credentials: Admisión solo gestiona pacientes/tránsito. Los médicos
+  // los administra Sistemas y no deben aparecer aquí ni con el filtro "Todos".
   const { data, error, isLoading } = useSWR(
-    `/api/list?limit=100${typeParam ? `&type=${typeParam}` : ""}${search ? `&search=${search}` : ""}`,
+    `/api/list?scope=credentials&limit=100${typeParam ? `&type=${typeParam}` : ""}${search ? `&search=${search}` : ""}`,
     (url) => fetch(url).then((res) => res.json())
   );
 
