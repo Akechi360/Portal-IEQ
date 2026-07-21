@@ -24,9 +24,10 @@ type StatusType = "idle" | "loading" | "success" | "error";
 
 export function LoginClient({ mac, redirect, ssid, loginUrl = "", logoutUrl = "" }: LoginClientProps) {
   const router = useRouter();
-  // El gateway manda el nombre de la VLAN (p.ej. "VLAN233"), no el SSID real
-  const displaySsid =
-    ssid && !/^vlan/i.test(ssid) ? ssid : "WiFi Clinica IEQ Los Mangos";
+  // El gateway manda identificadores internos (VLAN233, auto_192168110101…),
+  // NUNCA el nombre real. Mostramos siempre el nombre amigable de la red.
+  const looksReal = ssid ? /clinica|ieq/i.test(ssid) && !/^(vlan|auto)/i.test(ssid) : false;
+  const displaySsid = looksReal ? ssid : "WiFi Clinica IEQ Los Mangos";
 
   // WISPr: si el gateway mandó login_url, tras validar el voucher redirigimos
   // al gateway con las credenciales para que él conceda el acceso a internet.

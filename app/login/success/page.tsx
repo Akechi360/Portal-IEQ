@@ -41,8 +41,12 @@ function SuccessContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  // El gateway puede mandar el nombre de VLAN en lugar del SSID real
-  const displaySsid = /^vlan/i.test(ssid) ? "WiFi Clinica IEQ Los Mangos" : ssid;
+  // El gateway manda identificadores internos (VLAN233, auto_192168110101…),
+  // NUNCA el nombre real de la red. Mostramos siempre el nombre amigable,
+  // salvo que por casualidad el valor recibido ya sea un nombre "de la clínica".
+  const REAL_SSID = "WiFi Clinica IEQ Los Mangos";
+  const looksReal = /clinica|ieq/i.test(ssid) && !/^(vlan|auto)/i.test(ssid);
+  const displaySsid = looksReal ? ssid : REAL_SSID;
 
   return (
     <div className={styles.portal}>
