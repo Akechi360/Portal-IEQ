@@ -21,6 +21,13 @@ import { activeSessionWhere } from "@/lib/session-activity";
 
 const MB = 1_048_576;
 
+/**
+ * Un equipo retenido por el portal cautivo solo consume unos pocos cientos de
+ * KB (detección de portal + cargar la pantalla de login). Si pasa de este
+ * umbral SIN haberse autenticado, es que está navegando saltándose el portal.
+ */
+const BYPASS_BYTES = 5 * MB;
+
 /** Estado de un cliente frente al portal. */
 type ClientStatus = "Autenticado" | "Sin accounting" | "Sin portal";
 
@@ -91,6 +98,10 @@ export async function GET(req: Request) {
       bytesDown: number;
       bytesUp: number;
       status: ClientStatus;
+      deviceType: string | null;
+      manufacturer: string | null;
+      /** Navega sin haberse autenticado nunca: se está saltando el portal. */
+      bypass: boolean;
     }> = [];
 
     const seen = new Set<string>();
@@ -112,14 +123,22 @@ export async function GET(req: Request) {
           mac,
           ip: c.ip || session?.ip || "—",
           // El username de Ruijie suele ser el voucher/correo; preferimos el
-          // nombre real que ya tenemos en la app.
-          username: session ? sessionName(session) : boundName || c.username || "Sin identificar",
+          // nombre real que ya tenemos en la app, y si no, cómo se llama el equipo.
+          username:
+            (session ? sessionName(session) : boundName) ||
+            c.hostname ||
+            (c.username && c.username !== "Unknown" ? c.username : null) ||
+            "Sin identificar",
           ssid: c.ssid && c.ssid !== "—" ? c.ssid : session?.ssid || "—",
           connectedAt: c.startedAt,
           durationSeconds: c.durationSeconds,
           bytesDown: c.bytesDown,
           bytesUp: c.bytesUp,
           status,
+          deviceType: c.deviceType,
+          manufacturer: c.manufacturer,
+          // Nunca pasó por el portal pero sí está navegando -> está saltándoselo.
+          bypass: status === "Sin portal" && c.bytesDown + c.bytesUp > BYPASS_BYTES,
         });
       }
     }
@@ -141,20 +160,31 @@ export async function GET(req: Request) {
         bytesDown: toBytes(s.dataDownMB),
         bytesUp: toBytes(s.dataUpMB),
         status: "Autenticado",
+        deviceType: null,
+        manufacturer: null,
+        bypass: false,
       });
     }
 
-    // Autenticados primero, luego los casados, y de últimos los desconocidos.
+    // Los que se saltan el portal van PRIMERO: es lo que hay que corregir.
+    // Después autenticados, casados sin accounting, y de últimos los que el
+    // portal sí está reteniendo (sin tráfico, o sea funcionando bien).
     const rank: Record<ClientStatus, number> = {
-      Autenticado: 0,
-      "Sin accounting": 1,
-      "Sin portal": 2,
+      Autenticado: 1,
+      "Sin accounting": 2,
+      "Sin portal": 3,
     };
-    clients.sort((a, b) => rank[a.status] - rank[b.status] || b.durationSeconds - a.durationSeconds);
+    clients.sort(
+      (a, b) =>
+        Number(b.bypass) - Number(a.bypass) ||
+        rank[a.status] - rank[b.status] ||
+        b.bytesDown + b.bytesUp - (a.bytesDown + a.bytesUp)
+    );
 
     const authenticated = clients.filter((c) => c.status === "Autenticado").length;
     const staleAccounting = clients.filter((c) => c.status === "Sin accounting").length;
     const withoutPortal = clients.filter((c) => c.status === "Sin portal").length;
+    const bypassing = clients.filter((c) => c.bypass).length;
 
     const totalDown = clients.reduce((a, c) => a + c.bytesDown, 0);
     const totalUp = clients.reduce((a, c) => a + c.bytesUp, 0);
@@ -179,6 +209,8 @@ export async function GET(req: Request) {
         activeClients: authenticated,
         staleAccounting,
         withoutPortal,
+        // Equipos navegando sin haber pasado nunca por el portal.
+        bypassing,
         totalAps: aps.length,
         totalDownBytes: totalDown,
         totalUpBytes: totalUp,

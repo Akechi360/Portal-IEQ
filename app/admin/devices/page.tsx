@@ -54,7 +54,12 @@ const STATUS_STYLES: Record<string, { chip: string; dot: string; title: string }
   "Sin portal": {
     chip: "bg-neutral-100 text-neutral-600",
     dot: "bg-neutral-400",
-    title: "Conectado al Wi-Fi sin autenticarse: o está en la lista de exentos, o nunca completó el portal",
+    title: "El portal lo está reteniendo: enganchó el Wi-Fi pero no navega (funcionando bien)",
+  },
+  "Saltando el portal": {
+    chip: "bg-red-50 text-red-700",
+    dot: "bg-red-500",
+    title: "Está navegando sin haberse autenticado nunca — se está saltando el portal cautivo",
   },
 };
 
@@ -62,24 +67,31 @@ function ClientCard({ client }: { client: any }) {
   const deviceType = guessDeviceType(client.mac);
   const durationMin = Math.floor(client.durationSeconds / 60);
   const durationStr = durationMin < 60 ? `${durationMin}m` : `${Math.floor(durationMin / 60)}h ${durationMin % 60}m`;
-  const status = STATUS_STYLES[client.status] ?? STATUS_STYLES["Sin portal"];
+  const label = client.bypass ? "Saltando el portal" : client.status;
+  const status = STATUS_STYLES[label] ?? STATUS_STYLES["Sin portal"];
 
   return (
-    <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <div
+      className={`rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md ${
+        client.bypass ? "border-red-200 ring-1 ring-red-100" : "border-neutral-100"
+      }`}
+    >
       <div className="mb-4 flex items-start gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50">
           <DeviceIcon type={deviceType} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-neutral-800">{client.username}</p>
-          <p className="text-xs text-neutral-400">{client.ssid}</p>
+          <p className="truncate text-xs text-neutral-400">
+            {[client.deviceType, client.manufacturer].filter(Boolean).join(" · ") || client.ssid}
+          </p>
         </div>
         <span
           title={status.title}
           className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${status.chip}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
-          {client.status}
+          {label}
         </span>
       </div>
       <div className="space-y-1.5 text-sm">
@@ -144,6 +156,7 @@ export default function DevicesPage() {
     activeClients: 0,
     staleAccounting: 0,
     withoutPortal: 0,
+    bypassing: 0,
     totalAps: 0,
     totalDownBytes: 0,
     totalUpBytes: 0,
@@ -173,6 +186,18 @@ export default function DevicesPage() {
         </div>
       )}
 
+      {!isLoading && kpis.bypassing > 0 && (
+        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            <strong>{kpis.bypassing} equipo(s) están navegando sin pasar por el portal cautivo.</strong>{" "}
+            Aparecen de primeros en la lista, marcados en rojo. Si no son equipos exentos a propósito
+            (TVs, servidores), revisa en Ruijie la lista de clientes gratuitos y la autenticación sin
+            percepción por MAC.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
           label="Equipos en el Wi-Fi"
@@ -186,7 +211,12 @@ export default function DevicesPage() {
           sub={isLoading ? "" : `${kpis.withoutPortal} sin pasar por el portal`}
           subColor="text-green-600"
         />
-        <KpiCard label="Access Points" value={isLoading ? "—" : kpis.totalAps} sub="Activos en la red" />
+        <KpiCard
+          label="Saltando el portal"
+          value={isLoading ? "—" : kpis.bypassing}
+          sub="Navegan sin autenticarse"
+          subColor={!isLoading && kpis.bypassing > 0 ? "text-red-600" : "text-neutral-400"}
+        />
         <KpiCard
           label="Tráfico total"
           value={isLoading ? "—" : `↓ ${fmtBytes(kpis.totalDownBytes)}`}
@@ -198,17 +228,19 @@ export default function DevicesPage() {
       <div className="flex items-start gap-2 rounded-xl border border-neutral-100 bg-white px-4 py-3 text-xs text-neutral-500 shadow-sm">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary-500" />
         <p>
-          <strong className="text-neutral-700">Equipos en el Wi-Fi</strong> es todo lo que Ruijie ve conectado
-          a los AP — incluidos los exentos del portal (TVs, equipos de la clínica) y los que se engancharon
-          a la red sin autenticarse. <strong className="text-neutral-700">Autenticados</strong> son los que
-          pasaron por el portal y el gateway sigue reportando. Por eso los dos números no coinciden.
+          <strong className="text-neutral-700">Equipos en el Wi-Fi</strong> es todo lo que Ruijie ve
+          enganchado a los AP. Los que dicen <strong className="text-neutral-700">Sin portal</strong> y no
+          tienen tráfico están correctamente retenidos en la pantalla de login. Los que dicen{" "}
+          <strong className="text-red-700">Saltando el portal</strong> sí están navegando sin haberse
+          autenticado nunca — esos son los que hay que corregir.
           {!isLoading && kpis.staleAccounting > 0 && (
             <>
               {" "}
-              Hay <strong className="text-amber-700">{kpis.staleAccounting}</strong> equipo(s) que sí se
-              autenticaron pero el gateway dejó de reportar su sesión.
+              Además hay <strong className="text-amber-700">{kpis.staleAccounting}</strong> equipo(s) que sí
+              se autenticaron pero el gateway dejó de reportar su sesión.
             </>
           )}
+          {" "}Hay {isLoading ? "—" : kpis.totalAps} Access Points activos.
         </p>
       </div>
 

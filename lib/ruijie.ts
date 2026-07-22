@@ -45,6 +45,12 @@ export interface RuijieSession {
   bytesDown: number;
   bytesUp: number;
   rssi: number | null;
+  /** "Smartphone", "iPhone", "TV/TV Box"… — lo clasifica el propio Ruijie. */
+  deviceType: string | null;
+  /** Marca del equipo (SAMSUNG, Apple, HONOR…). */
+  manufacturer: string | null;
+  /** Nombre que anuncia el equipo (ej. "S25-Ultra-de-Martin"). */
+  hostname: string | null;
 }
 
 export interface RuijieUserGroup {
@@ -424,6 +430,9 @@ export async function getSessions(): Promise<RuijieSession[]> {
         bytesDown: 52_428_800,
         rssi: -60,
         bytesUp: 10_485_760,
+        deviceType: "Smartphone",
+        manufacturer: "SAMSUNG",
+        hostname: "Galaxy-A07",
       },
       {
         id: "sess-mock-002",
@@ -437,6 +446,9 @@ export async function getSessions(): Promise<RuijieSession[]> {
         bytesDown: 209_715_200,
         rssi: -70,
         bytesUp: 41_943_040,
+        deviceType: "TV/TV Box",
+        manufacturer: "Google",
+        hostname: "GoogleTV0041",
       },
     ];
   }
@@ -506,6 +518,10 @@ export async function getSessions(): Promise<RuijieSession[]> {
       bytesDown: u.flowDown || u.downFlow || u.wifiDown || u.rxBytes || 0,
       bytesUp: u.flowUp || u.upFlow || u.wifiUp || u.txBytes || 0,
       rssi: typeof u.rssiInt === "number" ? u.rssiInt : u.rssi ? Number(u.rssi) : null,
+      // Ruijie ya clasifica el terminal; el nombre del campo varía por versión.
+      deviceType: u.deviceType || u.terminalType || u.staType || u.clientType || null,
+      manufacturer: u.manufacturer || u.vendor || u.brand || u.factory || null,
+      hostname: u.hostname || u.staName || u.deviceName || u.terminalName || null,
     };
   });
 }
