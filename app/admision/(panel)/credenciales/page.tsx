@@ -16,6 +16,7 @@ interface ListItem {
   room?: string | null;
   status: string; // "Active" | "Expired" | "Blocked" | "Pending"
   devicesCount: number;
+  maxDevices: number | null;
   expiresAt: string | null;
   createdAt: string;
 }
@@ -314,7 +315,7 @@ export default function CredencialesPage() {
                       )}
                     </td>
                     <td className="hidden xl:table-cell px-4 py-3.5 text-sm text-center text-gray-600">
-                      {cred.devicesCount} c.
+                      {cred.maxDevices ? `${cred.devicesCount} / ${cred.maxDevices}` : cred.devicesCount}
                     </td>
                     <td className="px-4 py-3.5 text-sm">
                       {cred.status === "Active" && (
@@ -371,6 +372,10 @@ export default function CredencialesPage() {
               <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-500">
                 <span>Tipo</span><span className="text-right font-medium text-gray-700">{tipoLabel(selected.type)}</span>
                 {selected.room && (<><span>Área / Hab.</span><span className="text-right font-medium text-gray-700">{selected.room}</span></>)}
+                <span>Dispositivos</span>
+                <span className="text-right font-medium text-gray-700">
+                  {selected.maxDevices ? `${selected.devicesCount} de ${selected.maxDevices}` : selected.devicesCount} en uso
+                </span>
                 <span>Expira</span>
                 <span className="text-right font-medium text-gray-700">
                   {selected.expiresAt

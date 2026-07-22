@@ -255,7 +255,9 @@ export default function AdminListPage() {
                     <td className="px-4 py-3 text-neutral-700">{item.room || "—"}</td>
 
                     {/* DISPOSITIVOS */}
-                    <td className="px-4 py-3 text-neutral-500">{item.devicesCount ?? 0} conectados</td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      {item.maxDevices ? `${item.devicesCount ?? 0} / ${item.maxDevices}` : `${item.devicesCount ?? 0}`} en uso
+                    </td>
 
                     {/* ESTADO */}
                     <td className="px-4 py-3">

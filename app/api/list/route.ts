@@ -8,7 +8,6 @@ import { NextResponse } from "next/server";
 import { CredentialStatus, DoctorStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireInternal } from "@/lib/jwt";
-import { activeSessionWhere } from "@/lib/session-activity";
 
 type ListItemType = "PACIENTE" | "TRANSITO" | "EMERGENCIA" | "MEDICO";
 
@@ -20,6 +19,7 @@ interface ListItem {
   room?: string | null;
   status: string;
   devicesCount: number;
+  maxDevices: number | null; // solo credenciales (vouchers); null para médicos
   expiresAt: string | null;
   createdAt: string;
 }
@@ -64,7 +64,11 @@ export async function GET(req: Request) {
     if (includeCredentials) {
       const credentials = await db.credential.findMany({
         where: type && type !== "MEDICO" ? { tipo: type as "PACIENTE" | "TRANSITO" | "EMERGENCIA" } : undefined,
-        include: { _count: { select: { sessions: { where: activeSessionWhere() } } } },
+        // Dispositivos reales usando la credencial = MACs casados (DeviceBinding),
+        // no las sesiones de accounting (que dependen de que el gateway las
+        // reporte). Cada equipo que se conecta casa su MAC; esto refleja los
+        // slots realmente en uso, hasta maxDevices.
+        include: { _count: { select: { deviceBindings: true } } },
         orderBy: { createdAt: "desc" },
       });
       items.push(
@@ -75,7 +79,8 @@ export async function GET(req: Request) {
           identifier: c.voucherCode,
           room: c.habitacion,
           status: mapCredentialStatus(c.status, c.expireAt),
-          devicesCount: c._count.sessions,
+          devicesCount: c._count.deviceBindings,
+          maxDevices: c.maxDevices,
           expiresAt: c.expireAt?.toISOString() || null,
           createdAt: c.createdAt.toISOString(),
         }))
@@ -84,7 +89,7 @@ export async function GET(req: Request) {
 
     if (includeDoctors) {
       const doctors = await db.doctor.findMany({
-        include: { _count: { select: { sessions: { where: activeSessionWhere() } } } },
+        include: { _count: { select: { deviceBindings: true } } },
         orderBy: { createdAt: "desc" },
       });
       items.push(
@@ -95,7 +100,8 @@ export async function GET(req: Request) {
           identifier: d.email,
           room: d.especialidad,
           status: mapDoctorStatus(d.status),
-          devicesCount: d._count.sessions,
+          devicesCount: d._count.deviceBindings,
+          maxDevices: null,
           expiresAt: null,
           createdAt: d.createdAt.toISOString(),
         }))
