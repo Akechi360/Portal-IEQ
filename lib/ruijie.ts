@@ -400,7 +400,12 @@ export async function getDevices(): Promise<RuijieDevice[]> {
 }
 
 /**
- * Lista las sesiones activas en el gateway.
+ * Lista los clientes conectados AHORA según Ruijie Cloud.
+ *
+ * Ojo con qué significa esto: Ruijie cuenta la ASOCIACIÓN Wi-Fi (capa 2), o
+ * sea todo equipo enganchado a un AP — se haya autenticado en el portal o no,
+ * e incluidos los exentos de la lista de clientes gratuitos. No es lo mismo
+ * que las sesiones de RADIUS que guarda la app.
  */
 export async function getSessions(): Promise<RuijieSession[]> {
   const token = await getRuijieToken();
@@ -437,25 +442,55 @@ export async function getSessions(): Promise<RuijieSession[]> {
   }
 
   const networkGroupId = process.env.RUIJIE_GROUP_ID || "9371493";
-  const sessionsUrl = `${RUIJIE_CLOUD_URL}/logbizagent/logbiz/api/sta/sta_users?access_token=${token}`;
-  
-  const res = await fetch(sessionsUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      groupId: Number(networkGroupId),
-      pageSize: 100,
-      pageIndex: 0,
-      staType: "currentUser"
-    })
-  });
-  
-  if (!res.ok) throw new Error("Error fetching sessions from Ruijie");
-  const json = await res.json();
-  if (json.code !== 0) {
-    throw new Error(`Ruijie error fetching sessions (code ${json.code}): ${json.msg}`);
+  const PAGE_SIZE = 100;
+  const MAX_PAGES = 20; // tope de seguridad (2000 clientes) por si la API no corta
+
+  const fetchPage = async (accessToken: string, pageIndex: number) => {
+    const res = await fetch(
+      `${RUIJIE_CLOUD_URL}/logbizagent/logbiz/api/sta/sta_users?access_token=${accessToken}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupId: Number(networkGroupId),
+          pageSize: PAGE_SIZE,
+          pageIndex,
+          staType: "currentUser",
+        }),
+      }
+    );
+    if (!res.ok) throw new Error(`Error fetching sessions from Ruijie: HTTP ${res.status}`);
+    return res.json();
+  };
+
+  // La clínica pasa de 100 clientes asociados en hora pico, así que hay que
+  // recorrer las páginas: con una sola quedaba topado justo cuando más importa.
+  let accessToken = token;
+  const list: any[] = [];
+
+  for (let pageIndex = 0; pageIndex < MAX_PAGES; pageIndex++) {
+    let json = await fetchPage(accessToken, pageIndex);
+
+    // Token vencido — renovar y reintentar esta página una vez
+    if (json.code !== 0 && isStaleTokenCode(json.code)) {
+      invalidateRuijieToken();
+      const fresh = await getRuijieToken();
+      if (fresh !== "MOCK_TOKEN_OFFLINE") {
+        accessToken = fresh;
+        json = await fetchPage(accessToken, pageIndex);
+      }
+    }
+
+    if (json.code !== 0) {
+      throw new Error(`Ruijie error fetching sessions (code ${json.code}): ${json.msg}`);
+    }
+
+    // El campo varía según versión de la API; probamos las formas conocidas.
+    const page: any[] =
+      json.list || json.data?.list || (Array.isArray(json.data) ? json.data : []);
+    list.push(...page);
+    if (page.length < PAGE_SIZE) break;
   }
-  const list = json.list || [];
 
   return list.map((u: any) => {
     const mac = u.mac ? normalizeMac(u.mac) : "00:00:00:00:00:00";

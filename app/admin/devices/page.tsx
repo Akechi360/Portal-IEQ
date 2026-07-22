@@ -1,6 +1,6 @@
 "use client";
 
-import { Wifi, Laptop, Smartphone, Monitor, HelpCircle, RefreshCw } from "lucide-react";
+import { Wifi, Laptop, Smartphone, Monitor, HelpCircle, RefreshCw, Info, AlertTriangle } from "lucide-react";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -39,10 +39,30 @@ function KpiCard({ label, value, sub, subColor = "text-neutral-400" }: { label: 
   );
 }
 
+/** Cada estado explica por qué el portal conoce (o no) a este equipo. */
+const STATUS_STYLES: Record<string, { chip: string; dot: string; title: string }> = {
+  Autenticado: {
+    chip: "bg-green-50 text-green-700",
+    dot: "bg-green-500",
+    title: "Pasó por el portal y el gateway sigue reportando su sesión",
+  },
+  "Sin accounting": {
+    chip: "bg-amber-50 text-amber-700",
+    dot: "bg-amber-500",
+    title: "Se autenticó en el portal, pero el gateway dejó de reportar su sesión",
+  },
+  "Sin portal": {
+    chip: "bg-neutral-100 text-neutral-600",
+    dot: "bg-neutral-400",
+    title: "Conectado al Wi-Fi sin autenticarse: o está en la lista de exentos, o nunca completó el portal",
+  },
+};
+
 function ClientCard({ client }: { client: any }) {
   const deviceType = guessDeviceType(client.mac);
   const durationMin = Math.floor(client.durationSeconds / 60);
   const durationStr = durationMin < 60 ? `${durationMin}m` : `${Math.floor(durationMin / 60)}h ${durationMin % 60}m`;
+  const status = STATUS_STYLES[client.status] ?? STATUS_STYLES["Sin portal"];
 
   return (
     <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -54,9 +74,12 @@ function ClientCard({ client }: { client: any }) {
           <p className="truncate font-semibold text-neutral-800">{client.username}</p>
           <p className="text-xs text-neutral-400">{client.ssid}</p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-          Activo
+        <span
+          title={status.title}
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${status.chip}`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+          {client.status}
         </span>
       </div>
       <div className="space-y-1.5 text-sm">
@@ -116,7 +139,17 @@ export default function DevicesPage() {
 
   const clients: any[] = data?.clients || [];
   const aps: any[] = data?.aps || [];
-  const kpis = data?.kpis || { totalClients: 0, activeClients: 0, totalAps: 0, totalDownBytes: 0, totalUpBytes: 0 };
+  const kpis = data?.kpis || {
+    totalClients: 0,
+    activeClients: 0,
+    staleAccounting: 0,
+    withoutPortal: 0,
+    totalAps: 0,
+    totalDownBytes: 0,
+    totalUpBytes: 0,
+    source: "ruijie",
+  };
+  const ruijieCaido = !isLoading && data?.ok && kpis.source === "portal";
 
   return (
     <div className="space-y-5">
@@ -130,11 +163,53 @@ export default function DevicesPage() {
         </button>
       </div>
 
+      {ruijieCaido && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            No se pudo consultar Ruijie Cloud, así que solo se ven los equipos autenticados por el portal.
+            El total real de conectados es mayor.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard label="Clientes conectados" value={isLoading ? "—" : kpis.activeClients} sub="En este momento" subColor="text-green-600" />
+        <KpiCard
+          label="Equipos en el Wi-Fi"
+          value={isLoading ? "—" : kpis.totalClients}
+          sub="Conectados a los AP"
+          subColor="text-neutral-400"
+        />
+        <KpiCard
+          label="Autenticados"
+          value={isLoading ? "—" : kpis.activeClients}
+          sub={isLoading ? "" : `${kpis.withoutPortal} sin pasar por el portal`}
+          subColor="text-green-600"
+        />
         <KpiCard label="Access Points" value={isLoading ? "—" : kpis.totalAps} sub="Activos en la red" />
-        <KpiCard label="Descarga total" value={isLoading ? "—" : fmtBytes(kpis.totalDownBytes)} sub="Sesiones activas" subColor="text-primary-600" />
-        <KpiCard label="Subida total" value={isLoading ? "—" : fmtBytes(kpis.totalUpBytes)} sub="Sesiones activas" subColor="text-emerald-600" />
+        <KpiCard
+          label="Tráfico total"
+          value={isLoading ? "—" : `↓ ${fmtBytes(kpis.totalDownBytes)}`}
+          sub={isLoading ? "" : `↑ ${fmtBytes(kpis.totalUpBytes)} de subida`}
+          subColor="text-primary-600"
+        />
+      </div>
+
+      <div className="flex items-start gap-2 rounded-xl border border-neutral-100 bg-white px-4 py-3 text-xs text-neutral-500 shadow-sm">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary-500" />
+        <p>
+          <strong className="text-neutral-700">Equipos en el Wi-Fi</strong> es todo lo que Ruijie ve conectado
+          a los AP — incluidos los exentos del portal (TVs, equipos de la clínica) y los que se engancharon
+          a la red sin autenticarse. <strong className="text-neutral-700">Autenticados</strong> son los que
+          pasaron por el portal y el gateway sigue reportando. Por eso los dos números no coinciden.
+          {!isLoading && kpis.staleAccounting > 0 && (
+            <>
+              {" "}
+              Hay <strong className="text-amber-700">{kpis.staleAccounting}</strong> equipo(s) que sí se
+              autenticaron pero el gateway dejó de reportar su sesión.
+            </>
+          )}
+        </p>
       </div>
 
       {aps.length > 0 && (
@@ -148,7 +223,7 @@ export default function DevicesPage() {
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-neutral-500 uppercase tracking-wider">
-          Clientes conectados {isLoading ? "" : `(${clients.length})`}
+          Equipos conectados {isLoading ? "" : `(${clients.length})`}
         </h2>
         {isLoading ? (
           <div className="rounded-xl border border-neutral-100 bg-white p-10 text-center text-sm text-neutral-400 shadow-sm">
