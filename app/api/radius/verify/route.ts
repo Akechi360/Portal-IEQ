@@ -89,6 +89,32 @@ export async function POST(req: Request) {
     if (credential && credential.status === "ACTIVE") {
       // Check expiration
       if (!credential.expireAt || credential.expireAt > new Date()) {
+        // ── Arranque del reloj de expiración en la PRIMERA validación ──
+        // La credencial se emite "en espera" (expireAt = null) y los días de
+        // estancia (o los 30 min de tránsito / 12h de emergencia) empiezan a
+        // contar en la primera conexión. IMPORTANTE: esto va ANTES y por FUERA
+        // del bloque de MAC, para que el reloj arranque aunque el gateway no
+        // mande una MAC utilizable (el usuario igual se conecta).
+        if (!credential.expireAt) {
+          let ms: number;
+          if (credential.tipo === "TRANSITO") {
+            ms = 30 * 60 * 1000; // 30 min
+          } else if (credential.tipo === "EMERGENCIA") {
+            ms = (await getSystemConfig("emergencia_session_hours")) * 60 * 60 * 1000;
+          } else {
+            ms = ((credential.diasEstancia ?? 1) * 24 + 2) * 60 * 60 * 1000;
+          }
+          try {
+            await db.credential.update({
+              where: { id: credential.id },
+              data: { expireAt: new Date(Date.now() + ms) },
+            });
+            console.log(`[RADIUS Verify] Reloj iniciado para ${username} (+${ms}ms)`);
+          } catch {
+            // Si falla el update, la credencial sigue válida (sin expiry aún).
+          }
+        }
+
         // ── Device binding: casa el voucher con el/los MAC del dispositivo ──
         // Si el MAC ya está casado -> pasa. Si es nuevo y hay cupo
         // (< maxDevices) -> lo casa. Si no hay cupo -> rechaza (otro equipo
@@ -108,31 +134,6 @@ export async function POST(req: Request) {
                 { status: 200 }
               );
             }
-            // Primera conexión: arranca aquí el reloj de expiración. La
-            // credencial se emite "en espera" (expireAt = null) y los días de
-            // estancia (o los 30 min de tránsito) empiezan a contar ahora, no
-            // al momento de emitir.
-            if (bindings.length === 0 && !credential.expireAt) {
-              let ms: number;
-              if (credential.tipo === "TRANSITO") {
-                ms = 30 * 60 * 1000; // 30 min
-              } else if (credential.tipo === "EMERGENCIA") {
-                // Paciente de emergencia: acceso de horas (default 12), no días.
-                ms = (await getSystemConfig("emergencia_session_hours")) * 60 * 60 * 1000;
-              } else {
-                ms = ((credential.diasEstancia ?? 1) * 24 + 2) * 60 * 60 * 1000;
-              }
-              try {
-                await db.credential.update({
-                  where: { id: credential.id },
-                  data: { expireAt: new Date(Date.now() + ms) },
-                });
-                console.log(`[RADIUS Verify] Reloj iniciado para ${username} (+${ms}ms)`);
-              } catch {
-                // Si falla el update, la credencial sigue válida (sin expiry aún).
-              }
-            }
-
             try {
               await db.deviceBinding.create({
                 data: { credentialId: credential.id, mac },
